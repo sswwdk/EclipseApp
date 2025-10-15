@@ -1,17 +1,17 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class OpenAIService {
-  final String apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
+  // TODO: 실제 API 키로 교체하세요
+  final String apiKey = 'YOUR_OPENAI_API_KEY_HERE';
   final String apiUrl = 'https://api.openai.com/v1/chat/completions';
   
   // 대화 히스토리를 저장 (컨텍스트 유지용)
   List<Map<String, String>> conversationHistory = [];
 
   OpenAIService() {
-    if (apiKey.isEmpty) {
-      throw Exception('OpenAI API 키가 설정되지 않았습니다.');
+    if (apiKey.isEmpty || apiKey == 'YOUR_OPENAI_API_KEY_HERE') {
+      throw Exception('OpenAI API 키가 설정되지 않았습니다. lib/services/openai_service.dart 파일에서 API 키를 설정하세요.');
     }
   }
 
