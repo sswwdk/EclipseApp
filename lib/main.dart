@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'login/login_screen.dart';
 
-// main 함수를 async로 변경하고 dotenv 로드 추가
-Future<void> main() async {
-  await dotenv.load(fileName: ".env");
+void main() {
   runApp(const MyApp());
 }
 

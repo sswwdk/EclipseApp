@@ -12,7 +12,6 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   http: ^1.1.0  # 추가: HTTP 요청용
-  flutter_dotenv: ^5.1.0  # 추가: API 키 보안 관리용
 
 dev_dependencies:
   flutter_test:
@@ -24,4 +23,3 @@ flutter:
   
   assets:
     - assets/images/
-    - .env  # 추가: .env 파일 포함
