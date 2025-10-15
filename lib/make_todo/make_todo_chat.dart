@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:whattodo/services/openai_service.dart'; // 위에서 만든 서비스 import
 
 /// 채팅 메시지 데이터 모델
 class ChatMessage {
@@ -32,10 +33,24 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   final ScrollController _scrollController = ScrollController();
+  
+  // OpenAI 서비스 인스턴스
+  late OpenAIService _openAIService;
+  
+  // 로딩 상태
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    
+    // OpenAI 서비스 초기화
+    _openAIService = OpenAIService();
+    _openAIService.initializeWithContext(
+      peopleCount: widget.peopleCount,
+      selectedCategories: widget.selectedCategories,
+    );
+    
     // 초기 메시지들 추가
     _messages.addAll([
       ChatMessage(
@@ -54,33 +69,51 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
+    
+    final userMessage = _messageController.text.trim();
     
     setState(() {
       _messages.add(ChatMessage(
-        text: _messageController.text.trim(),
+        text: userMessage,
         isUser: true,
         timestamp: DateTime.now(),
       ));
+      _isLoading = true; // 로딩 시작
     });
     
     _messageController.clear();
     _scrollToBottom();
     
-    // AI 응답 시뮬레이션 (실제로는 API 호출)
-    Future.delayed(const Duration(milliseconds: 500), () {
+    try {
+      // OpenAI API 호출
+      final aiResponse = await _openAIService.sendMessage(userMessage);
+      
       if (mounted) {
         setState(() {
           _messages.add(ChatMessage(
-            text: '좋은 아이디어네요! 더 자세히 알려주세요.',
+            text: aiResponse,
             isUser: false,
             timestamp: DateTime.now(),
           ));
+          _isLoading = false; // 로딩 종료
         });
         _scrollToBottom();
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(
+            text: '죄송합니다. 응답을 가져오는 중 오류가 발생했습니다.',
+            isUser: false,
+            timestamp: DateTime.now(),
+          ));
+          _isLoading = false;
+        });
+        _scrollToBottom();
+      }
+    }
   }
 
   void _scrollToBottom() {
@@ -127,8 +160,46 @@ class _ChatScreenState extends State<ChatScreen> {
               child: ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount: _messages.length,
+                itemCount: _messages.length + (_isLoading ? 1 : 0),
                 itemBuilder: (context, index) {
+                  // 로딩 인디케이터 표시
+                  if (index == _messages.length && _isLoading) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: const [
+                              BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A21)),
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                '생각 중...',
+                                style: TextStyle(color: Color(0xFFFF7A21), fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  
                   final message = _messages[index];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 14),
@@ -156,6 +227,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       child: TextField(
                         controller: _messageController,
+                        enabled: !_isLoading, // 로딩 중에는 입력 불가
                         decoration: const InputDecoration(
                           hintText: '메시지를 입력하세요...',
                           hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
@@ -168,14 +240,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(width: 10),
                   GestureDetector(
-                    onTap: _sendMessage,
+                    onTap: _isLoading ? null : _sendMessage, // 로딩 중에는 버튼 비활성화
                     child: Container(
                       width: 44,
                       height: 44,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFF7A21),
+                      decoration: BoxDecoration(
+                        color: _isLoading ? Colors.grey : const Color(0xFFFF7A21),
                         shape: BoxShape.circle,
-                        boxShadow: [
+                        boxShadow: const [
                           BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 4)),
                         ],
                       ),

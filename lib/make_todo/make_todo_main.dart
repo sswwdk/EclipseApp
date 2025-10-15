@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'make_todo.dart';
-import '../main.dart';
+import '../screens/home.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,7 +10,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1; // 할 일 생성 버튼이 활성화되도록 설정
 
   @override
   Widget build(BuildContext context) {
@@ -90,9 +90,9 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedItemColor: const Color(0xFFFF7A21),
           unselectedItemColor: Colors.black54,
           onTap: (i) {
-            setState(() => _selectedIndex = i);
             if (i == 0) {
               // 홈 버튼을 누르면 main.dart로 돌아가기
+              setState(() => _selectedIndex = i);
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (_) => const MainScreen(),
@@ -101,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
             } else if (i == 1) {
               // 할 일 생성 버튼 - 현재 화면 유지 (화면 이동용으로만 사용)
               // 실제 할 일 만들기는 중앙의 "할 일 만들러가기" 버튼으로만 가능
+              setState(() => _selectedIndex = i);
             }
           },
           items: const [

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/wave_painter.dart';
 import 'signup_screen.dart';
-import '../main.dart';
+import '../screens/home.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
