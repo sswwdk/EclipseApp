@@ -31,7 +31,7 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              '몇 명과 함께 하시나요?',
+              '총 몇 명이 함께하시나요? (본인 포함)',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,

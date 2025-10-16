@@ -45,7 +45,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          '회원가입',
+          '돌아가기',
           style: TextStyle(
             color: Colors.grey,
             fontSize: 16,
@@ -64,7 +64,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: Padding(
                 padding: EdgeInsets.only(bottom: 40),
                 child: Text(
-                  '오늘 뭐하지?',
+                  '회원가입',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -74,40 +74,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
             
-            // 아이디 입력 필드
-            _buildInputField('아이디', '아이디를 입력하세요', _idController),
+            // 아이디 입력 필드 (필수)
+            _buildInputField('아이디', '아이디를 입력하세요', _idController, isRequired: true),
             const SizedBox(height: 20),
             
-            // 비밀번호 입력 필드
-            _buildInputField('비밀번호', '비밀번호를 입력하세요', _passwordController, isPassword: true),
+            // 비밀번호 입력 필드 (필수)
+            _buildInputField('비밀번호', '비밀번호를 입력하세요', _passwordController, isPassword: true, isRequired: true),
             const SizedBox(height: 20),
             
-            // 이름 입력 필드
-            _buildInputField('이름', '이름을 입력하세요', _nameController),
+            // 닉네임 입력 필드 (필수)
+            _buildInputField('닉네임', '닉네임을 입력하세요', _nicknameController, isRequired: true),
             const SizedBox(height: 20),
             
-            // 닉네임 입력 필드
-            _buildInputField('닉네임', '닉네임을 입력하세요', _nicknameController),
+            // 이메일 입력 필드 (필수)
+            _buildInputField('이메일', '이메일을 입력하세요', _emailController, isRequired: true),
             const SizedBox(height: 20),
             
-            // 이메일 입력 필드
-            _buildInputField('이메일', '이메일을 입력하세요', _emailController),
+            // 이름 입력 필드 (선택)
+            _buildInputField('이름', '이름을 입력하세요', _nameController, isOptional: true),
             const SizedBox(height: 20),
             
-            // 생년월일 선택 필드
-            _buildDateField(),
+            // 전화번호 입력 필드 (선택)
+            _buildInputField('전화번호', '전화번호를 입력하세요', _phoneController, isOptional: true),
             const SizedBox(height: 20),
             
-            // 전화번호 입력 필드
-            _buildInputField('전화번호', '전화번호를 입력하세요', _phoneController),
+            // 주소 입력 필드 (선택)
+            _buildInputField('주소', '주소를 입력하세요', _addressController, isOptional: true),
             const SizedBox(height: 20),
             
-            // 성별 선택 필드
-            _buildGenderField(),
+            // 성별 선택 필드 (선택)
+            _buildGenderField(isOptional: true),
             const SizedBox(height: 20),
             
-            // 주소 입력 필드
-            _buildInputField('주소', '주소를 입력하세요', _addressController),
+            // 생년월일 선택 필드 (선택)
+            _buildDateField(isOptional: true),
             const SizedBox(height: 40),
             
             // 회원가입 버튼
@@ -115,8 +115,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  // 필수 항목 검증
+                  final String id = _idController.text.trim();
+                  final String password = _passwordController.text.trim();
                   final String nickname = _nicknameController.text.trim();
                   final String email = _emailController.text.trim();
+                  
+                  if (id.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('아이디를 입력하세요.')),
+                    );
+                    return;
+                  }
+                  
+                  if (password.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('비밀번호를 입력하세요.')),
+                    );
+                    return;
+                  }
                   
                   if (nickname.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -141,8 +158,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     return;
                   }
                   
-                  // TODO: 회원가입 로직에 닉네임, 이메일 포함하여 처리
-                  debugPrint('회원가입 닉네임: $nickname, 이메일: $email');
+                  // TODO: 회원가입 로직에 필수 정보 포함하여 처리
+                  debugPrint('회원가입 - 아이디: $id, 닉네임: $nickname, 이메일: $email');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('회원가입이 완료되었습니다.')),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF8126),
@@ -170,17 +190,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildInputField(String label, String hint, TextEditingController controller, {bool isPassword = false}) {
+  Widget _buildInputField(String label, String hint, TextEditingController controller, {bool isPassword = false, bool isRequired = false, bool isOptional = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            if (isRequired) ...[
+              const SizedBox(width: 4),
+              const Text(
+                '*',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+            if (isOptional) ...[
+              const SizedBox(width: 4),
+              const Text(
+                '(선택)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
         TextField(
@@ -213,17 +259,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildDateField() {
+  Widget _buildDateField({bool isOptional = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '생년월일',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
+        Row(
+          children: [
+            const Text(
+              '생년월일',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            if (isOptional) ...[
+              const SizedBox(width: 4),
+              const Text(
+                '(선택)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
         GestureDetector(
@@ -282,17 +343,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildGenderField() {
+  Widget _buildGenderField({bool isOptional = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '성별',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
+        Row(
+          children: [
+            const Text(
+              '성별',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            if (isOptional) ...[
+              const SizedBox(width: 4),
+              const Text(
+                '(선택)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
         Container(

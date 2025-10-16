@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
+import '../screens/home.dart';
 
 class MyInfoScreen extends StatelessWidget {
   const MyInfoScreen({Key? key}) : super(key: key);
@@ -20,6 +21,21 @@ class MyInfoScreen extends StatelessWidget {
           ),
         ),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black,
+          ),
+          onPressed: () {
+            // 뒤로 가기 시 항상 홈 화면으로 돌아가기
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => const MainScreen(),
+              ),
+              (route) => false, // 모든 이전 화면 제거
+            );
+          },
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(

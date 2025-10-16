@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'make_todo.dart';
 import '../screens/home.dart';
 import '../myinfo/myinfo_screen.dart';
+import '../community/community_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -104,8 +105,13 @@ class _HomeScreenState extends State<HomeScreen> {
               // 실제 할 일 만들기는 중앙의 "할 일 만들러가기" 버튼으로만 가능
               setState(() => _selectedIndex = i);
             } else if (i == 2) {
-              // 커뮤니티 버튼 - 아직 구현되지 않음
+              // 커뮤니티 버튼을 누르면 CommunityScreen으로 이동
               setState(() => _selectedIndex = i);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const CommunityScreen(),
+                ),
+              );
             } else if (i == 3) {
               // 내 정보 버튼을 누르면 MyInfoScreen으로 이동
               setState(() => _selectedIndex = i);

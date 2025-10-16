@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../login/login_screen.dart';
 import '../make_todo/make_todo_main.dart';
 import '../myinfo/myinfo_screen.dart';
+import '../community/community_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -21,7 +22,7 @@ class _MainScreenState extends State<MainScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          '할일추천',
+          '할 일 추천',
           style: TextStyle(
             color: Colors.black,
             fontSize: 20,
@@ -119,8 +120,13 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               );
             } else if (i == 2) {
-              // 커뮤니티 버튼 - 아직 구현되지 않음
+              // 커뮤니티 버튼을 누르면 CommunityScreen으로 이동
               setState(() => _selectedIndex = i);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const CommunityScreen(),
+                ),
+              );
             } else if (i == 3) {
               // 내 정보 버튼을 누르면 MyInfoScreen으로 이동
               setState(() => _selectedIndex = i);
