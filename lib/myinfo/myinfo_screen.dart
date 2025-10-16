@@ -3,7 +3,8 @@ import 'profile_settings_screen.dart';
 import '../screens/home.dart';
 
 class MyInfoScreen extends StatelessWidget {
-  const MyInfoScreen({Key? key}) : super(key: key);
+  final String? fromScreen; // 어느 화면에서 왔는지 추적
+  const MyInfoScreen({Key? key, this.fromScreen}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
