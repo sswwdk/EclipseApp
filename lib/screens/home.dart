@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../login/login_screen.dart';
 import '../make_todo/make_todo_main.dart';
+import '../myinfo/myinfo_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -117,8 +118,18 @@ class _MainScreenState extends State<MainScreen> {
                   builder: (_) => const HomeScreen(),
                 ),
               );
+            } else if (i == 2) {
+              // 커뮤니티 버튼 - 아직 구현되지 않음
+              setState(() => _selectedIndex = i);
+            } else if (i == 3) {
+              // 내 정보 버튼을 누르면 MyInfoScreen으로 이동
+              setState(() => _selectedIndex = i);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const MyInfoScreen(),
+                ),
+              );
             }
-            // 커뮤니티와 내 정보는 나중에 구현
           },
           items: const [
             BottomNavigationBarItem(
