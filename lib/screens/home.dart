@@ -126,7 +126,7 @@ class _MainScreenState extends State<MainScreen> {
               setState(() => _selectedIndex = i);
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => const MyInfoScreen(),
+                  builder: (_) => MyInfoScreen(fromScreen: 'home'),
                 ),
               );
             }
