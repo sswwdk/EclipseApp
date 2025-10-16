@@ -250,7 +250,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
                       ),
                     );
                   },
-                  child: const Text('AI와 할 일 만들러 가기',
+                  child: const Text('하루와 할 일 만들러 가기!',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
               ),
