@@ -33,6 +33,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _messageFocusNode = FocusNode();
   
   // OpenAI 서비스 인스턴스
   late OpenAIService _openAIService;
@@ -66,6 +67,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _messageFocusNode.dispose();
     super.dispose();
   }
 
@@ -86,6 +88,11 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
     _scrollToBottom();
     
+    // 메시지 전송 후 텍스트 필드에 포커스 유지
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _messageFocusNode.requestFocus();
+    });
+    
     try {
       // OpenAI API 호출
       final aiResponse = await _openAIService.sendMessage(userMessage);
@@ -100,6 +107,11 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false; // 로딩 종료
         });
         _scrollToBottom();
+        
+        // AI 응답 후에도 텍스트 필드에 포커스 유지
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _messageFocusNode.requestFocus();
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -112,6 +124,11 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false;
         });
         _scrollToBottom();
+        
+        // 에러 발생 후에도 텍스트 필드에 포커스 유지
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _messageFocusNode.requestFocus();
+        });
       }
     }
   }
@@ -227,6 +244,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       child: TextField(
                         controller: _messageController,
+                        focusNode: _messageFocusNode,
                         enabled: !_isLoading, // 로딩 중에는 입력 불가
                         decoration: const InputDecoration(
                           hintText: '메시지를 입력하세요...',
