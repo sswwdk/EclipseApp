@@ -12,6 +12,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _nicknameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   
@@ -23,6 +25,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _idController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
+    _nicknameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     super.dispose();
@@ -82,6 +86,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
             _buildInputField('이름', '이름을 입력하세요', _nameController),
             const SizedBox(height: 20),
             
+            // 닉네임 입력 필드
+            _buildInputField('닉네임', '닉네임을 입력하세요', _nicknameController),
+            const SizedBox(height: 20),
+            
+            // 이메일 입력 필드
+            _buildInputField('이메일', '이메일을 입력하세요', _emailController),
+            const SizedBox(height: 20),
+            
             // 생년월일 선택 필드
             _buildDateField(),
             const SizedBox(height: 20),
@@ -103,7 +115,34 @@ class _SignUpScreenState extends State<SignUpScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // 회원가입 로직
+                  final String nickname = _nicknameController.text.trim();
+                  final String email = _emailController.text.trim();
+                  
+                  if (nickname.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('닉네임을 입력하세요.')),
+                    );
+                    return;
+                  }
+                  
+                  if (email.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('이메일을 입력하세요.')),
+                    );
+                    return;
+                  }
+                  
+                  // 이메일 형식 검증
+                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  if (!emailRegex.hasMatch(email)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('올바른 이메일 형식을 입력하세요.')),
+                    );
+                    return;
+                  }
+                  
+                  // TODO: 회원가입 로직에 닉네임, 이메일 포함하여 처리
+                  debugPrint('회원가입 닉네임: $nickname, 이메일: $email');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF8126),
