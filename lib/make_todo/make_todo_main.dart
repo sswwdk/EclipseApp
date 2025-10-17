@@ -117,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() => _selectedIndex = i);
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => MyInfoScreen(fromScreen: 'make_todo'),
+                  builder: (_) => const MyInfoScreen(),
                 ),
               );
             }

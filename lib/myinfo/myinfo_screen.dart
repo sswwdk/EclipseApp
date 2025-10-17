@@ -118,7 +118,7 @@ class MyInfoScreen extends StatelessWidget {
                   );
                 },
                 child: const Text(
-                  '닉네임',
+                  '내 프로필',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
