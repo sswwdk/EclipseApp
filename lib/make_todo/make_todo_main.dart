@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'make_todo.dart';
-import '../screens/home.dart';
+import '../home/home.dart';
 import '../myinfo/myinfo_screen.dart';
 import '../community/community_screen.dart';
 

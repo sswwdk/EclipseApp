@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/home.dart';
+import '../home/home.dart';
 import '../make_todo/make_todo_main.dart';
 import '../myinfo/myinfo_screen.dart';
 
