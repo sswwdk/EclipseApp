@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens/home.dart';
+import '../login/login_screen.dart';
+import '../login/find_account_screen.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({Key? key}) : super(key: key);
@@ -89,11 +91,11 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
   void _processAccountDeletion() {
     // 실제 계정 삭제 로직
-    _showSnackBar('계정이 성공적으로 삭제되었습니다.');
+    _showSnackBar('회원이 탈퇴되었습니다.');
     
     // 로그인 화면으로 이동
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const MainScreen()),
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
       (route) => false,
     );
   }
@@ -310,11 +312,15 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    // 비밀번호 재설정 화면으로 이동
-                    _showSnackBar('비밀번호 재설정 기능을 구현해주세요.');
+                    // 비밀번호 찾기 화면으로 이동
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const FindAccountScreen(),
+                      ),
+                    );
                   },
                   child: const Text(
-                    '비밀번호를 잊으셨나요? 비밀번호 재설정',
+                    '비밀번호를 잊으셨나요?',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey,
