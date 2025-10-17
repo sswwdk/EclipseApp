@@ -31,7 +31,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back_ios,
+            Icons.arrow_back,
             color: Colors.black,
           ),
           onPressed: () => Navigator.of(context).pop(),
