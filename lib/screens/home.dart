@@ -3,6 +3,7 @@ import '../login/login_screen.dart';
 import '../make_todo/make_todo_main.dart';
 import '../myinfo/myinfo_screen.dart';
 import '../community/community_screen.dart';
+import 'restaurant_detail_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -71,11 +72,18 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             // 첫 번째 추천 카드
             _buildRecommendationCard(
-              imagePlaceholder: "Movie poster for 'The Grand Budapest Hotel'",
-              title: "인생은 짧은 여행",
+              imagePlaceholder: "햄버거와 감자튀김 이미지",
+              title: "버거퀸",
               rating: 4.7,
-              reviewCount: 3456,
-              tags: ["힐링", "여행", "드라마"],
+              reviewCount: 1234,
+              tags: ["혼밥하기 좋은", "재료가 신선해요", "육즙이 살아있어요", "배달이 빨라요"],
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const RestaurantDetailScreen(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
             
@@ -201,21 +209,25 @@ class _MainScreenState extends State<MainScreen> {
     required double rating,
     required int reviewCount,
     required List<String> tags,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 이미지 플레이스홀더
@@ -288,6 +300,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
