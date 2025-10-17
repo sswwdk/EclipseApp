@@ -25,7 +25,7 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
             Align(
               alignment: Alignment.centerLeft,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
             ),
@@ -174,7 +174,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  icon: const Icon(Icons.arrow_back),
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),
                 const Text('인원 수 고르기', style: TextStyle(fontSize: 14, color: Colors.black54)),

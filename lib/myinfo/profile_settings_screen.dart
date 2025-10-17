@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'delete_account_screen.dart';
 
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({Key? key}) : super(key: key);
@@ -21,7 +22,7 @@ class ProfileSettingsScreen extends StatelessWidget {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back_ios,
+            Icons.arrow_back,
             color: Colors.black,
           ),
           onPressed: () => Navigator.of(context).pop(),
@@ -51,7 +52,7 @@ class ProfileSettingsScreen extends StatelessWidget {
             const SizedBox(height: 20),
             
             // 계정 관리 섹션
-            _buildAccountManagementSection(),
+            _buildAccountManagementSection(context),
           ],
         ),
       ),
@@ -226,7 +227,7 @@ class ProfileSettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountManagementSection() {
+  Widget _buildAccountManagementSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -249,7 +250,13 @@ class ProfileSettingsScreen extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.cancel_outlined,
             title: '회원 탈퇴하기',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const DeleteAccountScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),

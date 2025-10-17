@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
 import '../screens/home.dart';
+import '../login/login_screen.dart';
 
 class MyInfoScreen extends StatelessWidget {
   final String? fromScreen; // 어느 화면에서 왔는지 추적
@@ -24,7 +25,7 @@ class MyInfoScreen extends StatelessWidget {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back_ios,
+            Icons.arrow_back,
             color: Colors.black,
           ),
           onPressed: () {
@@ -58,7 +59,11 @@ class MyInfoScreen extends StatelessWidget {
             const SizedBox(height: 20),
             
             // 고객지원 섹션
-            _buildSupportSection(),
+            _buildSupportSection(context),
+            const SizedBox(height: 20),
+            
+            // 로그아웃 섹션
+            _buildLogoutSection(context),
           ],
         ),
       ),
@@ -118,7 +123,7 @@ class MyInfoScreen extends StatelessWidget {
                   );
                 },
                 child: const Text(
-                  '닉네임',
+                  '내 프로필',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -197,7 +202,7 @@ class MyInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSupportSection() {
+  Widget _buildSupportSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -249,6 +254,7 @@ class MyInfoScreen extends StatelessWidget {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    bool isDestructive = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -259,22 +265,23 @@ class MyInfoScreen extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: const Color(0xFFFF8126),
+              color: isDestructive ? Colors.red : const Color(0xFFFF8126),
               size: 24,
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: Colors.black87,
+                  color: isDestructive ? Colors.red : Colors.black87,
+                  fontWeight: isDestructive ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
-              color: Color(0xFFFF8126),
+              color: isDestructive ? Colors.red : const Color(0xFFFF8126),
               size: 20,
             ),
           ],
@@ -288,6 +295,91 @@ class MyInfoScreen extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       height: 1,
       color: Colors.grey[200],
+    );
+  }
+
+  Widget _buildLogoutSection(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            spreadRadius: 1,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildMenuItem(
+            icon: Icons.logout,
+            title: '로그아웃',
+            onTap: () {
+              _showLogoutDialog(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            '로그아웃',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            '정말 로그아웃하시겠습니까?',
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // 로그인 화면으로 이동
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
+              child: const Text(
+                '로그아웃',
+                style: TextStyle(
+                  color: Color(0xFFFF8126),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

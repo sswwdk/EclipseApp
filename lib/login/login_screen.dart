@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/wave_painter.dart';
 import 'signup_screen.dart';
+import 'find_account_screen.dart';
 import '../screens/home.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -145,7 +146,12 @@ class _LoginScreenState extends State<LoginScreen> {
               
               // 아이디/비밀번호 찾기
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FindAccountScreen()),
+                  );
+                },
                 child: const Text(
                   '아이디/비밀번호 찾기',
                   style: TextStyle(
