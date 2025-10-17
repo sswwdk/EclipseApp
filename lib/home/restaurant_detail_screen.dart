@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/bottom_navigation_widget.dart';
 
 class RestaurantDetailScreen extends StatelessWidget {
   const RestaurantDetailScreen({Key? key}) : super(key: key);
@@ -193,60 +194,9 @@ class RestaurantDetailScreen extends StatelessWidget {
         ),
       ),
       
-      // 하단바
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x1A000000),
-              blurRadius: 16,
-              offset: Offset(0, -4),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              selectedItemColor: const Color(0xFFFF8126),
-              unselectedItemColor: Colors.grey,
-              currentIndex: 0,
-              onTap: (index) {
-                // 하단바 네비게이션 로직
-                if (index == 0) {
-                  Navigator.of(context).pop(); // 홈으로 돌아가기
-                }
-              },
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_rounded),
-                  label: '홈',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.add_circle_outline),
-                  label: '할 일 생성',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.chat_bubble_outline),
-                  label: '커뮤니티',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_outline),
-                  label: '내 정보',
-                ),
-              ],
-            ),
-          ),
-        ),
+      bottomNavigationBar: BottomNavigationWidget(
+        currentIndex: 0,
+        fromScreen: 'restaurant_detail',
       ),
     );
   }
