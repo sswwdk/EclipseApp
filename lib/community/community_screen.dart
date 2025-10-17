@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../screens/home.dart';
+import 'message_screen.dart';
+import '../home/home.dart';
 import '../make_todo/make_todo_main.dart';
 import '../myinfo/myinfo_screen.dart';
 
@@ -30,6 +31,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Transform.rotate(
+              angle: -0.785398, // -45도 (오른쪽 대각선 위)
+              child: const Icon(
+                Icons.send_outlined,
+                color: Colors.black,
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const MessageScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8), // 간격 추가
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(

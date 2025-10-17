@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
-import '../screens/home.dart';
+import '../home/home.dart';
 import '../login/login_screen.dart';
 
 class MyInfoScreen extends StatelessWidget {
