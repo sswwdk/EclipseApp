@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
+import 'delete_account_screen.dart';
 import '../screens/home.dart';
 
 class MyInfoScreen extends StatelessWidget {
@@ -58,7 +59,7 @@ class MyInfoScreen extends StatelessWidget {
             const SizedBox(height: 20),
             
             // 고객지원 섹션
-            _buildSupportSection(),
+            _buildSupportSection(context),
           ],
         ),
       ),
@@ -197,7 +198,7 @@ class MyInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSupportSection() {
+  Widget _buildSupportSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -240,6 +241,18 @@ class MyInfoScreen extends StatelessWidget {
             title: '문의하기',
             onTap: () {},
           ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.logout_outlined,
+            title: '회원 탈퇴',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const DeleteAccountScreen(),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -249,6 +262,7 @@ class MyInfoScreen extends StatelessWidget {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    bool isDestructive = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -259,22 +273,23 @@ class MyInfoScreen extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: const Color(0xFFFF8126),
+              color: isDestructive ? Colors.red : const Color(0xFFFF8126),
               size: 24,
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: Colors.black87,
+                  color: isDestructive ? Colors.red : Colors.black87,
+                  fontWeight: isDestructive ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
-              color: Color(0xFFFF8126),
+              color: isDestructive ? Colors.red : const Color(0xFFFF8126),
               size: 20,
             ),
           ],
