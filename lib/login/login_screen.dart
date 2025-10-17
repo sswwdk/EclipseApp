@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/wave_painter.dart';
 import 'signup_screen.dart';
 import 'find_account_screen.dart';
-import '../screens/home.dart';
+import '../home/home.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
