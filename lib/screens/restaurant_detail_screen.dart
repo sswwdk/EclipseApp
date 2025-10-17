@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'home.dart';
+import '../make_todo/make_todo_main.dart';
+import '../myinfo/myinfo_screen.dart';
+import '../community/community_screen.dart';
 
 class RestaurantDetailScreen extends StatelessWidget {
   const RestaurantDetailScreen({Key? key}) : super(key: key);
@@ -221,9 +225,34 @@ class RestaurantDetailScreen extends StatelessWidget {
               unselectedItemColor: Colors.grey,
               currentIndex: 0,
               onTap: (index) {
-                // 하단바 네비게이션 로직
                 if (index == 0) {
-                  Navigator.of(context).pop(); // 홈으로 돌아가기
+                  // 홈 버튼을 누르면 홈 화면으로 이동
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const MainScreen(),
+                    ),
+                  );
+                } else if (index == 1) {
+                  // 할 일 생성 버튼을 누르면 할 일 생성 화면으로 이동
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const HomeScreen(),
+                    ),
+                  );
+                } else if (index == 2) {
+                  // 커뮤니티 버튼을 누르면 커뮤니티 화면으로 이동
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const CommunityScreen(),
+                    ),
+                  );
+                } else if (index == 3) {
+                  // 내 정보 버튼을 누르면 내 정보 화면으로 이동
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => MyInfoScreen(fromScreen: 'restaurant_detail'),
+                    ),
+                  );
                 }
               },
               items: const [
