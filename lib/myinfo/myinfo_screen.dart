@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
-import 'delete_account_screen.dart';
 import '../screens/home.dart';
 
 class MyInfoScreen extends StatelessWidget {
@@ -240,18 +239,6 @@ class MyInfoScreen extends StatelessWidget {
             icon: Icons.help_outline,
             title: '문의하기',
             onTap: () {},
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.logout_outlined,
-            title: '회원 탈퇴',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const DeleteAccountScreen(),
-                ),
-              );
-            },
           ),
         ],
       ),

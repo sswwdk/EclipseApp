@@ -17,7 +17,6 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     '기록 삭제 목적',
     '이용이 불편하고 장애가 많아서',
     '다른 사이트가 더 좋아서',
-    '삭제하고 싶은 내용이 있어서',
     '사용빈도가 낮아서',
     '콘텐츠 불만',
     '기타',
@@ -120,7 +119,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          '계정 삭제',
+          '회원 탈퇴',
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -170,7 +169,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               
               // 탈퇴 사유 요청
               const Text(
-                '계정을 삭제하시려는 이유를 말씀해주세요.\n제품 개선에 중요 자료로 활용하겠습니다.',
+                '회원을 탈퇴하시려는 이유를 말씀해주세요.\n서비스 개선에 중요 자료로 활용하겠습니다.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.black87,
@@ -240,7 +239,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '계정을 삭제하면 회원님의 모든 콘텐츠와 활동 기록, 포인트 충전·적립·사용 내역이 삭제됩니다. 삭제된 정보는 복구할 수 없으니 신중하게 결정해주세요.',
+                      '회원을 탈퇴하면 회원님의 모든 활동 기록과 찜 목록, 일정표 히스토리가 삭제됩니다. 삭제된 정보는 복구할 수 없으니 신중하게 결정해주세요.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.black87,
@@ -249,7 +248,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     ),
                     SizedBox(height: 12),
                     Text(
-                      '포인트 충전을 통해 적립한 포인트는 계정 삭제 시 환불이 불가합니다. 또한 환불 신청 후 환불 처리가 완료되기 전 계정을 삭제하는 경우 포인트 구매 기록을 확인할 수 없으므로 환불이 불가합니다.',
+                      '오뭐 플러스 구독은 회원 탈퇴 시 환불이 불가합니다. 또한 환불 신청 후 환불 처리가 완료되기 전 회원을 탈퇴하는 경우 오뭐 플러스 구독여부를 확인할 수 없으므로 환불이 불가합니다.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.black87,
