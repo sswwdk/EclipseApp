@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_navigation_widget.dart';
+import 'todo_list_screen.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({Key? key}) : super(key: key);
@@ -42,58 +43,113 @@ class _CommunityScreenState extends State<CommunityScreen> {
             // 커뮤니티 포스트들
             _buildPostCard(
               profileImage: Icons.person,
+              nickname: 'Suetheking',
+              timeAgo: '방금 전',
+              title: '아 심심해',
+              content: '같이가요',
+              schedule: {
+                'title': '메가커피 노량진점 → 카츠진 → 영등포 CGV',
+                'items': [
+                  {'time': '19:00', 'place': '메가커피 노량진점'},
+                  {'time': '20:30', 'place': '카츠진'},
+                  {'time': '22:00', 'place': '영등포 CGV'},
+                ],
+              },
+            ),
+            _buildDivider(),
+            
+            _buildPostCard(
+              profileImage: Icons.person,
               nickname: '근면한 떡볶이',
-              location: '문래동',
               timeAgo: '1주 전',
               title: '망원동 이치젠 같이 가실분?',
               content: '21세 남자입니다. 너무 핫플이라서 혼자가기가 좀 그런데 같이 가실 분 구합니다.',
+              schedule: {
+                'title': '망원동 이치젠 → 망원시장 → 홍대',
+                'items': [
+                  {'time': '19:00', 'place': '망원동 이치젠'},
+                  {'time': '21:00', 'place': '망원시장'},
+                  {'time': '22:30', 'place': '홍대'},
+                ],
+              },
             ),
             _buildDivider(),
             
             _buildPostCard(
               profileImage: Icons.person,
               nickname: '꼼꼼한 연어',
-              location: '영등포동',
               timeAgo: '1주 전',
               title: '양갈비가 맛있는 판코네!',
-              content: '동네는 아니고 회사 근처지만 양갈비 좋아하시는...',
+              content: '동네는 아니고 회사 근처지만 양갈비 좋아하시는 분들 모집합니다.',
+              schedule: {
+                'title': '판코네 → 강남역 → 신논현',
+                'items': [
+                  {'time': '18:30', 'place': '판코네'},
+                  {'time': '20:00', 'place': '강남역'},
+                  {'time': '21:30', 'place': '신논현'},
+                ],
+              },
             ),
             _buildDivider(),
             
             _buildPostCard(
               profileImage: Icons.person,
               nickname: '활발한 칼국수',
-              location: '신사동',
               timeAgo: '1주 전',
               title: '주문할때 최소주문금액...',
-              content: '확인 어떻게 하는지 아시는분 있나요??...',
+              content: '확인 어떻게 하는지 아시는분 있나요??',
+              schedule: {
+                'title': '홍대 스타벅스 → 홍대 클럽',
+                'items': [
+                  {'time': '20:00', 'place': '홍대 스타벅스'},
+                  {'time': '22:00', 'place': '홍대 클럽'},
+                ],
+              },
             ),
             _buildDivider(),
             
             _buildPostCard(
               profileImage: Icons.person,
               nickname: '케밥데몬헌터',
-              location: '강남구',
               timeAgo: '2주 전',
               title: '서울 근교 여행지 추천해주세요',
-              content: '주말에 가족과 함께 갈 수 있는 서울 근처 여행지를 찾고 있어요...',
+              content: '주말에 가족과 함께 갈 수 있는 서울 근처 여행지를 찾고 있어요.',
+              schedule: {
+                'title': '잠실 롯데월드 → 잠실 래미안 → 송파구청',
+                'items': [
+                  {'time': '09:00', 'place': '잠실 롯데월드'},
+                  {'time': '14:00', 'place': '잠실 래미안'},
+                  {'time': '17:00', 'place': '송파구청'},
+                ],
+              },
             ),
             _buildDivider(),
             
             _buildPostCard(
               profileImage: Icons.person,
               nickname: '달콤한 파스타',
-              location: '홍대',
               timeAgo: '2주 전',
               title: '혼자 가기 좋은 카페',
-              content: '홍대 근처에서 혼자 가서 책 읽기 좋은 조용한 카페 있나요?...',
+              content: '홍대 근처에서 혼자 가서 책 읽기 좋은 조용한 카페 있나요?',
+              schedule: {
+                'title': '홍대 카페 → 망원시장 → 홍대',
+                'items': [
+                  {'time': '14:00', 'place': '홍대 카페'},
+                  {'time': '16:00', 'place': '망원시장'},
+                  {'time': '18:00', 'place': '홍대'},
+                ],
+              },
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // 글쓰기 기능
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const TodoListScreen(),
+            ),
+          );
         },
         backgroundColor: const Color(0xFFFF8126),
         child: const Icon(
@@ -111,10 +167,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget _buildPostCard({
     required IconData profileImage,
     required String nickname,
-    required String location,
     required String timeAgo,
     required String title,
     required String content,
+    Map<String, dynamic>? schedule,
   }) {
     return Container(
       color: Colors.white,
@@ -155,7 +211,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$location $timeAgo',
+                      timeAgo,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -188,6 +244,87 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
           ),
           const SizedBox(height: 12),
+          
+          // 일정표 정보 (있는 경우에만 표시)
+          if (schedule != null) ...[
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF8126).withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFFF8126).withValues(alpha: 0.2),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        color: const Color(0xFFFF8126),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          schedule['title'],
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF8126),
+                          ),
+                          softWrap: true,
+                          overflow: TextOverflow.visible,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // 일정 정보
+                  if (schedule['items'] != null) ...[
+                    ...(schedule['items'] as List<Map<String, dynamic>>).map((scheduleItem) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 3,
+                              margin: const EdgeInsets.only(top: 6),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFFF8126),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                '${scheduleItem['time']} ${scheduleItem['place']}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                softWrap: true,
+                                overflow: TextOverflow.visible,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           
           // 댓글 버튼
           Row(

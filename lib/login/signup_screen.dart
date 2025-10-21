@@ -90,8 +90,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
             _buildInputField('이메일', '이메일을 입력하세요', _emailController, isRequired: true),
             const SizedBox(height: 20),
             
-            // 이름 입력 필드 (선택)
-            _buildInputField('이름', '이름을 입력하세요', _nameController, isOptional: true),
+            // 이름 입력 필드 (필수)
+            _buildInputField('이름', '이름을 입력하세요', _nameController, isRequired: true),
             const SizedBox(height: 20),
             
             // 전화번호 입력 필드 (선택)
@@ -120,6 +120,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   final String password = _passwordController.text.trim();
                   final String nickname = _nicknameController.text.trim();
                   final String email = _emailController.text.trim();
+                  final String name = _nameController.text.trim();
                   
                   if (id.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -149,6 +150,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     return;
                   }
                   
+                  if (name.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('이름을 입력하세요.')),
+                    );
+                    return;
+                  }
+                  
                   // 이메일 형식 검증
                   final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                   if (!emailRegex.hasMatch(email)) {
@@ -159,7 +167,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   }
                   
                   // TODO: 회원가입 로직에 필수 정보 포함하여 처리
-                  debugPrint('회원가입 - 아이디: $id, 닉네임: $nickname, 이메일: $email');
+                  debugPrint('회원가입 - 아이디: $id, 닉네임: $nickname, 이메일: $email, 이름: $name');
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('회원가입이 완료되었습니다.')),
                   );
