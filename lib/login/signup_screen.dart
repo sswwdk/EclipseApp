@@ -169,8 +169,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   // TODO: 회원가입 로직에 필수 정보 포함하여 처리
                   debugPrint('회원가입 - 아이디: $id, 닉네임: $nickname, 이메일: $email, 이름: $name');
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('회원가입이 완료되었습니다.')),
+                    const SnackBar(
+                      content: Text('회원가입이 완료되었습니다.'),
+                      backgroundColor: Color(0xFFFF8126),
+                    ),
                   );
+                  // 로그인 화면으로 돌아가기
+                  Navigator.of(context).pop();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF8126),
