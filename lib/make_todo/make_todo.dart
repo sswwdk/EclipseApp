@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'make_todo_chat.dart';
+import '../theme/app_theme.dart';
 
 class PeopleCountScreen extends StatefulWidget {
   const PeopleCountScreen({super.key});
@@ -17,7 +18,7 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -70,7 +71,7 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF7A21),
+                    backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
                     elevation: 3,
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -162,10 +163,45 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
     });
   }
 
+  // 다음 단계로 진행할 수 있는지 확인
+  bool get _canProceed => _selected.isNotEmpty;
+
+  // 다음 단계로 진행
+  void _proceedToNext() {
+    if (!_canProceed) {
+      // 선택하지 않았을 때 알림 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('최소 하나의 카테고리를 선택해주세요.'),
+          backgroundColor: AppTheme.primaryColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // 결과를 요청한 포맷으로 콘솔 출력
+    final list = _selected.toList();
+    // ignore: avoid_print
+    print('인원 수 : ${widget.peopleCount}명');
+    // ignore: avoid_print
+    print('선택 : ${list.map((e) => '"$e"').join(', ')}');
+
+    // 채팅 화면으로 이동하여 선택한 카테고리 시각화
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          peopleCount: widget.peopleCount,
+          selectedCategories: list,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,30 +262,15 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF7A21),
+                    backgroundColor: _canProceed 
+                        ? AppTheme.primaryColor 
+                        : Colors.grey[400],
                     foregroundColor: Colors.white,
-                    elevation: 3,
+                    elevation: _canProceed ? 3 : 1,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: () {
-                    // 결과를 요청한 포맷으로 콘솔 출력
-                    final list = _selected.toList();
-                    // ignore: avoid_print
-                    print('인원 수 : ${widget.peopleCount}명');
-                    // ignore: avoid_print
-                    print('선택 : ${list.map((e) => '"$e"').join(', ')}');
-
-                    // 채팅 화면으로 이동하여 선택한 카테고리 시각화
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ChatScreen(
-                          peopleCount: widget.peopleCount,
-                          selectedCategories: list,
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: _canProceed ? _proceedToNext : null,
                   child: const Text('하루와 할 일 만들러 가기!',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
