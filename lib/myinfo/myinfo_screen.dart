@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
 import '../home/home.dart';
 import '../login/login_screen.dart';
+import '../theme/app_theme.dart';
 
 class MyInfoScreen extends StatelessWidget {
   final String? fromScreen; // 어느 화면에서 왔는지 추적
@@ -10,14 +11,14 @@ class MyInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
         title: const Text(
           '내 정보',
           style: TextStyle(
-            color: Colors.black,
+            color: AppTheme.textPrimaryColor,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -26,7 +27,7 @@ class MyInfoScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back,
-            color: Colors.black,
+            color: AppTheme.textPrimaryColor,
           ),
           onPressed: () {
             // 뒤로 가기 시 항상 홈 화면으로 돌아가기
@@ -42,7 +43,7 @@ class MyInfoScreen extends StatelessWidget {
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: const Color(0xFFFF8126),
+             color: AppTheme.primaryColor,
           ),
         ),
       ),
@@ -127,7 +128,7 @@ class MyInfoScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                     color: AppTheme.textPrimaryColor,
                   ),
                 ),
               ),
@@ -265,7 +266,7 @@ class MyInfoScreen extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isDestructive ? Colors.red : const Color(0xFFFF8126),
+              color: isDestructive ? Colors.red : AppTheme.primaryColor,
               size: 24,
             ),
             const SizedBox(width: 16),
@@ -274,14 +275,14 @@ class MyInfoScreen extends StatelessWidget {
                 title,
                 style: TextStyle(
                   fontSize: 16,
-                  color: isDestructive ? Colors.red : Colors.black87,
+                  color: isDestructive ? Colors.red : AppTheme.textPrimaryColor,
                   fontWeight: isDestructive ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ),
             Icon(
               Icons.chevron_right,
-              color: isDestructive ? Colors.red : const Color(0xFFFF8126),
+              color: isDestructive ? Colors.red : AppTheme.primaryColor,
               size: 20,
             ),
           ],
