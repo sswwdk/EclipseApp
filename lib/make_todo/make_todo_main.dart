@@ -115,9 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
             } else if (i == 3) {
               // 내 정보 버튼을 누르면 MyInfoScreen으로 이동
               setState(() => _selectedIndex = i);
-              Navigator.of(context).push(
+              Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                  builder: (_) => const MyInfoScreen(),
+                  builder: (_) => MyInfoScreen(fromScreen: 'make_todo'),
                 ),
               );
             }

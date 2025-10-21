@@ -131,7 +131,7 @@ class _MainScreenState extends State<MainScreen> {
             } else if (i == 2) {
               // 커뮤니티 버튼을 누르면 CommunityScreen으로 이동
               setState(() => _selectedIndex = i);
-              Navigator.of(context).push(
+              Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (_) => const CommunityScreen(),
                 ),
@@ -139,7 +139,7 @@ class _MainScreenState extends State<MainScreen> {
             } else if (i == 3) {
               // 내 정보 버튼을 누르면 MyInfoScreen으로 이동
               setState(() => _selectedIndex = i);
-              Navigator.of(context).push(
+              Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (_) => MyInfoScreen(fromScreen: 'home'),
                 ),
@@ -355,3 +355,4 @@ class _RoundedTopNavBar extends StatelessWidget {
     );
   }
 }
+
