@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_navigation_widget.dart';
 import 'todo_list_screen.dart';
+import 'post_detail_screen.dart';
+import 'message_screen.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({Key? key}) : super(key: key);
@@ -29,6 +31,26 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          Transform.rotate(
+            angle: -0.5, // 오른쪽 위를 가리키도록 회전
+            child: IconButton(
+              icon: Icon(
+                Icons.send,
+                color: Colors.grey[600],
+                size: 20,
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const MessageScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -172,10 +194,28 @@ class _CommunityScreenState extends State<CommunityScreen> {
     required String content,
     Map<String, dynamic>? schedule,
   }) {
-    return Container(
+    return Material(
       color: Colors.white,
-      padding: const EdgeInsets.all(16),
-      child: Column(
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PostDetailScreen(
+                post: {
+                  'profileImage': profileImage,
+                  'nickname': nickname,
+                  'timeAgo': timeAgo,
+                  'title': title,
+                  'content': content,
+                  'schedule': schedule,
+                },
+              ),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 사용자 정보
@@ -345,6 +385,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ],
           ),
         ],
+      ),
+        ),
       ),
     );
   }
