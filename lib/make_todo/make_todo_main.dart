@@ -28,25 +28,27 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 60),
                     const Text(
                       '안녕하세요 OOO님!',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 28,
                         fontWeight: FontWeight.w800,
                         color: Colors.black87,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     const Text(
                       '오늘 뭐할래요?',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: Colors.black54,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const Spacer(),
                     Center(
@@ -55,12 +57,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           backgroundColor: const Color(0xFFFF7A21),
                           foregroundColor: Colors.white,
                           elevation: 6,
-                          shadowColor: const Color(0xFFFF7A21).withOpacity(0.6),
+                          shadowColor: const Color(0xFFFF7A21).withValues(alpha: 0.6),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 28,
-                            vertical: 14,
+                            horizontal: 40,
+                            vertical: 18,
                           ),
-                          shape: const StadiumBorder(),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () {
                           Navigator.of(context).push(
@@ -70,8 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                         child: const Text(
-                          '할 일 만들러가기',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                          '오늘 할 일 만들기',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -182,26 +186,8 @@ class _BackgroundImage extends StatelessWidget {
   const _BackgroundImage();
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Try to load asset image. If missing, a grey gradient remains.
-        Image.asset(
-          'assets/images/home_bg.png',
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) {
-            return const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFF6F6F6), Color(0xFFEDEDED)],
-                ),
-              ),
-            );
-          },
-        ),
-      ],
+    return Container(
+      color: Colors.white,
     );
   }
 }
