@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login/login_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,12 +14,23 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Whattodo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7A21)),
-        useMaterial3: true,
-        fontFamily: null,
-      ),
+      theme: AppTheme.lightTheme,
       home: const LoginScreen(),
+      // 화면 전환 시 하늘색 배경 제거
+      themeMode: ThemeMode.light,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+              },
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
   }
 }

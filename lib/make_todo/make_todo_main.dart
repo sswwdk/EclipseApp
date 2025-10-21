@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'make_todo.dart';
 import '../home/home.dart';
 import '../myinfo/myinfo_screen.dart';
@@ -36,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black87,
+                        color: AppTheme.textPrimaryColor,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -46,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black54,
+                        color: AppTheme.textSecondaryColor,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -93,8 +94,8 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           currentIndex: _selectedIndex,
-          selectedItemColor: const Color(0xFFFF7A21),
-          unselectedItemColor: Colors.black54,
+          selectedItemColor: AppTheme.primaryColor,
+          unselectedItemColor: AppTheme.textSecondaryColor,
           onTap: (i) {
             if (i == 0) {
               // 홈 버튼을 누르면 main.dart로 돌아가기
@@ -158,7 +159,7 @@ class _RoundedTopNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.backgroundColor,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -187,7 +188,7 @@ class _BackgroundImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppTheme.backgroundColor,
     );
   }
 }

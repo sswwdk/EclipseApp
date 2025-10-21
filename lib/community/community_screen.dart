@@ -3,6 +3,7 @@ import '../widgets/bottom_navigation_widget.dart';
 import 'todo_list_screen.dart';
 import 'post_detail_screen.dart';
 import 'message_screen.dart';
+import '../theme/app_theme.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({Key? key}) : super(key: key);
@@ -17,15 +18,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(
           '커뮤니티',
           style: TextStyle(
-            color: Color(0xFFFF8126),
+            color: AppTheme.primaryColor,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -37,7 +38,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             child: IconButton(
               icon: Icon(
                 Icons.send,
-                color: Colors.grey[600],
+                color: AppTheme.textSecondaryColor,
                 size: 20,
               ),
               onPressed: () {
@@ -55,7 +56,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: const Color(0xFFFF8126),
+            color: AppTheme.primaryColor,
           ),
         ),
       ),
@@ -173,7 +174,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
           );
         },
-        backgroundColor: const Color(0xFFFF8126),
+        backgroundColor: AppTheme.primaryColor,
         child: const Icon(
           Icons.edit,
           color: Colors.white,
@@ -226,12 +227,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AppTheme.dividerColor,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   profileImage,
-                  color: Colors.grey[600],
+                  color: AppTheme.textSecondaryColor,
                   size: 20,
                 ),
               ),
@@ -254,7 +255,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       timeAgo,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: AppTheme.textSecondaryColor,
                       ),
                     ),
                   ],
@@ -291,10 +292,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
               margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF8126).withValues(alpha: 0.05),
+                color: AppTheme.primaryColorWithOpacity10,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFFFF8126).withValues(alpha: 0.2),
+                  color: AppTheme.primaryColorWithOpacity20,
                   width: 1,
                 ),
               ),
@@ -305,7 +306,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     children: [
                       Icon(
                         Icons.schedule,
-                        color: const Color(0xFFFF8126),
+                        color: AppTheme.primaryColor,
                         size: 16,
                       ),
                       const SizedBox(width: 6),
@@ -315,7 +316,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFFF8126),
+                            color: AppTheme.primaryColor,
                           ),
                           softWrap: true,
                           overflow: TextOverflow.visible,
@@ -338,7 +339,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               height: 3,
                               margin: const EdgeInsets.only(top: 6),
                               decoration: const BoxDecoration(
-                                color: Color(0xFFFF8126),
+                                color: AppTheme.primaryColor,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -348,7 +349,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                 '${scheduleItem['time']} ${scheduleItem['place']}',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[600],
+                                  color: AppTheme.textSecondaryColor,
                                   fontWeight: FontWeight.w500,
                                 ),
                                 softWrap: true,
@@ -372,14 +373,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
               Icon(
                 Icons.chat_bubble_outline,
                 size: 16,
-                color: Colors.grey[600],
+                color: AppTheme.textSecondaryColor,
               ),
               const SizedBox(width: 4),
               Text(
                 '댓글',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: AppTheme.textSecondaryColor,
                 ),
               ),
             ],
@@ -394,7 +395,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget _buildDivider() {
     return Container(
       height: 1,
-      color: Colors.grey[200],
+      color: AppTheme.dividerColor,
     );
   }
 }
