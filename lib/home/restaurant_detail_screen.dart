@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_navigation_widget.dart';
+import '../services/api_service.dart';
 
 class RestaurantDetailScreen extends StatelessWidget {
-  const RestaurantDetailScreen({Key? key}) : super(key: key);
+  final Restaurant restaurant;
+  
+  const RestaurantDetailScreen({Key? key, required this.restaurant}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -15,9 +18,9 @@ class RestaurantDetailScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '버거퀸',
-          style: TextStyle(
+        title: Text(
+          restaurant.name,
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -54,7 +57,7 @@ class RestaurantDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '햄버거와 감자튀김 이미지',
+                      restaurant.imageUrl ?? '레스토랑 이미지',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -94,7 +97,7 @@ class RestaurantDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '서울시 강남구 테헤란로 123',
+                        restaurant.address ?? '주소 정보 없음',
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 14,
@@ -103,17 +106,81 @@ class RestaurantDetailScreen extends StatelessWidget {
                     ],
                   ),
                   
+                  // 전화번호
+                  if (restaurant.phone != null) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.phone,
+                          color: Color(0xFFFF8126),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          restaurant.phone!,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  
+                  // 평점
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star,
+                        color: Color(0xFFFF8126),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '평점: ${restaurant.rating}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  // 영업시간
+                  if (restaurant.businessHour != null) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.access_time,
+                          color: Color(0xFFFF8126),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            restaurant.businessHour!,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  
                   const SizedBox(height: 16),
                   
-                  // 태그들
+                  // 태그들 (전화번호와 평점 제외)
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _buildTag('#혼밥하기 좋은'),
-                      _buildTag('#재료가 신선해요'),
-                      _buildTag('#육즙이 살아있어요'),
-                      _buildTag('#배달이 빨라요'),
+                      if (restaurant.description != null) _buildTag('#${restaurant.description!}'),
                     ],
                   ),
                 ],
