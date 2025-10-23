@@ -202,6 +202,18 @@ async def get_template(template_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"템플릿 조회 오류: {str(e)}")
 
+@router.get("/main")
+async def get_main_data():
+    """메인 페이지 데이터 조회 (category 테이블에서)"""
+    try:
+        with get_connection() as conn:
+            query = text("SELECT * FROM category ORDER BY last_crawl DESC")
+            result = conn.execute(query)
+            data = [dict(row) for row in result]
+        return {"success": True, "data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
 @router.get("/restaurants")
 async def get_restaurants():
     """모든 레스토랑 목록 조회 (category 테이블에서)"""
