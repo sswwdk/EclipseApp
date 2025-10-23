@@ -3,6 +3,7 @@ import '../login/login_screen.dart';
 import '../make_todo/make_todo_main.dart';
 import '../myinfo/myinfo_screen.dart';
 import '../community/community_screen.dart';
+import '../services/api_service.dart';
 import 'restaurant_detail_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -14,6 +15,35 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  List<Restaurant> restaurants = [];
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRestaurants();
+  }
+
+  Future<void> _loadRestaurants() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+      
+      final restaurantsData = await ApiService.getRestaurants();
+      setState(() {
+        restaurants = restaurantsData;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,41 +100,90 @@ class _MainScreenState extends State<MainScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // 첫 번째 추천 카드
-            _buildRecommendationCard(
-              imagePlaceholder: "햄버거와 감자튀김 이미지",
-              title: "버거퀸",
-              rating: 4.7,
-              reviewCount: 1234,
-              tags: ["혼밥하기 좋은", "재료가 신선해요", "육즙이 살아있어요", "배달이 빨라요"],
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const RestaurantDetailScreen(),
+            if (isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            
-            // 두 번째 추천 카드
-            _buildRecommendationCard(
-              imagePlaceholder: "Exhibition poster 'Color of Sound'",
-              title: "소리의 색, 색의 소리",
-              rating: 4.9,
-              reviewCount: 5123,
-              tags: ["전시", "미술", "영감"],
-            ),
-            const SizedBox(height: 16),
-            
-            // 세 번째 추천 카드
-            _buildRecommendationCard(
-              imagePlaceholder: "Book cover 'The Midnight Library'",
-              title: "한밤의 도서관",
-              rating: 4.5,
-              reviewCount: 2845,
-              tags: ["독서", "소설", "판타지"],
-            ),
+                ),
+              )
+            else if (errorMessage != null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '데이터를 불러올 수 없습니다',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadRestaurants,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF8126),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('다시 시도'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (restaurants.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Text(
+                    '추천할 레스토랑이 없습니다',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              )
+            else
+              ...restaurants.map((restaurant) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildRecommendationCard(
+                  imagePlaceholder: restaurant.imageUrl ?? "레스토랑 이미지",
+                  title: restaurant.name,
+                  rating: restaurant.rating,
+                  reviewCount: 0, // API에서 리뷰 수가 없으므로 0으로 설정
+                  tags: [
+                    if (restaurant.description != null) restaurant.description!,
+                  ],
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
+                      ),
+                    );
+                  },
+                ),
+              )).toList(),
           ],
         ),
       ),
