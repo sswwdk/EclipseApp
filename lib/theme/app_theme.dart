@@ -124,6 +124,15 @@ class AppTheme {
         color: dividerColor,
         thickness: 1,
       ),
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: Color(0xFFFF7A21),
+        contentTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        behavior: SnackBarBehavior.fixed,
+      ),
     );
   }
   

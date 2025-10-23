@@ -144,8 +144,8 @@ class TaskSelectScreen extends StatefulWidget {
 class _TaskSelectScreenState extends State<TaskSelectScreen> {
   // 선택 가능한 카테고리 목록 (아이콘 + 라벨)
   final List<_Category> _categories = const <_Category>[
-    _Category(name: '음식점', icon: Icons.restaurant),
     _Category(name: '카페', icon: Icons.local_cafe),
+    _Category(name: '음식점', icon: Icons.restaurant),
     _Category(name: '콘텐츠', icon: Icons.movie_filter),
   ];
 
@@ -166,6 +166,24 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
   // 다음 단계로 진행할 수 있는지 확인
   bool get _canProceed => _selected.isNotEmpty;
 
+  // 카테고리를 정해진 순서로 정렬하는 함수
+  List<String> _sortCategories(Set<String> selected) {
+    // 우선순위: 카페 -> 음식점 -> 콘텐츠
+    const priorityOrder = ['카페', '음식점', '콘텐츠'];
+    
+    return selected.toList()
+      ..sort((a, b) {
+        int indexA = priorityOrder.indexOf(a);
+        int indexB = priorityOrder.indexOf(b);
+        
+        // 우선순위 목록에 없는 경우 뒤로 배치
+        if (indexA == -1) indexA = 999;
+        if (indexB == -1) indexB = 999;
+        
+        return indexA.compareTo(indexB);
+      });
+  }
+
   // 다음 단계로 진행
   void _proceedToNext() {
     if (!_canProceed) {
@@ -173,26 +191,26 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('최소 하나의 카테고리를 선택해주세요.'),
-          backgroundColor: AppTheme.primaryColor,
-          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
+    // 카테고리를 우선순위대로 정렬
+    final sortedList = _sortCategories(_selected);
+    
     // 결과를 요청한 포맷으로 콘솔 출력
-    final list = _selected.toList();
     // ignore: avoid_print
     print('인원 수 : ${widget.peopleCount}명');
     // ignore: avoid_print
-    print('선택 : ${list.map((e) => '"$e"').join(', ')}');
+    print('선택 : ${sortedList.map((e) => '"$e"').join(', ')}');
 
-    // 채팅 화면으로 이동하여 선택한 카테고리 시각화
+    // 채팅 화면으로 이동하여 선택한 카테고리 시각화 (정렬된 순서로 전달)
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ChatScreen(
           peopleCount: widget.peopleCount,
-          selectedCategories: list,
+          selectedCategories: sortedList,
         ),
       ),
     );
