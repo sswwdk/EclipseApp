@@ -1,15 +1,21 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'token_manager.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl = 'http://192.168.14.51:8080';
   
-  // 레스토랑 목록 조회
+  // 레스토랑 목록 조회 (기존 category 테이블에서)
   static Future<List<Restaurant>> getRestaurants() async {
     try {
+      final headers = {
+        'Content-Type': 'application/json',
+        ...TokenManager.jwtHeader,
+      };
+      
       final response = await http.get(
-        Uri.parse('$baseUrl/restaurants'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$baseUrl/api/service/restaurants'),
+        headers: headers,
       );
       
       if (response.statusCode == 200) {
@@ -32,9 +38,14 @@ class ApiService {
   // 특정 레스토랑 조회
   static Future<Restaurant> getRestaurant(String id) async {
     try {
+      final headers = {
+        'Content-Type': 'application/json',
+        ...TokenManager.jwtHeader,
+      };
+      
       final response = await http.get(
-        Uri.parse('$baseUrl/restaurants/$id'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$baseUrl/api/service/restaurants/$id'),
+        headers: headers,
       );
       
       if (response.statusCode == 200) {
@@ -58,9 +69,14 @@ class ApiService {
   // API 상태 확인
   static Future<bool> checkApiStatus() async {
     try {
+      final headers = {
+        'Content-Type': 'application/json',
+        ...TokenManager.jwtHeader,
+      };
+      
       final response = await http.get(
         Uri.parse('$baseUrl/'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
       );
       return response.statusCode == 200;
     } catch (e) {

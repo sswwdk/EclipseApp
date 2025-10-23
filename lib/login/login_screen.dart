@@ -3,6 +3,8 @@ import '../widgets/wave_painter.dart';
 import 'signup_screen.dart';
 import 'find_account_screen.dart';
 import '../home/home.dart';
+import '../services/user_service.dart';
+import '../services/token_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -14,12 +16,72 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _idController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_idController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showSnackBar('아이디와 비밀번호를 입력해주세요.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await UserService.login(
+        _idController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      // 응답에서 토큰 추출 및 저장
+      if (response['body'] != null) {
+        final body = response['body'];
+        final token1 = body['token1'];
+        final token2 = body['token2'];
+        
+        if (token1 != null && token2 != null) {
+          TokenManager.setTokens(token1, token2);
+          _showSnackBar('로그인 성공!');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        } else {
+          _showSnackBar('토큰을 받지 못했습니다.');
+        }
+      } else {
+        _showSnackBar('로그인 응답 형식이 올바르지 않습니다.');
+      }
+    } catch (e) {
+      _showSnackBar('로그인 중 오류가 발생했습니다: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFFF8126),
+      ),
+    );
+  }
+
+  /// 로그아웃 처리
+  void _handleLogout() {
+    TokenManager.clearTokens();
+    _showSnackBar('로그아웃되었습니다.');
   }
 
   @override
@@ -115,13 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // 로그인 로직 (아이디/비밀번호 검증 없이 바로 이동)
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const MainScreen()),
-                      );
-                    },
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF8126),
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -130,14 +186,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      '로그인',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            '로그인',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ),

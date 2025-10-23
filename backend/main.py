@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import get_connection, test_connection, create_tables, insert_sample_data
-from sqlalchemy import text
+from database import test_connection, create_tables, insert_sample_data
 import os
+
+# 라우터 임포트
+from routers import auth, users, service, community, history, chat, like, inquiries, notice
 
 app = FastAPI(
     title="WhatToDo API",
@@ -18,6 +20,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 라우터 등록
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(service.router)
+app.include_router(community.router)
+app.include_router(history.router)
+app.include_router(chat.router)
+app.include_router(like.router)
+app.include_router(inquiries.router)
+app.include_router(notice.router)
 
 @app.on_event("startup")
 async def startup_event():
@@ -48,37 +61,6 @@ async def health_check():
             return {"status": "unhealthy", "database": "disconnected"}
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}
-
-@app.get("/restaurants")
-async def get_restaurants():
-    """모든 레스토랑 목록 조회 (category 테이블에서)"""
-    try:
-        with get_connection() as conn:
-            query = text("SELECT * FROM category ORDER BY last_crawl DESC")
-            result = conn.execute(query)
-            data = [dict(row) for row in result]
-        return {"success": True, "data": data}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
-
-@app.get("/restaurants/{restaurant_id}")
-async def get_restaurant(restaurant_id: str):
-    """특정 레스토랑 상세 정보 조회 (category 테이블에서)"""
-    try:
-        with get_connection() as conn:
-            query = text("SELECT * FROM category WHERE id = :id")
-            result = conn.execute(query, {"id": restaurant_id})
-            row = result.fetchone()
-
-            if not row:
-                raise HTTPException(status_code=404, detail="레스토랑을 찾을 수 없습니다")
-
-            data = dict(row)
-        return {"success": True, "data": data}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

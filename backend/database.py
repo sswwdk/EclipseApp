@@ -62,21 +62,6 @@ def create_tables():
     """
     try:
         with get_connection() as conn:
-            # restaurants 테이블 생성
-            conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS restaurants (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    address VARCHAR(500),
-                    phone VARCHAR(20),
-                    rating DECIMAL(3,2) DEFAULT 0.0,
-                    description TEXT,
-                    image_url VARCHAR(500),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                )
-            """))
-            
             # users 테이블 생성
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS users (
@@ -88,22 +73,105 @@ def create_tables():
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 )
             """))
-            
-            # todos 테이블 생성 (Foreign Key 제거)
+
+            # posts 테이블 생성 (커뮤니티용)
             conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS todos (
+                CREATE TABLE IF NOT EXISTS posts (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT,
+                    user_id INT NOT NULL,
                     title VARCHAR(255) NOT NULL,
-                    description TEXT,
-                    completed BOOLEAN DEFAULT FALSE,
+                    content TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 )
             """))
-            
+
+            # comments 테이블 생성
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS comments (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    post_id INT NOT NULL,
+                    user_id INT NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+
+            # chats 테이블 생성
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS chats (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    sender_id INT NOT NULL,
+                    receiver_id INT NOT NULL,
+                    message TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+
+            # likes 테이블 생성
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS likes (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    store_id VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY unique_like (user_id, store_id)
+                )
+            """))
+
+            # inquiries 테이블 생성
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS inquiries (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    title VARCHAR(255) NOT NULL,
+                    content TEXT NOT NULL,
+                    category VARCHAR(100) DEFAULT '기타',
+                    status ENUM('pending', 'answered', 'closed') DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            """))
+
+            # notices 테이블 생성
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS notices (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    title VARCHAR(255) NOT NULL,
+                    content TEXT NOT NULL,
+                    is_important BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            """))
+
+            # reports 테이블 생성
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS reports (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    content_type ENUM('post', 'comment') NOT NULL,
+                    content_id INT NOT NULL,
+                    reason VARCHAR(255) NOT NULL,
+                    status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+
+            # history 테이블 생성
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS history (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    category_id VARCHAR(255),
+                    action VARCHAR(100) NOT NULL,
+                    details TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+
         print("테이블 생성 완료!")
-        
+
     except Exception as e:
         print(f"테이블 생성 오류: {e}")
         raise e
