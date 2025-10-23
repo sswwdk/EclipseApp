@@ -14,7 +14,7 @@ class ApiService {
       };
       
       final response = await http.get(
-        Uri.parse('$baseUrl/api/service/restaurants'),
+        Uri.parse('$baseUrl/api/service/main'),
         headers: headers,
       );
       
@@ -44,7 +44,7 @@ class ApiService {
       };
       
       final response = await http.get(
-        Uri.parse('$baseUrl/api/service/restaurants/$id'),
+        Uri.parse('$baseUrl/api/service/main/$id'),
         headers: headers,
       );
       
