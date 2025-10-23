@@ -238,7 +238,7 @@ class _ChatScreenState extends State<ChatScreen> {
             borderRadius: BorderRadius.circular(16),
           ),
           title: const Text(
-            '홈 화면으로 나가시겠습니까?',
+            '채팅을 나가시겠습니까?',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
