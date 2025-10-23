@@ -3,54 +3,106 @@ from sqlalchemy import text
 from database import get_connection
 from typing import Optional
 import hashlib
+import jwt
+import datetime
+from models.user_dto import GetUserLoginDto, ToUserLoginDto, JsonHeader, ToUserLoginBody
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
-@router.post("")
-async def login_or_logout(user_data: dict):
-    """로그인 또는 로그아웃"""
+# JWT 설정
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+
+@router.post("/session", response_model=ToUserLoginDto)
+async def login(login_dto: GetUserLoginDto):
+    """로그인"""
     try:
-        user_type = user_data.get("type")
-        username = user_data.get("id")
-        password = user_data.get("pw")
+        username = login_dto.body.id
+        password = login_dto.body.password
         
-        if not all([user_type, username, password]):
-            raise HTTPException(status_code=400, detail="필수 필드가 누락되었습니다")
-        
-        if user_type == "login":
-            # 로그인 로직
-            with get_connection() as conn:
-                query = text("SELECT id, username, email FROM users WHERE username = :username")
-                result = conn.execute(query, {"username": username})
-                user = result.fetchone()
-                
-                if not user:
-                    raise HTTPException(status_code=401, detail="사용자를 찾을 수 없습니다")
-                
-                return {
-                    "success": True,
-                    "message": "로그인 성공",
-                    "user": {
-                        "id": user.id,
-                        "username": user.username,
-                        "email": user.email
-                    }
-                }
-        
-        elif user_type == "logout":
-            # 로그아웃 로직 (클라이언트에서 토큰 삭제)
-            return {
-                "success": True,
-                "message": "로그아웃 성공"
+        # 로그인 로직
+        with get_connection() as conn:
+            # 비밀번호 해싱
+            password_hash = hashlib.sha256(password.encode()).hexdigest()
+            
+            query = text("SELECT id, username, email, password_hash FROM users WHERE username = :username")
+            result = conn.execute(query, {"username": username})
+            user = result.fetchone()
+            
+            if not user:
+                return ToUserLoginDto(
+                    header=JsonHeader(content="application/json"),
+                    body=ToUserLoginBody(
+                        status_code=401,
+                        message="사용자를 찾을 수 없습니다",
+                        token1="",
+                        token2=""
+                    )
+                )
+            
+            # 비밀번호 확인
+            if user.password_hash != password_hash:
+                return ToUserLoginDto(
+                    header=JsonHeader(content="application/json"),
+                    body=ToUserLoginBody(
+                        status_code=401,
+                        message="비밀번호가 일치하지 않습니다",
+                        token1="",
+                        token2=""
+                    )
+                )
+            
+            # JWT 토큰 생성
+            payload = {
+                "user_id": user.id,
+                "username": user.username,
+                "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=24)
             }
+            
+            token1 = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+            token2 = jwt.encode({"refresh": True, "user_id": user.id}, SECRET_KEY, algorithm=ALGORITHM)
+            
+            return ToUserLoginDto(
+                header=JsonHeader(content="application/json"),
+                body=ToUserLoginBody(
+                    status_code=200,
+                    message="로그인 성공",
+                    token1=token1,
+                    token2=token2
+                )
+            )
+            
+    except Exception as e:
+        return ToUserLoginDto(
+            header=JsonHeader(content="application/json"),
+            body=ToUserLoginBody(
+                status_code=500,
+                message=f"로그인 오류: {str(e)}",
+                token1="",
+                token2=""
+            )
+        )
+
+@router.put("/session")
+async def logout(user_data: dict):
+    """로그아웃"""
+    try:
+        username = user_data.get("id")
+        password = user_data.get("password")
         
-        else:
-            raise HTTPException(status_code=400, detail="잘못된 타입입니다")
+        if not all([username, password]):
+            raise HTTPException(status_code=400, detail="ID와 비밀번호가 필요합니다")
+        
+        # 로그아웃 로직 (클라이언트에서 토큰 삭제)
+        return {
+            "success": True,
+            "message": "로그아웃 성공"
+        }
             
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"인증 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"로그아웃 오류: {str(e)}")
 
 @router.post("/id")
 async def find_id(user_data: dict):
@@ -107,7 +159,7 @@ async def find_password(user_data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"비밀번호 찾기 오류: {str(e)}")
 
-@router.post("/signup")
+@router.post("/register")
 async def signup(user_data: dict):
     """회원가입"""
     try:
@@ -151,7 +203,7 @@ async def signup(user_data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"회원가입 오류: {str(e)}")
 
-@router.delete("")
+@router.delete("/register")
 async def delete_user(user_data: dict):
     """회원 탈퇴"""
     try:

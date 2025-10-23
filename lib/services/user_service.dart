@@ -5,7 +5,7 @@ import 'token_manager.dart';
 class UserService {
   static const String baseUrl = 'http://192.168.14.51:8080';
 
-  // 로그인 (상대방 서버 형식에 맞춤)
+  // 로그인
   static Future<Map<String, dynamic>> login(String username, String password) async {
     try {
       final headers = {
@@ -14,14 +14,14 @@ class UserService {
       };
       
       final response = await http.post(
-        Uri.parse('$baseUrl/api/auth/users/login'),
+        Uri.parse('$baseUrl/api/users/session'),
         headers: headers,
         body: json.encode({
           'header': {
             'content': 'application/json',
+            'jwt': null,
           },
           'body': {
-            'type': 'login',
             'id': username,
             'password': password,
           },
@@ -47,13 +47,18 @@ class UserService {
         ...TokenManager.jwtHeader,
       };
       
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/users'),
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/users/session'),
         headers: headers,
         body: json.encode({
-          'id': username,
-          'pw': password,
-          'type': 'logout',
+          'header': {
+            'content': 'application/json',
+            'jwt': null,
+          },
+          'body': {
+            'id': username,
+            'password': password,
+          },
         }),
       );
 
@@ -130,7 +135,7 @@ class UserService {
       };
       
       final response = await http.post(
-        Uri.parse('$baseUrl/api/users/signup'),
+        Uri.parse('$baseUrl/api/users/register'),
         headers: headers,
         body: json.encode({
           'username': username,
@@ -159,7 +164,7 @@ class UserService {
       };
       
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/users'),
+        Uri.parse('$baseUrl/api/users/register'),
         headers: headers,
         body: json.encode({
           'user_id': userId,
