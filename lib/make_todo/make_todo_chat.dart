@@ -12,6 +12,8 @@ class ChatMessage {
   final String? yesNoQuestion;
   final String? currentCategory;
   final List<String>? availableCategories;
+  bool isButtonActive; // 버튼 활성화 상태
+  String? selectedButton; // 선택된 버튼 ('yes' 또는 'no', null이면 선택 안 됨)
 
   ChatMessage({
     required this.text,
@@ -22,6 +24,8 @@ class ChatMessage {
     this.yesNoQuestion,
     this.currentCategory,
     this.availableCategories,
+    this.isButtonActive = true, // 기본값은 활성화
+    this.selectedButton, // 기본값은 null (선택 안 됨)
   });
 }
 
@@ -49,6 +53,9 @@ class _ChatScreenState extends State<ChatScreen> {
   
   // 로딩 상태
   bool _isLoading = false;
+  
+  // 현재 대화 단계 (입력창 제어를 위해)
+  String _currentStage = "collecting_details";
 
   @override
   void initState() {
@@ -114,6 +121,13 @@ class _ChatScreenState extends State<ChatScreen> {
     final userMessage = _messageController.text.trim();
     
     setState(() {
+      // 모든 이전 메시지의 버튼 비활성화
+      for (var message in _messages) {
+        if (message.showYesNoButtons) {
+          message.isButtonActive = false;
+        }
+      }
+      
       _messages.add(ChatMessage(
         text: userMessage,
         isUser: true,
@@ -143,6 +157,11 @@ class _ChatScreenState extends State<ChatScreen> {
         final yesNoQuestion = response['yesNoQuestion'] as String?;
         final currentCategory = response['currentCategory'] as String?;
         final availableCategories = response['availableCategories'] as List<dynamic>?;
+        
+        // 현재 stage 업데이트
+        if (stage != null) {
+          _currentStage = stage;
+        }
         
         // "네"를 입력했고 completed 단계이며 추천 결과가 있으면 결과 화면으로 이동
         if (userMessage == "네" && stage == 'completed' && recommendations != null && recommendations.isNotEmpty) {
@@ -228,6 +247,72 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  /// 뒤로가기 확인 다이얼로그 표시
+  void _showBackDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            '뒤로 가시겠습니까?',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            '지금까지 대화가 삭제됩니다.',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.black54,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+              },
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+                // 인원 수 선택 화면으로 이동 (2번 pop)
+                Navigator.of(context).pop(); // TaskSelectScreen 제거
+                Navigator.of(context).pop(); // PeopleCountScreen으로
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF7A21),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                '뒤로가기',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// 나가기 확인 다이얼로그 표시
   void _showExitDialog() {
     showDialog(
@@ -238,7 +323,7 @@ class _ChatScreenState extends State<ChatScreen> {
             borderRadius: BorderRadius.circular(16),
           ),
           title: const Text(
-            '홈 화면으로 나가시겠습니까?',
+            '채팅을 나가시겠습니까?',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -295,9 +380,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
-      body: SafeArea(
+    return WillPopScope(
+      onWillPop: () async {
+        // 하드웨어 뒤로가기 버튼 또는 제스처로 뒤로가기 시도 시
+        _showBackDialog();
+        return false; // 기본 뒤로가기 동작 방지
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF7F7F7),
+        body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -316,9 +407,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Stack(
                   children: [
-                    const Align(
+                    Align(
                       alignment: Alignment.centerLeft,
-                      child: BackButton(),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: _showBackDialog,
+                      ),
                     ),
                     const Center(
                       child: Text('하루와 할 일 찾기',
@@ -426,7 +520,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: TextField(
                         controller: _messageController,
                         focusNode: _messageFocusNode,
-                        enabled: !_isLoading, // 로딩 중에는 입력 불가
+                        enabled: !_isLoading && _currentStage != "confirming_results" && _currentStage != "completed", // 로딩 중이거나 결과 확인/완료 단계에는 입력 불가
                         decoration: const InputDecoration(
                           hintText: '메시지를 입력하세요...',
                           hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
@@ -439,12 +533,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(width: 10),
                   GestureDetector(
-                    onTap: _isLoading ? null : _sendMessage, // 로딩 중에는 버튼 비활성화
+                    onTap: (_isLoading || _currentStage == "confirming_results" || _currentStage == "completed") ? null : _sendMessage, // 로딩 중이거나 결과 확인/완료 단계에는 버튼 비활성화
                     child: Container(
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: _isLoading ? Colors.grey : const Color(0xFFFF7A21),
+                        color: (_isLoading || _currentStage == "confirming_results" || _currentStage == "completed") ? Colors.grey : const Color(0xFFFF7A21),
                         shape: BoxShape.circle,
                         boxShadow: const [
                           BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 4)),
@@ -458,6 +552,7 @@ class _ChatScreenState extends State<ChatScreen> {
             )
           ],
         ),
+      ),
       ),
     );
   }
@@ -607,6 +702,8 @@ class _ChatScreenState extends State<ChatScreen> {
             text: message.text,
             showYesNoButtons: message.showYesNoButtons,
             yesNoQuestion: message.yesNoQuestion,
+            isButtonActive: message.isButtonActive,
+            selectedButton: message.selectedButton,
             onYesPressed: () => _handleYesNoResponse(true),
             onNoPressed: () => _handleYesNoResponse(false),
           ),
@@ -619,11 +716,31 @@ class _ChatScreenState extends State<ChatScreen> {
   void _handleYesNoResponse(bool isYes) async {
     // 현재 메시지의 yesNoQuestion을 확인하여 결과 확인 단계인지 판단
     final lastMessage = _messages.isNotEmpty ? _messages.last : null;
-    final isResultConfirmation = lastMessage?.yesNoQuestion?.contains("결과물을 출력") == true;
+    final isResultConfirmation = lastMessage?.yesNoQuestion?.contains("후보지를 출력") == true;
     
-    final response = isResultConfirmation ? "네" : (isYes ? "네" : "추가하기");
+    // 응답 텍스트 결정
+    String response;
+    if (isResultConfirmation) {
+      response = "후보지 출력"; // "후보지 출력" 버튼을 눌렀을 때
+    } else if (isYes) {
+      response = "네"; // "네" 버튼을 눌렀을 때
+    } else {
+      response = "추가하기"; // "추가하기" 버튼을 눌렀을 때
+    }
     
     setState(() {
+      // 모든 이전 메시지의 버튼 비활성화 및 선택된 버튼 표시
+      for (var message in _messages) {
+        if (message.showYesNoButtons) {
+          message.isButtonActive = false;
+        }
+      }
+      
+      // 현재 메시지에 선택된 버튼 표시
+      if (lastMessage != null && lastMessage.showYesNoButtons) {
+        lastMessage.selectedButton = isYes ? 'yes' : 'no';
+      }
+      
       _messages.add(ChatMessage(
         text: response,
         isUser: true,
@@ -635,7 +752,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
     
     try {
-      final aiResponse = await _openAIService.sendMessage(response);
+      // 서버에는 "후보지 출력" 대신 "네"를 전송 (백엔드 호환성)
+      final serverMessage = (response == "후보지 출력") ? "네" : response;
+      final aiResponse = await _openAIService.sendMessage(serverMessage);
       
       if (mounted) {
         final stage = aiResponse['stage'] as String?;
@@ -646,7 +765,12 @@ class _ChatScreenState extends State<ChatScreen> {
         final currentCategory = aiResponse['currentCategory'] as String?;
         final availableCategories = aiResponse['availableCategories'] as List<dynamic>?;
         
-        // "네"를 눌렀을 때 결과 화면으로 이동 (completed 단계에서만)
+        // 현재 stage 업데이트
+        if (stage != null) {
+          _currentStage = stage;
+        }
+        
+        // "네" 또는 "후보지 출력"을 눌렀을 때 결과 화면으로 이동 (completed 단계에서만)
         if (isYes && stage == 'completed') {
           setState(() {
             _isLoading = false;
@@ -774,6 +898,8 @@ class _ChatBubble extends StatelessWidget {
   final String text;
   final bool showYesNoButtons;
   final String? yesNoQuestion;
+  final bool isButtonActive;
+  final String? selectedButton;
   final VoidCallback? onYesPressed;
   final VoidCallback? onNoPressed;
   
@@ -781,6 +907,8 @@ class _ChatBubble extends StatelessWidget {
     required this.text,
     this.showYesNoButtons = false,
     this.yesNoQuestion,
+    this.isButtonActive = true,
+    this.selectedButton,
     this.onYesPressed,
     this.onNoPressed,
   });
@@ -819,23 +947,27 @@ class _ChatBubble extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            // 결과 확인 단계인지 확인 (yesNoQuestion이 "결과물을 출력하시겠습니까?"인 경우)
-            if (yesNoQuestion?.contains("결과물을 출력") == true) ...[
-              // 결과 확인 단계: "네" 버튼만 표시
+            // 결과 확인 단계인지 확인 (yesNoQuestion이 "후보지를 출력하시겠습니까?"인 경우)
+            if (yesNoQuestion?.contains("후보지를 출력") == true) ...[
+              // 결과 확인 단계: "후보지 출력" 버튼만 표시
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: onYesPressed,
+                  onPressed: isButtonActive ? onYesPressed : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF7A21),
+                    backgroundColor: isButtonActive 
+                      ? const Color(0xFFFF7A21) 
+                      : (selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.grey[400]),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    disabledBackgroundColor: selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.grey[400],
+                    disabledForegroundColor: Colors.white,
                   ),
                   child: const Text(
-                    '네',
+                    '후보지 출력',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -846,14 +978,18 @@ class _ChatBubble extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: onYesPressed,
+                      onPressed: isButtonActive ? onYesPressed : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF7A21),
+                        backgroundColor: isButtonActive 
+                          ? const Color(0xFFFF7A21) 
+                          : (selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.grey[400]),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
+                        disabledBackgroundColor: selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.grey[400],
+                        disabledForegroundColor: Colors.white,
                       ),
                       child: const Text(
                         '네',
@@ -864,14 +1000,20 @@ class _ChatBubble extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: onNoPressed,
+                      onPressed: isButtonActive ? onNoPressed : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[300],
-                        foregroundColor: Colors.black87,
+                        backgroundColor: isButtonActive 
+                          ? Colors.grey[300] 
+                          : (selectedButton == 'no' ? const Color(0xFFFF7A21) : Colors.grey[400]),
+                        foregroundColor: isButtonActive 
+                          ? Colors.black87 
+                          : (selectedButton == 'no' ? Colors.white : Colors.white),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
+                        disabledBackgroundColor: selectedButton == 'no' ? const Color(0xFFFF7A21) : Colors.grey[400],
+                        disabledForegroundColor: Colors.white,
                       ),
                       child: const Text(
                         '추가하기',

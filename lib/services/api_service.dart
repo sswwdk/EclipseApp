@@ -13,21 +13,19 @@ class ApiService {
         ...TokenManager.jwtHeader,
       };
       
-      // 요청 본문 형식
-      final requestBody = {
-        'headers': {
-          'content': 'application/json',
-          'jwt': TokenManager.accessToken,
-        },
-        'body': 'asd',
-      };
-      
-      // POST 요청으로 변경
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/main'),
-        headers: headers,
-        body: json.encode(requestBody),
-      );
+    final requestBody = {
+      'headers': {
+        'content': 'application/json',
+        'jwt': TokenManager.accessToken,
+      },
+      'body': 'asd',
+    };
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/service/main'),
+      headers: headers,
+      body: json.encode(requestBody),
+    );
       
 
       final data = json.decode(utf8.decode(response.bodyBytes));
