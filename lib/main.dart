@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'login/login_screen.dart';
 import 'theme/app_theme.dart';
 
+
 void main() {
   runApp(const MyApp());
 }
@@ -15,7 +16,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Whattodo',
       theme: AppTheme.lightTheme,
+      /* 추가 */
       home: const LoginScreen(),
+      /* 추가 */
       // 화면 전환 시 하늘색 배경 제거
       themeMode: ThemeMode.light,
       builder: (context, child) {

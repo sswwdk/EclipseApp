@@ -152,16 +152,16 @@ RESPONSE_MESSAGES = {
     "start": {
         "first_message": "안녕! 나는 하루야!\n\n{people_count}명이 함께할 거구나! 그리고 {categories_text} 활동을 하고 싶다고 했지?\n\n그럼 먼저 '{first_category}' 활동에 대해 좀 더 자세히 말해줄 수 있을까? 어떤 걸 원해?",
         "next_category": "좋아! 그럼 '{next_category}' 활동은 어떤 걸 원해?",
-        "all_completed": "모든 활동에 대한 질문이 끝났어! 이제 결과물을 출력하시겠습니까?",
+        "all_completed": "모든 활동에 대한 질문이 끝났어! 이제 후보지를 출력하시겠습니까?",
         "add_more": "좋아! '{current_category}' 활동에 대해 더 추가하고 싶은 내용이 있나요?",
         "final_result": "짜잔! 오늘의 추천 리스트야! 이 중에서 마음에 드는 게 있으면 좋겠다! 즐거운 하루 보내!",
         "modification_mode": "어떤 내용을 수정하시겠습니까? 선택한 활동 중 더 추가하고 싶은 것이 있나요?",
         "unclear_response": "죄송해요! '네' 또는 '추가하기'로 답변해주세요.",
-        "unclear_result_response": "죄송해요! '네'로 답변해주세요."
+        "unclear_result_response": "죄송해요! '후보지 출력' 버튼을 눌러주세요."
     },
     "buttons": {
         "yes_no_question": "이 정보로 다음 질문으로 넘어가시겠습니까?",
-        "result_question": "결과물을 출력하시겠습니까?"
+        "result_question": "후보지를 출력하시겠습니까?"
     }
 }
 
@@ -759,10 +759,10 @@ def handle_user_action_response(session: Dict, user_response: str) -> ChatRespon
             # 명확하지 않은 응답 - 사용자 액션 대기 상태 유지
             return ChatResponse(
                 status="success",
-                message="죄송해요! '네'로 답변해주세요.",
+                message=RESPONSE_MESSAGES["start"]["unclear_result_response"],
                 stage="confirming_results",
                 showYesNoButtons=True,
-                yesNoQuestion="결과물을 출력하시겠습니까?"
+                yesNoQuestion=RESPONSE_MESSAGES["buttons"]["result_question"]
             )
     
     # 태그 수집 단계: Next(다음 카테고리로) / More(현재 카테고리에 추가 입력) 처리
@@ -983,10 +983,10 @@ async def confirm_results(request: ChatRequest):
             # 명확하지 않은 응답
             return ChatResponse(
                 status="success",
-                message="죄송해요! '네'로 답변해주세요.",
+                message=RESPONSE_MESSAGES["start"]["unclear_result_response"],
                 stage="confirming_results",
                 showYesNoButtons=True,
-                yesNoQuestion="결과물을 출력하시겠습니까?"
+                yesNoQuestion=RESPONSE_MESSAGES["buttons"]["result_question"]
             )
     
     except Exception as e:
