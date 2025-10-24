@@ -5,7 +5,7 @@ import 'token_manager.dart';
 class ApiService {
   static const String baseUrl = 'http://192.168.14.51:8080';
   
-  // 레스토랑 목록 조회 (기존 category 테이블에서)
+  // 메인 화면 데이터 조회 (새로운 DTO 형식)
   static Future<List<Restaurant>> getRestaurants() async {
     try {
       final headers = {
@@ -13,22 +13,27 @@ class ApiService {
         ...TokenManager.jwtHeader,
       };
       
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/service/restaurants'),
+      // 요청 본문 형식
+      final requestBody = {
+        'headers': {
+          'content': 'application/json',
+          'jwt': TokenManager.accessToken,
+        },
+        'body': 'asd',
+      };
+      
+      // POST 요청으로 변경
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/service/main'),
         headers: headers,
+        body: json.encode(requestBody),
       );
       
-      if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
-        if (data['success'] == true) {
-          List<dynamic> restaurants = data['data'];
-          return restaurants.map((json) => Restaurant.fromJson(json)).toList();
-        } else {
-          throw Exception('API 응답 오류: ${data['message']}');
-        }
-      } else {
-        throw Exception('HTTP 오류: ${response.statusCode}');
-      }
+
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      List<dynamic> categories = data['body']['categories'];
+      return categories.map((json) => Restaurant.fromMainScreenJson(json)).toList();
+      
     } catch (e) {
       print('API 호출 오류: $e');
       throw Exception('네트워크 오류: $e');
@@ -44,7 +49,7 @@ class ApiService {
       };
       
       final response = await http.get(
-        Uri.parse('$baseUrl/api/service/restaurants/$id'),
+        Uri.parse('$baseUrl/api/service/main/$id'),
         headers: headers,
       );
       
@@ -63,25 +68,6 @@ class ApiService {
     } catch (e) {
       print('API 호출 오류: $e');
       throw Exception('네트워크 오류: $e');
-    }
-  }
-  
-  // API 상태 확인
-  static Future<bool> checkApiStatus() async {
-    try {
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-      
-      final response = await http.get(
-        Uri.parse('$baseUrl/'),
-        headers: headers,
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      print('API 상태 확인 오류: $e');
-      return false;
     }
   }
 }
@@ -135,6 +121,26 @@ class Restaurant {
       latitude: json['latitude'],
       longitude: json['longitude'],
       lastCrawl: json['last_crawl'],
+    );
+  }
+
+  // 서버 응답 형식에 맞는 팩토리 메서드
+  factory Restaurant.fromMainScreenJson(Map<String, dynamic> json) {
+    return Restaurant(
+      id: json['id']?.toString() ?? '',
+      name: json['title']?.toString() ?? '',
+      image: json['image_url']?.toString(),
+      subCategory: json['sub_category']?.toString(),
+      detailAddress: json['detail_address']?.toString(),
+      phone: json['phone']?.toString(),
+      do_: null,
+      si: null,
+      gu: null,
+      businessHour: null,
+      type: null,
+      latitude: null,
+      longitude: null,
+      lastCrawl: null,
     );
   }
 
