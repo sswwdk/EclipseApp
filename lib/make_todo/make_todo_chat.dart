@@ -56,6 +56,10 @@ class _ChatScreenState extends State<ChatScreen> {
   
   // 현재 대화 단계 (입력창 제어를 위해)
   String _currentStage = "collecting_details";
+  
+  // 후보지 출력 완료 상태
+  bool _showRecommendationButton = false;
+  Map<String, dynamic>? _recommendations;
 
   @override
   void initState() {
@@ -120,6 +124,16 @@ class _ChatScreenState extends State<ChatScreen> {
     
     final userMessage = _messageController.text.trim();
     
+    // confirming_results 단계에서 긍정적 표현 체크
+    if (_currentStage == "confirming_results") {
+      final isPositive = _isPositiveResponse(userMessage);
+      if (isPositive) {
+        // 긍정적 표현이면 Yes 버튼을 누른 것처럼 처리
+        _handleYesNoResponse(true, userInputMessage: userMessage);
+        return;
+      }
+    }
+    
     setState(() {
       // 모든 이전 메시지의 버튼 비활성화
       for (var message in _messages) {
@@ -141,7 +155,9 @@ class _ChatScreenState extends State<ChatScreen> {
     
     // 메시지 전송 후 텍스트 필드에 포커스 유지
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _messageFocusNode.requestFocus();
+      if (mounted) {
+        _messageFocusNode.requestFocus();
+      }
     });
     
     try {
@@ -163,24 +179,13 @@ class _ChatScreenState extends State<ChatScreen> {
           _currentStage = stage;
         }
         
-        // "네"를 입력했고 completed 단계이며 추천 결과가 있으면 결과 화면으로 이동
+        // "네"를 입력했고 completed 단계이며 추천 결과가 있으면 후보지 고르러 가기 버튼 표시
         if (userMessage == "네" && stage == 'completed' && recommendations != null && recommendations.isNotEmpty) {
           setState(() {
             _isLoading = false;
+            _showRecommendationButton = true;
+            _recommendations = recommendations;
           });
-          
-          // 추천 결과 화면으로 이동
-          if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RecommendationResultScreen(
-                  recommendations: recommendations,
-                  selectedCategories: widget.selectedCategories,
-                ),
-              ),
-            );
-          }
         } else if (userMessage == "추가하기" && availableCategories != null && availableCategories.isNotEmpty) {
           // "추가하기"를 입력했을 때 추가 활동 선택 UI 표시
           setState(() {
@@ -212,7 +217,9 @@ class _ChatScreenState extends State<ChatScreen> {
         
         // AI 응답 후에도 텍스트 필드에 포커스 유지
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _messageFocusNode.requestFocus();
+          if (mounted) {
+            _messageFocusNode.requestFocus();
+          }
         });
       }
     } catch (e) {
@@ -229,7 +236,9 @@ class _ChatScreenState extends State<ChatScreen> {
         
         // 에러 발생 후에도 텍스트 필드에 포커스 유지
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _messageFocusNode.requestFocus();
+          if (mounted) {
+            _messageFocusNode.requestFocus();
+          }
         });
       }
     }
@@ -237,7 +246,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (mounted && _scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -245,6 +254,18 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+  }
+
+  /// 긍정적 표현 체크
+  bool _isPositiveResponse(String message) {
+    final lowerMessage = message.toLowerCase().trim();
+    final positiveWords = [
+      "네", "넹", "넵", "예", "yes", "y", "ok", "좋아", "좋아요", "그래", "맞아", 
+      "ㅇㅇ", "ㅇ", "기기", "ㄱㄱ", "고고", "네네", "응", "어", "ㅇㅋ", "오케이",
+      "후보지", "후보지 출력", "출력", "보여줘", "보여주세요", "확인"
+    ];
+    
+    return positiveWords.any((word) => lowerMessage.contains(word));
   }
 
   /// 뒤로가기 확인 다이얼로그 표시
@@ -501,55 +522,97 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
 
-            // 하단 입력창
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: const [
-                          BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
-                        ],
+            // 하단 입력창 또는 후보지 고르러 가기 버튼
+            if (_showRecommendationButton)
+              // 후보지 고르러 가기 버튼
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (_recommendations != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RecommendationResultScreen(
+                              recommendations: _recommendations!,
+                              selectedCategories: widget.selectedCategories,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF7A21),
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      shadowColor: const Color(0xFFFF7A21).withValues(alpha: 0.4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: TextField(
-                        controller: _messageController,
-                        focusNode: _messageFocusNode,
-                        enabled: !_isLoading && _currentStage != "confirming_results" && _currentStage != "completed", // 로딩 중이거나 결과 확인/완료 단계에는 입력 불가
-                        decoration: const InputDecoration(
-                          hintText: '메시지를 입력하세요...',
-                          hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text(
+                      '후보지 고르러 가기',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else
+              // 일반 채팅 입력창
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
+                          ],
                         ),
-                        onSubmitted: (_) => _sendMessage(),
+                        child: TextField(
+                          controller: _messageController,
+                          focusNode: _messageFocusNode,
+                          enabled: !_isLoading && _currentStage != "completed", // 로딩 중이거나 완료 단계에는 입력 불가
+                          decoration: const InputDecoration(
+                            hintText: '메시지를 입력하세요...',
+                            hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: (_isLoading || _currentStage == "confirming_results" || _currentStage == "completed") ? null : _sendMessage, // 로딩 중이거나 결과 확인/완료 단계에는 버튼 비활성화
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: (_isLoading || _currentStage == "confirming_results" || _currentStage == "completed") ? Colors.grey : const Color(0xFFFF7A21),
-                        shape: BoxShape.circle,
-                        boxShadow: const [
-                          BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 4)),
-                        ],
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: (_isLoading || _currentStage == "completed") ? null : _sendMessage, // 로딩 중이거나 완료 단계에는 버튼 비활성화
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: (_isLoading || _currentStage == "completed") ? Colors.grey : const Color(0xFFFF7A21),
+                          shape: BoxShape.circle,
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 4)),
+                          ],
+                        ),
+                        child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
                       ),
-                      child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
                     ),
-                  ),
-                ],
-              ),
-            )
+                  ],
+                ),
+              )
           ],
         ),
       ),
@@ -713,19 +776,27 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   /// Yes/No 버튼 응답 처리
-  void _handleYesNoResponse(bool isYes) async {
+  void _handleYesNoResponse(bool isYes, {String? userInputMessage}) async {
     // 현재 메시지의 yesNoQuestion을 확인하여 결과 확인 단계인지 판단
     final lastMessage = _messages.isNotEmpty ? _messages.last : null;
     final isResultConfirmation = lastMessage?.yesNoQuestion?.contains("후보지를 출력") == true;
     
     // 응답 텍스트 결정
     String response;
-    if (isResultConfirmation) {
+    if (userInputMessage != null) {
+      // 사용자가 직접 입력한 메시지가 있으면 그것을 사용
+      response = userInputMessage;
+    } else if (isResultConfirmation) {
       response = "후보지 출력"; // "후보지 출력" 버튼을 눌렀을 때
     } else if (isYes) {
       response = "네"; // "네" 버튼을 눌렀을 때
     } else {
       response = "추가하기"; // "추가하기" 버튼을 눌렀을 때
+    }
+    
+    // 사용자가 입력한 경우 입력창 비우기
+    if (userInputMessage != null) {
+      _messageController.clear();
     }
     
     setState(() {
@@ -752,8 +823,16 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
     
     try {
-      // 서버에는 "후보지 출력" 대신 "네"를 전송 (백엔드 호환성)
-      final serverMessage = (response == "후보지 출력") ? "네" : response;
+      // 서버에는 긍정적 표현을 "네"로 통일하여 전송 (백엔드 호환성)
+      String serverMessage;
+      if (userInputMessage != null) {
+        // 사용자가 직접 입력한 경우, confirming_results 단계에서는 "네"로 전송
+        serverMessage = "네";
+      } else if (response == "후보지 출력") {
+        serverMessage = "네";
+      } else {
+        serverMessage = response;
+      }
       final aiResponse = await _openAIService.sendMessage(serverMessage);
       
       if (mounted) {
@@ -770,27 +849,20 @@ class _ChatScreenState extends State<ChatScreen> {
           _currentStage = stage;
         }
         
-        // "네" 또는 "후보지 출력"을 눌렀을 때 결과 화면으로 이동 (completed 단계에서만)
+        // "네" 또는 "후보지 출력"을 눌렀을 때 후보지 고르러 가기 버튼 표시 (completed 단계에서만)
         if (isYes && stage == 'completed') {
-          setState(() {
-            _isLoading = false;
-          });
-          
-          // 추천 결과가 있으면 결과 화면으로 이동
+          // 추천 결과가 있으면 후보지 고르러 가기 버튼 표시
           if (recommendations != null && recommendations.isNotEmpty) {
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RecommendationResultScreen(
-                    recommendations: recommendations,
-                    selectedCategories: widget.selectedCategories,
-                  ),
-                ),
-              );
-            }
+            setState(() {
+              _isLoading = false;
+              _showRecommendationButton = true;
+              _recommendations = recommendations;
+            });
           } else {
             // 추천 결과가 없으면 서버에 다시 요청
+            setState(() {
+              _isLoading = false;
+            });
             _requestRecommendations();
             return; // 함수 종료
           }
@@ -850,20 +922,9 @@ class _ChatScreenState extends State<ChatScreen> {
         if (stage == 'completed' && recommendations != null && recommendations.isNotEmpty) {
           setState(() {
             _isLoading = false;
+            _showRecommendationButton = true;
+            _recommendations = recommendations;
           });
-          
-          // 추천 결과 화면으로 이동
-          if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RecommendationResultScreen(
-                  recommendations: recommendations,
-                  selectedCategories: widget.selectedCategories,
-                ),
-              ),
-            );
-          }
         } else {
           setState(() {
             _messages.add(ChatMessage(
@@ -957,14 +1018,19 @@ class _ChatBubble extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isButtonActive 
                       ? const Color(0xFFFF7A21) 
-                      : (selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.grey[400]),
-                    foregroundColor: Colors.white,
+                      : (selectedButton == 'yes' ? Colors.white : Colors.grey[400]),
+                    foregroundColor: isButtonActive 
+                      ? Colors.white 
+                      : (selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.white),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
+                      side: !isButtonActive && selectedButton == 'yes'
+                        ? const BorderSide(color: Color(0xFFFF7A21), width: 2)
+                        : BorderSide.none,
                     ),
-                    disabledBackgroundColor: selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.grey[400],
-                    disabledForegroundColor: Colors.white,
+                    disabledBackgroundColor: selectedButton == 'yes' ? Colors.white : Colors.grey[400],
+                    disabledForegroundColor: selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.white,
                   ),
                   child: const Text(
                     '후보지 출력',
@@ -982,14 +1048,19 @@ class _ChatBubble extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isButtonActive 
                           ? const Color(0xFFFF7A21) 
-                          : (selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.grey[400]),
-                        foregroundColor: Colors.white,
+                          : (selectedButton == 'yes' ? Colors.white : Colors.grey[400]),
+                        foregroundColor: isButtonActive 
+                          ? Colors.white 
+                          : (selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.white),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
+                          side: !isButtonActive && selectedButton == 'yes'
+                            ? const BorderSide(color: Color(0xFFFF7A21), width: 2)
+                            : BorderSide.none,
                         ),
-                        disabledBackgroundColor: selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.grey[400],
-                        disabledForegroundColor: Colors.white,
+                        disabledBackgroundColor: selectedButton == 'yes' ? Colors.white : Colors.grey[400],
+                        disabledForegroundColor: selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.white,
                       ),
                       child: const Text(
                         '네',
@@ -1004,16 +1075,19 @@ class _ChatBubble extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isButtonActive 
                           ? Colors.grey[300] 
-                          : (selectedButton == 'no' ? const Color(0xFFFF7A21) : Colors.grey[400]),
+                          : (selectedButton == 'no' ? Colors.white : Colors.grey[400]),
                         foregroundColor: isButtonActive 
                           ? Colors.black87 
-                          : (selectedButton == 'no' ? Colors.white : Colors.white),
+                          : (selectedButton == 'no' ? const Color(0xFFFF7A21) : Colors.white),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
+                          side: !isButtonActive && selectedButton == 'no'
+                            ? const BorderSide(color: Color(0xFFFF7A21), width: 2)
+                            : BorderSide.none,
                         ),
-                        disabledBackgroundColor: selectedButton == 'no' ? const Color(0xFFFF7A21) : Colors.grey[400],
-                        disabledForegroundColor: Colors.white,
+                        disabledBackgroundColor: selectedButton == 'no' ? Colors.white : Colors.grey[400],
+                        disabledForegroundColor: selectedButton == 'no' ? const Color(0xFFFF7A21) : Colors.white,
                       ),
                       child: const Text(
                         '추가하기',

@@ -91,6 +91,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         return GestureDetector(
           onTap: () {
             // 매장 상세 화면으로 이동
+            if (!mounted) return;
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -365,7 +366,10 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (!mounted) return;
+            Navigator.pop(context);
+          },
         ),
         title: const Text(
           '추천 결과',
@@ -468,6 +472,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                 child: ElevatedButton(
                   onPressed: () {
                     // TODO: 일정표 제작하기 기능 구현
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('일정표 제작하기 기능은 준비 중입니다.'),
@@ -498,6 +503,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                 child: ElevatedButton(
                   onPressed: () {
                     // TODO: 완료하기 기능 구현
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('완료하기 기능은 준비 중입니다.'),
