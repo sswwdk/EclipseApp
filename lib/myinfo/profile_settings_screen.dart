@@ -216,12 +216,6 @@ class ProfileSettingsScreen extends StatelessWidget {
             title: '오뭐 플러스 구독하기',
             onTap: () {},
           ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.description_outlined,
-            title: '대표 템플릿 지정하기',
-            onTap: () {},
-          ),
         ],
       ),
     );
