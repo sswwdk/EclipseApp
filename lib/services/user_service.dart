@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'http_interceptor.dart';
 import 'token_manager.dart';
 
 class UserService {
@@ -8,17 +8,11 @@ class UserService {
   // 로그인
   static Future<Map<String, dynamic>> login(String username, String password) async {
     try {
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/users/session'),
-        headers: headers,
+      final response = await HttpInterceptor.post(
+        '/api/users/session',
         body: json.encode({
-          'header': {
-            'content': 'application/json',
+          'headers': {
+            'content_type': 'application/json',
             'jwt': null,
           },
           'body': {
@@ -42,18 +36,12 @@ class UserService {
   // 로그아웃
   static Future<Map<String, dynamic>> logout(String username, String password) async {
     try {
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-      
-      final response = await http.put(
-        Uri.parse('$baseUrl/api/users/session'),
-        headers: headers,
+      final response = await HttpInterceptor.put(
+        '/api/users/session',
         body: json.encode({
-          'header': {
-            'content': 'application/json',
-            'jwt': null,
+          'headers': {
+            'content_type': 'application/json',
+            'jwt': TokenManager.accessToken,
           },
           'body': {
             'id': username,
@@ -76,14 +64,8 @@ class UserService {
   // 아이디 찾기
   static Future<Map<String, dynamic>> findId(String email) async {
     try {
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/users/id'),
-        headers: headers,
+      final response = await HttpInterceptor.post(
+        '/api/users/id',
         body: json.encode({'email': email}),
       );
 
@@ -101,14 +83,8 @@ class UserService {
   // 비밀번호 찾기
   static Future<Map<String, dynamic>> findPassword(String username, String email) async {
     try {
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/users/password'),
-        headers: headers,
+      final response = await HttpInterceptor.post(
+        '/api/users/password',
         body: json.encode({
           'username': username,
           'email': email,
@@ -139,11 +115,6 @@ class UserService {
     String? birth,
   }) async {
     try {
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-      
       // body 데이터 구성 (선택 필드는 null이 아닐 때만 포함)
       final Map<String, dynamic> bodyData = {
         'id': id,
@@ -159,11 +130,10 @@ class UserService {
       if (sex != null) bodyData['sex'] = sex;
       if (birth != null && birth.isNotEmpty) bodyData['birth'] = birth;
       
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/users/register'),
-        headers: headers,
+      final response = await HttpInterceptor.post(
+        '/api/users/register',
         body: json.encode({
-          'header': {
+          'headers': {
             'content_type': 'application/json',
             'jwt': null,
           },
@@ -185,14 +155,8 @@ class UserService {
   // 회원 탈퇴
   static Future<Map<String, dynamic>> deleteUser(String userId, String password) async {
     try {
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-      
-      final response = await http.delete(
-        Uri.parse('$baseUrl/api/users/register'),
-        headers: headers,
+      final response = await HttpInterceptor.delete(
+        '/api/users/register',
         body: json.encode({
           'user_id': userId,
           'password': password,
@@ -213,15 +177,7 @@ class UserService {
   // 내 정보 보기
   static Future<Map<String, dynamic>> getMyInfo(String userId) async {
     try {
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-      
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/users/me/$userId'),
-        headers: headers,
-      );
+      final response = await HttpInterceptor.get('/api/users/me/$userId');
 
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
@@ -237,14 +193,8 @@ class UserService {
   // 선호 취향 선택
   static Future<Map<String, dynamic>> updatePreferences(String userId, Map<String, dynamic> preferences) async {
     try {
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-      
-      final response = await http.put(
-        Uri.parse('$baseUrl/api/users/$userId/preferences'),
-        headers: headers,
+      final response = await HttpInterceptor.put(
+        '/api/users/$userId/preferences',
         body: json.encode(preferences),
       );
 

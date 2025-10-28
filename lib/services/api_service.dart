@@ -13,13 +13,13 @@ class ApiService {
         ...TokenManager.jwtHeader,
       };
       
-    final requestBody = {
-      'headers': {
-        'content': 'application/json',
-        'jwt': TokenManager.accessToken,
-      },
-      'body': 'asd',
-    };
+      final requestBody = {
+        'headers': {
+          'content_type': 'application/json',
+          'jwt': TokenManager.accessToken,
+        },
+        'body': "qwerfgh",
+      };
 
     final response = await http.post(
       Uri.parse('$baseUrl/api/service/main'),
