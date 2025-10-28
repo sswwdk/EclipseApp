@@ -16,12 +16,14 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final FocusNode _passwordFocusNode = FocusNode();
   bool _isLoading = false;
 
   @override
   void dispose() {
     _idController.dispose();
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -127,6 +129,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: TextField(
                   controller: _idController,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) {
+                    // 엔터를 누르면 비밀번호 필드로 포커스 이동
+                    FocusScope.of(context).requestFocus(_passwordFocusNode);
+                  },
                   decoration: InputDecoration(
                     hintText: '아이디',
                     hintStyle: TextStyle(color: Colors.grey[400]),
@@ -151,7 +158,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: TextField(
                   controller: _passwordController,
+                  focusNode: _passwordFocusNode,
                   obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    // 엔터를 누르면 로그인 실행
+                    if (!_isLoading) {
+                      _handleLogin();
+                    }
+                  },
                   decoration: InputDecoration(
                     hintText: '비밀번호',
                     hintStyle: TextStyle(color: Colors.grey[400]),
