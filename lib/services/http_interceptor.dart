@@ -31,10 +31,11 @@ class HttpInterceptor {
     Object? body,
     bool retryOn401 = true,
   }) async {
+    final Object? finalBody = _attachDtoHeadersIfNeeded(body);
     final response = await http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: _buildHeaders(headers),
-      body: body,
+      body: finalBody,
     );
 
     if (response.statusCode == 401 && retryOn401) {
@@ -51,10 +52,11 @@ class HttpInterceptor {
     Object? body,
     bool retryOn401 = true,
   }) async {
+    final Object? finalBody = _attachDtoHeadersIfNeeded(body);
     final response = await http.put(
       Uri.parse('$baseUrl$endpoint'),
       headers: _buildHeaders(headers),
-      body: body,
+      body: finalBody,
     );
 
     if (response.statusCode == 401 && retryOn401) {
@@ -71,10 +73,11 @@ class HttpInterceptor {
     Object? body,
     bool retryOn401 = true,
   }) async {
+    final Object? finalBody = _attachDtoHeadersIfNeeded(body);
     final response = await http.delete(
       Uri.parse('$baseUrl$endpoint'),
       headers: _buildHeaders(headers),
-      body: body,
+      body: finalBody,
     );
 
     if (response.statusCode == 401 && retryOn401) {
@@ -96,6 +99,38 @@ class HttpInterceptor {
     }
     
     return defaultHeaders;
+  }
+
+  /// DTO를 사용하는 엔드포인트에 JWT를 JSON 내부 `headers`에 자동 삽입
+  static Object? _attachDtoHeadersIfNeeded(Object? body) {
+    try {
+      if (body is String && body.trim().isNotEmpty) {
+        final decoded = json.decode(body);
+        if (decoded is Map<String, dynamic>) {
+          // 이미 headers가 있으면 jwt만 갱신
+          if (decoded.containsKey('headers') && decoded['headers'] is Map<String, dynamic>) {
+            final hdr = Map<String, dynamic>.from(decoded['headers'] as Map);
+            hdr['content_type'] = hdr['content_type'] ?? 'application/json';
+            if (TokenManager.accessToken != null) {
+              hdr['jwt'] = TokenManager.accessToken;
+            }
+            decoded['headers'] = hdr;
+            return json.encode(decoded);
+          }
+          // body가 있고 headers가 없으면 headers 주입
+          if (decoded.containsKey('body')) {
+            decoded['headers'] = {
+              'content_type': 'application/json',
+              'jwt': TokenManager.accessToken,
+            };
+            return json.encode(decoded);
+          }
+        }
+      }
+    } catch (_) {
+      // 본문이 JSON이 아니면 건드리지 않음
+    }
+    return body;
   }
 
   /// 토큰 갱신 후 요청 재시도

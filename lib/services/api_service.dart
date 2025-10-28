@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'http_interceptor.dart';
 import 'token_manager.dart';
 
 class ApiService {
@@ -21,16 +21,19 @@ class ApiService {
         'body': "qwerfgh",
       };
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/service/main'),
+    final response = await HttpInterceptor.post(
+      '/api/service/main',
       headers: headers,
       body: json.encode(requestBody),
     );
       
-
-      final data = json.decode(utf8.decode(response.bodyBytes));
-      List<dynamic> categories = data['body']['categories'];
-      return categories.map((json) => Restaurant.fromMainScreenJson(json)).toList();
+      final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final Map<String, dynamic>? body = data['body'] as Map<String, dynamic>?;
+      final List<dynamic> categories = (body?['categories'] as List<dynamic>?) ?? const [];
+      return categories
+          .whereType<Map<String, dynamic>>()
+          .map((json) => Restaurant.fromMainScreenJson(json))
+          .toList();
       
     } catch (e) {
       print('API 호출 오류: $e');
@@ -46,10 +49,7 @@ class ApiService {
         ...TokenManager.jwtHeader,
       };
       
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/service/main/$id'),
-        headers: headers,
-      );
+      final response = await HttpInterceptor.get('/api/service/main/$id', headers: headers);
       
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));

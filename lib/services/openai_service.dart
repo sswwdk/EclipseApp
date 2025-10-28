@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'http_interceptor.dart';
 
 /// FastAPI 서버와 통신하는 서비스
 class OpenAIService {
@@ -18,12 +19,8 @@ class OpenAIService {
     required List<String> selectedCategories,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/start'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Accept': 'application/json',
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/start',
         body: jsonEncode({
           'peopleCount': peopleCount,
           'selectedCategories': selectedCategories,
@@ -54,12 +51,8 @@ class OpenAIService {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/chat'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Accept': 'application/json',
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/chat',
         body: jsonEncode({
           'sessionId': _sessionId,
           'message': userMessage,
@@ -100,12 +93,8 @@ class OpenAIService {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/confirm-results'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Accept': 'application/json',
-        },
+      final response = await HttpInterceptor.post(
+        '/api/confirm-results',
         body: jsonEncode({
           'sessionId': _sessionId,
           'message': '네', // "네" 응답으로 처리
