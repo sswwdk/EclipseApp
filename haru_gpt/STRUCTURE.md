@@ -5,20 +5,20 @@
 ```
 EclipseApp/
 │
-├── haru_gpt/                          # 🎯 메인 API 모듈 (신규)
+├── haru_gpt/                          #  메인 API 모듈 (신규)
 │   ├── __init__.py                    # 패키지 초기화 파일
-│   ├── config.py                      # 🔧 환경 설정
-│   ├── models.py                      # 📝 Pydantic 데이터 모델
-│   ├── prompts.py                     # ⭐ LLM 프롬프트 템플릿 (수정 용이)
-│   ├── database.py                    # 💾 추천 데이터베이스 상수
-│   ├── utils.py                       # 🛠️ 유틸리티 함수 (태그 추출, 추천 생성)
-│   ├── handlers.py                    # 🎮 대화 흐름 제어 핸들러
-│   ├── main.py                        # 🚀 FastAPI 앱 & 엔드포인트
-│   └── README.md                      # 📖 상세 사용 설명서
+│   ├── config.py                      #  환경 설정
+│   ├── models.py                      #  Pydantic 데이터 모델
+│   ├── prompts.py                     #  LLM 프롬프트 템플릿 (수정 용이)
+│   ├── database.py                    #  추천 데이터베이스 상수
+│   ├── utils.py                       #  유틸리티 함수 (태그 추출, 추천 생성)
+│   ├── handlers.py                    #  대화 흐름 제어 핸들러
+│   ├── main.py                        #  FastAPI 앱 & 엔드포인트
+│   └── README.md                      #  상세 사용 설명서
 │
-├── run_haru_gpt_server.py             # ▶️ 서버 실행 스크립트
+├── run_haru_gpt_server.py             # ▶ 서버 실행 스크립트
 │
-├── haru_gpt_api.py                    # ⚠️ 레거시 파일 (더 이상 사용 안 함)
+├── haru_gpt_api.py                    #  레거시 파일 (더 이상 사용 안 함)
 │
 ├── backend/                           # 기존 백엔드 (별도)
 │   ├── main.py
