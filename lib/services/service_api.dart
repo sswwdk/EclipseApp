@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'http_interceptor.dart';
 import 'token_manager.dart';
 
 class ServiceApi {
@@ -8,12 +8,8 @@ class ServiceApi {
   // 메인 로직 시작 (하루랑 채팅 시작 시)
   static Future<Map<String, dynamic>> startMainLogic(int numPeople, String category) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/start'),
-        headers: {
-          'Content-Type': 'application/json',
-          ...TokenManager.jwtHeader,
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/start',
         body: json.encode({
           '인원수': numPeople,
           '카테고리': category,
@@ -34,12 +30,8 @@ class ServiceApi {
   // 하루랑 채팅
   static Future<Map<String, dynamic>> chatWithHaru(String prompt, String userId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/chat'),
-        headers: {
-          'Content-Type': 'application/json',
-          ...TokenManager.jwtHeader,
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/chat',
         body: json.encode({
           'prompt': prompt,
           'user_id': userId,
@@ -60,12 +52,8 @@ class ServiceApi {
   // 커뮤니티 공유
   static Future<Map<String, dynamic>> shareToCommunity(String content, String userId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/community'),
-        headers: {
-          'Content-Type': 'application/json',
-          ...TokenManager.jwtHeader,
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/community',
         body: json.encode({
           'content': content,
           'user_id': userId,
@@ -86,12 +74,8 @@ class ServiceApi {
   // 친구에게 공유
   static Future<Map<String, dynamic>> shareWithFriend(String content, String friendId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/person'),
-        headers: {
-          'Content-Type': 'application/json',
-          ...TokenManager.jwtHeader,
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/person',
         body: json.encode({
           'content': content,
           'friend_id': friendId,
@@ -112,12 +96,8 @@ class ServiceApi {
   // 찜하기
   static Future<Map<String, dynamic>> likeStore(String storeId, String userId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/like/$storeId'),
-        headers: {
-          'Content-Type': 'application/json',
-          ...TokenManager.jwtHeader,
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/like/$storeId',
         body: json.encode({'user_id': userId}),
       );
 
@@ -135,12 +115,8 @@ class ServiceApi {
   // 찜 취소
   static Future<Map<String, dynamic>> unlikeStore(String storeId, String userId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/api/service/like/$storeId'),
-        headers: {
-          'Content-Type': 'application/json',
-          ...TokenManager.jwtHeader,
-        },
+      final response = await HttpInterceptor.delete(
+        '/api/service/like/$storeId',
         body: json.encode({'user_id': userId}),
       );
 
@@ -158,12 +134,8 @@ class ServiceApi {
   // 템플릿 선택
   static Future<Map<String, dynamic>> selectTemplate(String templateId, String userId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/templates'),
-        headers: {
-          'Content-Type': 'application/json',
-          ...TokenManager.jwtHeader,
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/templates',
         body: json.encode({
           'template_id': templateId,
           'user_id': userId,
@@ -184,13 +156,7 @@ class ServiceApi {
   // 템플릿 조회
   static Future<Map<String, dynamic>> getTemplate(String templateId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/service/templates/$templateId'),
-        headers: {
-          'Content-Type': 'application/json',
-          ...TokenManager.jwtHeader,
-        },
-      );
+      final response = await HttpInterceptor.get('/api/service/templates/$templateId');
 
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));

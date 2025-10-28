@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'http_interceptor.dart';
 
 /// FastAPI 서버와 통신하는 서비스
 class OpenAIService {
   // FastAPI 서버 주소
-  // Android 에뮬레이터: 'http://10.0.2.2:8000'
-  // iOS 시뮬레이터: 'http://localhost:8000'
-  // 실제 기기: 'http://<컴퓨터_IP>:8000'
-  static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl = 'http://192.168.14.51:8080';
   
   // 현재 세션 ID
   String? _sessionId;
@@ -21,12 +19,8 @@ class OpenAIService {
     required List<String> selectedCategories,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/start'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Accept': 'application/json',
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/start',
         body: jsonEncode({
           'peopleCount': peopleCount,
           'selectedCategories': selectedCategories,
@@ -57,12 +51,8 @@ class OpenAIService {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/chat'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Accept': 'application/json',
-        },
+      final response = await HttpInterceptor.post(
+        '/api/service/chat',
         body: jsonEncode({
           'sessionId': _sessionId,
           'message': userMessage,
@@ -103,12 +93,8 @@ class OpenAIService {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/confirm-results'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Accept': 'application/json',
-        },
+      final response = await HttpInterceptor.post(
+        '/api/confirm-results',
         body: jsonEncode({
           'sessionId': _sessionId,
           'message': '네', // "네" 응답으로 처리

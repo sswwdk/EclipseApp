@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 class TokenManager {
+  static const String baseUrl = 'http://192.168.14.51:8080';
   static String? _accessToken;
   static String? _refreshToken;
 
@@ -47,18 +51,50 @@ class TokenManager {
     }
 
     try {
-      // TODO: 실제 토큰 갱신 API 호출 구현
-      // 현재는 임시로 false 반환
       print('토큰 갱신 시도 중...');
-      print('리프레시 토큰: ${_refreshToken!.substring(0, 10)}...');
       
-      // 실제 구현 시:
-      // 1. refresh token으로 새로운 access token 요청
-      // 2. 응답에서 새로운 토큰들 추출
-      // 3. setTokens()로 새로운 토큰들 저장
-      // 4. 성공/실패 반환
-      
-      return false; // 임시로 실패 반환
+      // 서버가 요구한 DTO 포맷으로 요청
+      final envelope = {
+        'headers': {
+          'content_type': 'application/json',
+          'jwt': null,
+        },
+        'body': {
+          'token': _refreshToken,
+        }
+      };
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/users/refresh'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(envelope),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('토큰 갱신 시간 초과');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final Map<String, dynamic> body = (data['body'] ?? {}) as Map<String, dynamic>;
+        // 다양한 키에 대응
+        final String? newAccessToken = body['token'] as String?;
+        
+        if (newAccessToken != null) {
+          _accessToken = newAccessToken;
+          print('액세스 토큰 갱신 완료: ${newAccessToken.substring(0, 10)}...');
+          return true;
+        } else {
+          print('토큰 갱신 응답에 access_token이 없습니다.');
+          return false;
+        }
+      } else {
+        print('토큰 갱신 실패: HTTP ${response.statusCode}');
+        return false;
+      }
     } catch (e) {
       print('토큰 갱신 실패: $e');
       return false;
