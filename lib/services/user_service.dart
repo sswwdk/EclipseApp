@@ -127,20 +127,47 @@ class UserService {
   }
 
   // 회원가입
-  static Future<Map<String, dynamic>> signup(String username, String email, String password) async {
+  static Future<Map<String, dynamic>> signup({
+    required String id,
+    required String username,
+    required String password,
+    required String nickname,
+    required String email,
+    String? phone,
+    String? address,
+    int? sex,
+    String? birth,
+  }) async {
     try {
       final headers = {
         'Content-Type': 'application/json',
         ...TokenManager.jwtHeader,
       };
       
+      // body 데이터 구성 (선택 필드는 null이 아닐 때만 포함)
+      final Map<String, dynamic> bodyData = {
+        'id': id,
+        'username': username,
+        'password': password,
+        'nickname': nickname,
+        'email': email,
+      };
+      
+      // 선택 필드 추가
+      if (phone != null && phone.isNotEmpty) bodyData['phone'] = phone;
+      if (address != null && address.isNotEmpty) bodyData['address'] = address;
+      if (sex != null) bodyData['sex'] = sex;
+      if (birth != null && birth.isNotEmpty) bodyData['birth'] = birth;
+      
       final response = await http.post(
         Uri.parse('$baseUrl/api/users/register'),
         headers: headers,
         body: json.encode({
-          'username': username,
-          'email': email,
-          'password': password,
+          'header': {
+            'content_type': 'application/json',
+            'jwt': null,
+          },
+          'body': bodyData,
         }),
       );
 

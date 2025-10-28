@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/user_service.dart';
 
 // 회원가입 화면
 class SignUpScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   
   DateTime? _selectedDate;
   String? _selectedGender;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -30,6 +32,117 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _phoneController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleSignup() async {
+    // 필수 항목 검증
+    final String id = _idController.text.trim();
+    final String password = _passwordController.text.trim();
+    final String nickname = _nicknameController.text.trim();
+    final String email = _emailController.text.trim();
+    final String name = _nameController.text.trim();
+    
+    if (id.isEmpty) {
+      _showSnackBar('아이디를 입력하세요.');
+      return;
+    }
+    
+    if (password.isEmpty) {
+      _showSnackBar('비밀번호를 입력하세요.');
+      return;
+    }
+    
+    if (nickname.isEmpty) {
+      _showSnackBar('닉네임을 입력하세요.');
+      return;
+    }
+    
+    if (email.isEmpty) {
+      _showSnackBar('이메일을 입력하세요.');
+      return;
+    }
+    
+    if (name.isEmpty) {
+      _showSnackBar('이름을 입력하세요.');
+      return;
+    }
+    
+    // 이메일 형식 검증
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      _showSnackBar('올바른 이메일 형식을 입력하세요.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 선택 필드 수집
+      final String? phone = _phoneController.text.trim().isNotEmpty 
+          ? _phoneController.text.trim() 
+          : null;
+      final String? address = _addressController.text.trim().isNotEmpty 
+          ? _addressController.text.trim() 
+          : null;
+      
+      // 성별 변환: 'female' -> 0, 'male' -> 1, 'none' 또는 null -> null
+      int? sex;
+      if (_selectedGender == 'female') {
+        sex = 0;
+      } else if (_selectedGender == 'male') {
+        sex = 1;
+      }
+      
+      // 생년월일 형식 변환: DateTime -> 'yyyy-MM-dd'
+      String? birth;
+      if (_selectedDate != null) {
+        birth = '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
+      }
+
+      // ✅ 실제 API 호출 (모든 필드 전달)
+      final response = await UserService.signup(
+        id: id,
+        username: name,
+        password: password,
+        nickname: nickname,
+        email: email,
+        phone: phone,
+        address: address,
+        sex: sex,
+        birth: birth,
+      );
+      
+      if (!mounted) return;
+
+      debugPrint('회원가입 성공: $response');
+      _showSnackBar('회원가입이 완료되었습니다!', isSuccess: true);
+      
+      // 1초 대기 후 로그인 화면으로 이동
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('회원가입 실패: $e');
+      _showSnackBar('회원가입에 실패했습니다: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showSnackBar(String message, {bool isSuccess = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSuccess ? const Color(0xFFFF8126) : Colors.red,
+      ),
+    );
   }
 
   @override
@@ -114,69 +227,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // 필수 항목 검증
-                  final String id = _idController.text.trim();
-                  final String password = _passwordController.text.trim();
-                  final String nickname = _nicknameController.text.trim();
-                  final String email = _emailController.text.trim();
-                  final String name = _nameController.text.trim();
-                  
-                  if (id.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('아이디를 입력하세요.')),
-                    );
-                    return;
-                  }
-                  
-                  if (password.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('비밀번호를 입력하세요.')),
-                    );
-                    return;
-                  }
-                  
-                  if (nickname.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('닉네임을 입력하세요.')),
-                    );
-                    return;
-                  }
-                  
-                  if (email.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('이메일을 입력하세요.')),
-                    );
-                    return;
-                  }
-                  
-                  if (name.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('이름을 입력하세요.')),
-                    );
-                    return;
-                  }
-                  
-                  // 이메일 형식 검증
-                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                  if (!emailRegex.hasMatch(email)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('올바른 이메일 형식을 입력하세요.')),
-                    );
-                    return;
-                  }
-                  
-                  // TODO: 회원가입 로직에 필수 정보 포함하여 처리
-                  debugPrint('회원가입 - 아이디: $id, 닉네임: $nickname, 이메일: $email, 이름: $name');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('회원가입이 완료되었습니다.'),
-                      backgroundColor: Color(0xFFFF8126),
-                    ),
-                  );
-                  // 로그인 화면으로 돌아가기
-                  Navigator.of(context).pop();
-                },
+                onPressed: _isLoading ? null : _handleSignup,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF8126),
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -185,14 +236,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   elevation: 2,
                 ),
-                child: const Text(
-                  '회원가입',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        '회원가입',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
             
