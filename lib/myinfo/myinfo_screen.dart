@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
+import 'terms_of_service_screen.dart';
 import '../home/home.dart';
 import '../login/login_screen.dart';
 import '../theme/app_theme.dart';
@@ -226,7 +227,13 @@ class MyInfoScreen extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.description_outlined,
             title: '이용약관',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const TermsOfServiceScreen(),
+                ),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(

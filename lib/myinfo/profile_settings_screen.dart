@@ -255,7 +255,7 @@ class ProfileSettingsScreen extends StatelessWidget {
         ],
       ),
     );
-  }
+  } 
 
   Widget _buildMenuItem({
     required IconData icon,
