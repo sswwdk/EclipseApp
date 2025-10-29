@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
 import 'terms_of_service_screen.dart';
+import 'favorite_list_screen.dart';
 import '../home/home.dart';
 import '../login/login_screen.dart';
 import '../theme/app_theme.dart';
@@ -57,7 +58,7 @@ class MyInfoScreen extends StatelessWidget {
             const SizedBox(height: 20),
             
             // 활동 섹션
-            _buildActivitySection(),
+            _buildActivitySection(context),
             const SizedBox(height: 20),
             
             // 고객지원 섹션
@@ -92,48 +93,38 @@ class MyInfoScreen extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // 프로필 사진
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                shape: BoxShape.circle,
+        child: SizedBox(
+          height: 60, // 프로필 사진 높이와 동일하게 유지
+          child: Row(
+            children: [
+              // 프로필 아이콘
+              const Icon(
+                Icons.person_outline,
+                size: 30,
+                color: AppTheme.primaryColor,
               ),
-              child: const Center(
-                child: Text(
-                  '프사',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            
-            // 닉네임
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const ProfileSettingsScreen(),
+              const SizedBox(width: 12),
+              
+              // 닉네임
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileSettingsScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    '내 프로필',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimaryColor,
                     ),
-                  );
-                },
-                child: const Text(
-                  '내 프로필',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                     color: AppTheme.textPrimaryColor,
                   ),
                 ),
               ),
-            ),
             
             // 화살표 아이콘
             GestureDetector(
@@ -153,10 +144,11 @@ class MyInfoScreen extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 
-  Widget _buildActivitySection() {
+  Widget _buildActivitySection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -179,7 +171,13 @@ class MyInfoScreen extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.favorite_outline,
             title: '찜목록',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const FavoriteListScreen(),
+                ),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
