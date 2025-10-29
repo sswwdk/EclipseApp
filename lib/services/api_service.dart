@@ -14,10 +14,6 @@ class ApiService {
       };
       
       final requestBody = {
-        'headers': {
-          'content_type': 'application/json',
-          'jwt': TokenManager.accessToken,
-        },
         'body': "qwerfgh",
       };
 
@@ -28,8 +24,7 @@ class ApiService {
     );
       
       final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-      final Map<String, dynamic>? body = data['body'] as Map<String, dynamic>?;
-      final List<dynamic> categories = (body?['categories'] as List<dynamic>?) ?? const [];
+      final List<dynamic> categories = (data?['categories'] as List<dynamic>?) ?? const [];
       return categories
           .whereType<Map<String, dynamic>>()
           .map((json) => Restaurant.fromMainScreenJson(json))
