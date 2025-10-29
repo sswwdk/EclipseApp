@@ -11,14 +11,8 @@ class UserService {
       final response = await HttpInterceptor.post(
         '/api/users/session',
         body: json.encode({
-          'headers': {
-            'content_type': 'application/json',
-            'jwt': null,
-          },
-          'body': {
             'id': username,
-            'password': password,
-          },
+            'password': password
         }),
       );
 

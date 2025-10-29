@@ -44,43 +44,36 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       // 응답에서 토큰/사용자 정보 추출 및 저장
-      if (response['body'] != null) {
-        final body = response['body'];
-        final token1 = body['token1'];
-        final token2 = body['token2'];
+      final token1 = response['token1'];
+      final token2 = response['token2'];
+      
+      if (token1 != null && token2 != null) {
+        TokenManager.setTokens(token1, token2);
         
-        if (token1 != null && token2 != null) {
-          TokenManager.setTokens(token1, token2);
-          
-          // 사용자 정보에서 닉네임과 ID 추출 (서버 응답 구조에 맞게)
-          String? nickname;
-          String? userId;
-          if (body['info'] != null) {
-            final info = body['info'] as Map<String, dynamic>;
-            nickname = info['nickname'] as String?;
-            userId = info['id'] as String?;
-          }
-          
-          // 닉네임이 없으면 username 사용
-          if (nickname == null) {
-            if (body['info'] != null) {
-              final info = body['info'] as Map<String, dynamic>;
-              nickname = info['username'] as String?;
-            }
-          }
-          
-          TokenManager.setUserName(nickname);
-          TokenManager.setUserId(userId);
-          _showSnackBar('로그인 성공!');
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-          );
-        } else {
-          _showSnackBar('토큰을 받지 못했습니다.');
+        // 사용자 정보에서 닉네임과 ID 추출
+        String? nickname;
+        String? userId;
+        if (response['info'] != null) {
+          final info = response['info'] as Map<String, dynamic>;
+          nickname = info['nickname'] as String?;
+          userId = info['username'] as String?; // username을 userId로 사용
         }
+        
+        // 닉네임이 없으면 username 사용
+        if (nickname == null && response['info'] != null) {
+          final info = response['info'] as Map<String, dynamic>;
+          nickname = info['username'] as String?;
+        }
+        
+        TokenManager.setUserName(nickname);
+        TokenManager.setUserId(userId);
+        _showSnackBar('로그인 성공!');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
       } else {
-        _showSnackBar('로그인 응답 형식이 올바르지 않습니다.');
+        _showSnackBar('토큰을 받지 못했습니다.');
       }
     } catch (e) {
       _showSnackBar('로그인 중 오류가 발생했습니다: $e');

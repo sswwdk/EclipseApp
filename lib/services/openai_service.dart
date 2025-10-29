@@ -32,11 +32,20 @@ class OpenAIService {
         },
       };
 
+      // 토큰 상태 확인
+      print('현재 accessToken: ${TokenManager.accessToken}');
+      print('토큰 존재 여부: ${TokenManager.hasTokens}');
+
       // 디버깅을 위한 로그
-      print('요청 본문: ${jsonEncode(requestBody)}');
+      print('초기화 요청 본문: ${jsonEncode(requestBody)}');
+      print('초기화 요청 URL: ${baseUrl}/api/service/start');
       
-      final response = await HttpInterceptor.post(
-        '/api/service/start',
+      // HttpInterceptor 대신 직접 HTTP 요청 전송 (변환 방지)
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/service/start'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: jsonEncode(requestBody),
       ).timeout(
         const Duration(seconds: 30),
@@ -45,12 +54,21 @@ class OpenAIService {
         },
       );
 
+      print('초기화 응답 상태 코드: ${response.statusCode}');
+      print('초기화 응답 본문: ${utf8.decode(response.bodyBytes)}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        _sessionId = data['sessionId'];
-        return data['message'] ?? '대화를 시작합니다!';
+        print('파싱된 응답 데이터: $data');
+        
+        // 응답에서 sessionId 추출 (다양한 위치에서 시도)
+        _sessionId = data['sessionId'] ?? data['body']?['sessionId'] ?? data['data']?['sessionId'];
+        print('추출된 sessionId: $_sessionId');
+        
+        final message = data['message'] ?? data['body']?['message'] ?? '대화를 시작합니다!';
+        return message;
       } else {
-        throw Exception('서버 응답 오류: ${response.statusCode}');
+        throw Exception('초기화 실패: ${response.statusCode} - ${utf8.decode(response.bodyBytes)}');
       }
     } catch (e) {
       throw Exception('초기화 중 오류 발생: $e');
@@ -76,8 +94,16 @@ class OpenAIService {
         },
       };
 
-      final response = await HttpInterceptor.post(
-        '/api/service/chat',
+      // 디버깅을 위한 로그
+      print('채팅 요청 본문: ${jsonEncode(requestBody)}');
+      print('요청 URL: ${baseUrl}/api/service/chat');
+
+      // HttpInterceptor 대신 직접 HTTP 요청 전송 (변환 방지)
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/service/chat'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: jsonEncode(requestBody),
       ).timeout(
         const Duration(seconds: 30),
@@ -85,6 +111,9 @@ class OpenAIService {
           throw Exception('서버 연결 시간 초과 (30초)');
         },
       );
+
+      print('응답 상태 코드: ${response.statusCode}');
+      print('응답 본문: ${utf8.decode(response.bodyBytes)}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -101,7 +130,7 @@ class OpenAIService {
           'availableCategories': data['availableCategories'] as List<dynamic>?,
         };
       } else {
-        throw Exception('서버 응답 오류: ${response.statusCode}');
+        throw Exception('서버 응답 오류: ${response.statusCode} - ${utf8.decode(response.bodyBytes)}');
       }
     } catch (e) {
       throw Exception('메시지 전송 중 오류 발생: $e');
