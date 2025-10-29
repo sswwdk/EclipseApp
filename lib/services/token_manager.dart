@@ -75,14 +75,8 @@ class TokenManager {
       
       // 서버가 요구한 DTO 포맷으로 요청
       final envelope = {
-        'header': {
-          'content_type': 'application/json',
-          'jwt': null,
-        },
-        'body': {
           'token': _refreshToken,
           'id': userId
-        }
       };
 
       final response = await http.post(
@@ -100,9 +94,8 @@ class TokenManager {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-        final Map<String, dynamic> body = (data['body'] ?? {}) as Map<String, dynamic>;
-        // 다양한 키에 대응
-        final String? newAccessToken = body['token'] as String?;
+
+        final String? newAccessToken = data['token'] as String?;
         
         if (newAccessToken != null) {
           _accessToken = newAccessToken;
