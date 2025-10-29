@@ -2,8 +2,143 @@ import 'package:flutter/material.dart';
 import 'make_todo_chat.dart';
 import '../theme/app_theme.dart';
 
+/// 위치 입력 화면
+class LocationInputScreen extends StatefulWidget {
+  const LocationInputScreen({super.key});
+
+  @override
+  State<LocationInputScreen> createState() => _LocationInputScreenState();
+}
+
+class _LocationInputScreenState extends State<LocationInputScreen> {
+  final TextEditingController _locationController = TextEditingController();
+
+  @override
+  void dispose() {
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  void _proceedToNext() {
+    final location = _locationController.text.trim();
+    
+    if (location.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('위치를 입력해주세요.'),
+        ),
+      );
+      return;
+    }
+
+    // 위치 출력
+    // ignore: avoid_print
+    print('위치 : $location');
+
+    // 인원 수 선택 화면으로 이동
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PeopleCountScreen(location: location),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '위치를 입력해주세요!',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '서울특별시만 지원하는 서비스 입니다.\n원하는 지역(구)을 입력해주세요.\n 나중에 이거는 지도에서 찍는 걸로 바꿀지 뭘로 할지 고민해봅시다',
+                    style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
+                  ],
+                ),
+                child: TextField(
+                  controller: _locationController,
+                  decoration: InputDecoration(
+                    hintText: '예: 강남구, 강동구, 영등포구...',
+                    hintStyle: const TextStyle(color: Colors.black38, fontSize: 14),
+                    prefixIcon: const Icon(Icons.location_on, color: AppTheme.primaryColor),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  ),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  onSubmitted: (_) => _proceedToNext(),
+                ),
+              ),
+            ),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    elevation: 3,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _proceedToNext,
+                  child: const Text('다음', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 인원 수 선택 화면
 class PeopleCountScreen extends StatefulWidget {
-  const PeopleCountScreen({super.key});
+  final String location;
+  
+  const PeopleCountScreen({super.key, required this.location});
 
   @override
   State<PeopleCountScreen> createState() => _PeopleCountScreenState();
@@ -14,6 +149,19 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
 
   void _increment() => setState(() => _count++);
   void _decrement() => setState(() => _count = _count > 1 ? _count - 1 : 1);
+
+  void _proceedToNext() {
+    // 인원 수 출력
+    // ignore: avoid_print
+    print('인원 수 : $_count명');
+
+    // 할 일 선택 화면으로 이동하면서 인원 수 전달
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TaskSelectScreen(location: widget.location, peopleCount: _count),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,19 +224,7 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: () {
-                    // 인원 수를 콘솔에 요청된 형식으로 출력
-                    // 예시) 인원 수 : 2명
-                    // ignore: avoid_print
-                    print('인원 수 : $_count명');
-
-                    // 할 일 선택 화면으로 이동하면서 인원 수 전달
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => TaskSelectScreen(peopleCount: _count),
-                      ),
-                    );
-                  },
+                  onPressed: _proceedToNext,
                   child: const Text('할 일 선택', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
               ),
@@ -132,9 +268,11 @@ class _CircleIconButton extends StatelessWidget {
 
 /// 사용자가 하고 싶은 일을 복수 선택할 수 있는 화면
 class TaskSelectScreen extends StatefulWidget {
+  /// 이전 단계에서 선택된 위치
+  final String location;
   /// 이전 단계에서 선택된 인원 수
   final int peopleCount;
-  const TaskSelectScreen({super.key, required this.peopleCount});
+  const TaskSelectScreen({super.key, required this.location, required this.peopleCount});
 
   @override
   State<TaskSelectScreen> createState() => _TaskSelectScreenState();
@@ -198,9 +336,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
     // 카테고리를 우선순위대로 정렬
     final sortedList = _sortCategories(_selected);
     
-    // 결과를 요청한 포맷으로 콘솔 출력
-    // ignore: avoid_print
-    print('인원 수 : ${widget.peopleCount}명');
+    // 선택한 카테고리 출력
     // ignore: avoid_print
     print('선택 : ${sortedList.map((e) => '"$e"').join(', ')}');
 
@@ -208,6 +344,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ChatScreen(
+          location: widget.location,
           peopleCount: widget.peopleCount,
           selectedCategories: sortedList,
         ),

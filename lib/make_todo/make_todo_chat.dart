@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:whattodo/services/openai_service.dart'; // 위에서 만든 서비스 import
 import 'package:whattodo/make_todo/recommendation_result_screen.dart';
 import '../widgets/common_dialogs.dart';
+import 'make_todo_main.dart';
 
 /// 채팅 메시지 데이터 모델
 class ChatMessage {
@@ -32,12 +33,14 @@ class ChatMessage {
 
 /// 선택한 내용 요약과 질문을 보여주는 간단한 채팅 화면
 class ChatScreen extends StatefulWidget {
+  /// 위치
+  final String location;
   /// 인원 수 (추후 프롬프트에 활용 가능)
   final int peopleCount;
   /// 사용자가 선택한 카테고리 목록
   final List<String> selectedCategories;
 
-  const ChatScreen({super.key, required this.peopleCount, required this.selectedCategories});
+  const ChatScreen({super.key, required this.location, required this.peopleCount, required this.selectedCategories});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -278,8 +281,11 @@ class _ChatScreenState extends State<ChatScreen> {
         CommonDialogs.showBackConfirmation(
           context: context,
           onConfirm: () {
-            Navigator.of(context).pop(); // TaskSelectScreen 제거
-            Navigator.of(context).pop(); // PeopleCountScreen으로
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              (route) => false,
+            );
           },
         );
         return false; // 기본 뒤로가기 동작 방지
@@ -290,7 +296,7 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 상단 헤더 (뒤로가기, 타이틀, 나가기 버튼)
+            // 상단 헤더 (뒤로가기, 타이틀)
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -311,15 +317,18 @@ class _ChatScreenState extends State<ChatScreen> {
                       alignment: Alignment.centerLeft,
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                        onPressed: () {
-                          CommonDialogs.showBackConfirmation(
-                            context: context,
-                            onConfirm: () {
-                              Navigator.of(context).pop(); // TaskSelectScreen 제거
-                              Navigator.of(context).pop(); // PeopleCountScreen으로
-                            },
-                          );
-                        },
+                      onPressed: () {
+                        CommonDialogs.showBackConfirmation(
+                          context: context,
+                          onConfirm: () {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (context) => const HomeScreen()),
+                              (route) => false,
+                            );
+                          },
+                        );
+                      },
                         padding: EdgeInsets.zero, // 내부 여백 제거
                         constraints: const BoxConstraints.tightFor(width: 40, height: 40), // 동일 높이
                         iconSize: 24,
@@ -328,41 +337,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     const Center(
                       child: Text('하루와 할 일 찾기',
                           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          CommonDialogs.showExitConfirmation(
-                            context: context,
-                            onConfirm: () {
-                              Navigator.of(context).popUntil((route) => route.isFirst);
-                            },
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFFF7A21),
-                          side: const BorderSide(
-                            color: Color(0xFFFF7A21),
-                            width: 1.5,
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          minimumSize: const Size(0, 40), // 동일 높이
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          '나가기',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFFFF7A21),
-                          ),
-                        ),
-                      ),
                     ),
                   ],
                   ),
