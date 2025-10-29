@@ -5,6 +5,7 @@ import 'change_password_screen.dart';
 import 'change_email_screen.dart';
 import 'change_address_screen.dart';
 import 'change_phone_screen.dart';
+import '../services/token_manager.dart';
 
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({Key? key}) : super(key: key);
@@ -107,25 +108,33 @@ class ProfileSettingsScreen extends StatelessWidget {
             const SizedBox(width: 16),
             
             // 닉네임과 이메일
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '닉네임',
-                    style: TextStyle(
+                    TokenManager.userName ?? '닉네임',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'example.gmail.com',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                  const SizedBox(height: 4),
+                  Builder(
+                    builder: (context) {
+                      // 디버깅을 위한 로그
+                      print('프로필 설정 화면에서 TokenManager.userName: ${TokenManager.userName}');
+                      print('프로필 설정 화면에서 TokenManager.userEmail: ${TokenManager.userEmail}');
+                      
+                      return Text(
+                        TokenManager.userEmail ?? 'example@gmail.com',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
