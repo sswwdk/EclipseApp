@@ -115,7 +115,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                   Text(
                     TokenManager.userName ?? '닉네임',
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
