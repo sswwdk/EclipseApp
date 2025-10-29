@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'http_interceptor.dart';
+import 'token_manager.dart';
 
 /// FastAPI 서버와 통신하는 서비스
 class OpenAIService {
@@ -13,18 +14,30 @@ class OpenAIService {
   // 세션 ID getter
   String? get sessionId => _sessionId;
 
-  /// 대화 초기화 - FastAPI /api/start 호출
+  /// 대화 초기화 - FastAPI /api/service/start 호출
   Future<String> initialize({
     required int peopleCount,
     required List<String> selectedCategories,
   }) async {
     try {
-      final response = await HttpInterceptor.post(
-        '/api/service/start',
-        body: jsonEncode({
+      // 서버가 기대하는 DTO 형식으로 요청 구성
+      final requestBody = {
+        'headers': {
+          'contentType': 'application/json',
+          'jwt': TokenManager.accessToken,
+        },
+        'body': {
           'peopleCount': peopleCount,
           'selectedCategories': selectedCategories,
-        }),
+        },
+      };
+
+      // 디버깅을 위한 로그
+      print('요청 본문: ${jsonEncode(requestBody)}');
+      
+      final response = await HttpInterceptor.post(
+        '/api/service/start',
+        body: jsonEncode(requestBody),
       ).timeout(
         const Duration(seconds: 30),
         onTimeout: () {
@@ -44,19 +57,28 @@ class OpenAIService {
     }
   }
 
-  /// 메시지 전송 - FastAPI /api/chat 호출
+  /// 메시지 전송 - FastAPI /api/service/chat 호출
   Future<Map<String, dynamic>> sendMessage(String userMessage) async {
     if (_sessionId == null) {
       throw Exception('세션이 초기화되지 않았습니다.');
     }
 
     try {
-      final response = await HttpInterceptor.post(
-        '/api/service/chat',
-        body: jsonEncode({
+      // 서버가 기대하는 DTO 형식으로 요청 구성
+      final requestBody = {
+        'headers': {
+          'contentType': 'application/json',
+          'jwt': TokenManager.accessToken,
+        },
+        'body': {
           'sessionId': _sessionId,
           'message': userMessage,
-        }),
+        },
+      };
+
+      final response = await HttpInterceptor.post(
+        '/api/service/chat',
+        body: jsonEncode(requestBody),
       ).timeout(
         const Duration(seconds: 30),
         onTimeout: () {
@@ -93,12 +115,21 @@ class OpenAIService {
     }
 
     try {
-      final response = await HttpInterceptor.post(
-        '/api/confirm-results',
-        body: jsonEncode({
+      // 서버가 기대하는 DTO 형식으로 요청 구성
+      final requestBody = {
+        'headers': {
+          'contentType': 'application/json',
+          'jwt': TokenManager.accessToken,
+        },
+        'body': {
           'sessionId': _sessionId,
           'message': '네', // "네" 응답으로 처리
-        }),
+        },
+      };
+
+      final response = await HttpInterceptor.post(
+        '/api/confirm-results',
+        body: jsonEncode(requestBody),
       ).timeout(
         const Duration(seconds: 30),
         onTimeout: () {

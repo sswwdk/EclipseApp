@@ -8,12 +8,21 @@ class ServiceApi {
   // 메인 로직 시작 (하루랑 채팅 시작 시)
   static Future<Map<String, dynamic>> startMainLogic(int numPeople, String category) async {
     try {
+      // 서버가 기대하는 DTO 형식으로 요청 구성
+      final requestBody = {
+        'headers': {
+          'contentType': 'application/json',
+          'jwt': TokenManager.accessToken,
+        },
+        'body': {
+          'peopleCount': numPeople,
+          'selectedCategories': [category],
+        },
+      };
+
       final response = await HttpInterceptor.post(
         '/api/service/start',
-        body: json.encode({
-          '인원수': numPeople,
-          '카테고리': category,
-        }),
+        body: json.encode(requestBody),
       );
 
       if (response.statusCode == 200) {
@@ -30,12 +39,21 @@ class ServiceApi {
   // 하루랑 채팅
   static Future<Map<String, dynamic>> chatWithHaru(String prompt, String userId) async {
     try {
+      // 서버가 기대하는 DTO 형식으로 요청 구성
+      final requestBody = {
+        'headers': {
+          'contentType': 'application/json',
+          'jwt': TokenManager.accessToken,
+        },
+        'body': {
+          'sessionId': userId, // userId를 sessionId로 사용
+          'message': prompt,
+        },
+      };
+
       final response = await HttpInterceptor.post(
         '/api/service/chat',
-        body: json.encode({
-          'prompt': prompt,
-          'user_id': userId,
-        }),
+        body: json.encode(requestBody),
       );
 
       if (response.statusCode == 200) {
