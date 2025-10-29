@@ -118,7 +118,7 @@ class MyInfoScreen extends StatelessWidget {
                   child: const Text(
                     '내 프로필',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 17,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimaryColor,
                     ),
