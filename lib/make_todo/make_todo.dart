@@ -19,18 +19,17 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            // Top back button
-            Align(
-              alignment: Alignment.centerLeft,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.of(context).maybePop(),
-              ),
-            ),
-            const SizedBox(height: 16),
             const Text(
               '총 몇 명이 함께하시나요? (본인 포함)',
               style: TextStyle(
@@ -220,21 +219,19 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: const Text('인원 수 고르기', style: TextStyle(fontSize: 14, color: Colors.black54)),
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 상단: 뒤로가기 + 서브 타이틀
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-                const Text('인원 수 고르기', style: TextStyle(fontSize: 14, color: Colors.black54)),
-              ],
-            ),
-            const SizedBox(height: 8),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Text(
