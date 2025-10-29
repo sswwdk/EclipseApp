@@ -50,13 +50,21 @@ class _LoginScreenState extends State<LoginScreen> {
       if (token1 != null && token2 != null) {
         TokenManager.setTokens(token1, token2);
         
-        // 사용자 정보에서 닉네임과 ID 추출
+        // 사용자 정보에서 닉네임, ID, 이메일 추출
         String? nickname;
         String? userId;
+        String? email;
         if (response['info'] != null) {
           final info = response['info'] as Map<String, dynamic>;
           nickname = info['nickname'] as String?;
           userId = info['username'] as String?; // username을 userId로 사용
+          email = info['email'] as String?;
+          
+          // 디버깅을 위한 로그
+          print('로그인 응답에서 추출된 닉네임: $nickname');
+          print('로그인 응답에서 추출된 사용자 ID: $userId');
+          print('로그인 응답에서 추출된 이메일: $email');
+          print('전체 info 데이터: $info');
         }
         
         // 닉네임이 없으면 username 사용
@@ -67,6 +75,12 @@ class _LoginScreenState extends State<LoginScreen> {
         
         TokenManager.setUserName(nickname);
         TokenManager.setUserId(userId);
+        TokenManager.setUserEmail(email);
+        
+        // TokenManager에 저장된 값 확인
+        print('TokenManager에 저장된 닉네임: ${TokenManager.userName}');
+        print('TokenManager에 저장된 사용자 ID: ${TokenManager.userId}');
+        print('TokenManager에 저장된 이메일: ${TokenManager.userEmail}');
         _showSnackBar('로그인 성공!');
         Navigator.pushReplacement(
           context,

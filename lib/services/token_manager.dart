@@ -7,6 +7,7 @@ class TokenManager {
   static String? _refreshToken;
   static String? _userName;
   static String? _userId;
+  static String? _userEmail;
 
   /// 액세스 토큰 저장
   static void setTokens(String accessToken, String refreshToken) {
@@ -27,6 +28,9 @@ class TokenManager {
   /// 사용자 ID 가져오기
   static String? get userId => _userId;
 
+  /// 사용자 이메일 가져오기
+  static String? get userEmail => _userEmail;
+
   /// 사용자 이름 저장
   static void setUserName(String? name) {
     _userName = name;
@@ -35,6 +39,11 @@ class TokenManager {
   /// 사용자 ID 저장
   static void setUserId(String? id) {
     _userId = id;
+  }
+
+  /// 사용자 이메일 저장
+  static void setUserEmail(String? email) {
+    _userEmail = email;
   }
 
   /// JWT 헤더 생성
@@ -54,6 +63,7 @@ class TokenManager {
     _refreshToken = null;
     _userName = null;
     _userId = null;
+    _userEmail = null;
     print('토큰 초기화 완료');
   }
 
