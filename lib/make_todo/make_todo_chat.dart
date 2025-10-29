@@ -425,14 +425,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Stack(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: SizedBox(
+                  height: 44, // 상단 요소들의 공통 기준 높이
+                  child: Stack(
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back),
+                        icon: const Icon(Icons.arrow_back, color: Colors.black87),
                         onPressed: _showBackDialog,
+                        padding: EdgeInsets.zero, // 내부 여백 제거
+                        constraints: const BoxConstraints.tightFor(width: 40, height: 40), // 동일 높이
+                        iconSize: 24,
                       ),
                     ),
                     const Center(
@@ -444,12 +449,15 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: OutlinedButton(
                         onPressed: _showExitDialog,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.black87,
+                          foregroundColor: const Color(0xFFFF7A21),
                           side: const BorderSide(
-                            color: Colors.black38,
+                            color: Color(0xFFFF7A21),
                             width: 1.5,
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          minimumSize: const Size(0, 40), // 동일 높이
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -459,11 +467,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
+                            color: Color(0xFFFF7A21),
                           ),
                         ),
                       ),
                     ),
                   ],
+                  ),
                 ),
               ),
             ),
@@ -849,19 +859,29 @@ class _ChatScreenState extends State<ChatScreen> {
           _currentStage = stage;
         }
         
-        // "네" 또는 "후보지 출력"을 눌렀을 때 후보지 고르러 가기 버튼 표시 (completed 단계에서만)
-        if (isYes && stage == 'completed') {
-          // 추천 결과가 있으면 후보지 고르러 가기 버튼 표시
+        // "네" 또는 "후보지 출력" 후 바로 추천 화면으로 이동 (completed 단계)
+        if ((isYes || response == "후보지 출력") && stage == 'completed') {
           if (recommendations != null && recommendations.isNotEmpty) {
             setState(() {
               _isLoading = false;
-              _showRecommendationButton = true;
+              _showRecommendationButton = false; // 버튼 사용 안 함
               _recommendations = recommendations;
             });
+            // 추천 화면으로 즉시 이동
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RecommendationResultScreen(
+                  recommendations: recommendations,
+                  selectedCategories: widget.selectedCategories,
+                ),
+              ),
+            );
           } else {
             // 추천 결과가 없으면 서버에 다시 요청
             setState(() {
               _isLoading = false;
+              _showRecommendationButton = false;
             });
             _requestRecommendations();
             return; // 함수 종료
