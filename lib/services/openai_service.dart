@@ -22,14 +22,8 @@ class OpenAIService {
     try {
       // 서버가 기대하는 DTO 형식으로 요청 구성
       final requestBody = {
-        'headers': {
-          'contentType': 'application/json',
-          'jwt': TokenManager.accessToken,
-        },
-        'body': {
           'peopleCount': peopleCount,
-          'selectedCategories': selectedCategories,
-        },
+          'selectedCategories': selectedCategories
       };
 
       // 토큰 상태 확인
@@ -45,6 +39,7 @@ class OpenAIService {
         Uri.parse('$baseUrl/api/service/start'),
         headers: {
           'Content-Type': 'application/json',
+          'jwt': TokenManager.accessToken ?? ''
         },
         body: jsonEncode(requestBody),
       ).timeout(
@@ -84,14 +79,8 @@ class OpenAIService {
     try {
       // 서버가 기대하는 DTO 형식으로 요청 구성
       final requestBody = {
-        'headers': {
-          'contentType': 'application/json',
-          'jwt': TokenManager.accessToken,
-        },
-        'body': {
           'sessionId': _sessionId,
           'message': userMessage,
-        },
       };
 
       // 디버깅을 위한 로그
@@ -103,6 +92,7 @@ class OpenAIService {
         Uri.parse('$baseUrl/api/service/chat'),
         headers: {
           'Content-Type': 'application/json',
+          'jwt': TokenManager.accessToken ?? ''
         },
         body: jsonEncode(requestBody),
       ).timeout(
@@ -146,18 +136,16 @@ class OpenAIService {
     try {
       // 서버가 기대하는 DTO 형식으로 요청 구성
       final requestBody = {
-        'headers': {
-          'contentType': 'application/json',
-          'jwt': TokenManager.accessToken,
-        },
-        'body': {
           'sessionId': _sessionId,
           'message': '네', // "네" 응답으로 처리
-        },
       };
 
       final response = await HttpInterceptor.post(
         '/api/confirm-results',
+        headers: {
+          'Content-Type': 'application/json',
+          'jwt': TokenManager.accessToken ?? ''
+        },
         body: jsonEncode(requestBody),
       ).timeout(
         const Duration(seconds: 30),
