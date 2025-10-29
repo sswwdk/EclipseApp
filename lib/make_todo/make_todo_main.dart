@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../services/token_manager.dart';
 import 'make_todo.dart';
 import '../widgets/bottom_navigation_widget.dart';
 
@@ -30,9 +31,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 60),
-                    const Text(
-                      '안녕하세요 OOO님!',
-                      style: TextStyle(
+                    Text(
+                      '안녕하세요 ${TokenManager.userName ?? '사용자'}님!',
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.textPrimaryColor,

@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text.trim(),
       );
 
-      // 응답에서 토큰 추출 및 저장
+      // 응답에서 토큰/사용자 정보 추출 및 저장
       if (response['body'] != null) {
         final body = response['body'];
         final token1 = body['token1'];
@@ -51,6 +51,26 @@ class _LoginScreenState extends State<LoginScreen> {
         
         if (token1 != null && token2 != null) {
           TokenManager.setTokens(token1, token2);
+          
+          // 사용자 정보에서 닉네임과 ID 추출 (서버 응답 구조에 맞게)
+          String? nickname;
+          String? userId;
+          if (body['info'] != null) {
+            final info = body['info'] as Map<String, dynamic>;
+            nickname = info['nickname'] as String?;
+            userId = info['id'] as String?;
+          }
+          
+          // 닉네임이 없으면 username 사용
+          if (nickname == null) {
+            if (body['info'] != null) {
+              final info = body['info'] as Map<String, dynamic>;
+              nickname = info['username'] as String?;
+            }
+          }
+          
+          TokenManager.setUserName(nickname);
+          TokenManager.setUserId(userId);
           _showSnackBar('로그인 성공!');
           Navigator.pushReplacement(
             context,
