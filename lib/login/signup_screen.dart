@@ -141,6 +141,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: isSuccess ? const Color(0xFFFF8126) : Colors.red,
+        duration: const Duration(seconds: 1),
       ),
     );
   }

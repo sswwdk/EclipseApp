@@ -371,6 +371,7 @@ class _WritePostScreenState extends State<WritePostScreen> {
         const SnackBar(
           content: Text('글이 등록되었습니다'),
           backgroundColor: Color(0xFFFF8126),
+          duration: Duration(seconds: 1),
         ),
       );
       // 커뮤니티 화면으로 이동

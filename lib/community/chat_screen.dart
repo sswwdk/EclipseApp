@@ -421,6 +421,7 @@ class _ChatScreenState extends State<ChatScreen> {
           SnackBar(
             content: Text('${widget.user['nickname']}님을 차단했습니다'),
             backgroundColor: const Color(0xFFFF8126),
+            duration: const Duration(seconds: 2),
           ),
         );
       },
@@ -437,6 +438,7 @@ class _ChatScreenState extends State<ChatScreen> {
           SnackBar(
             content: Text('${widget.user['nickname']}님을 신고했습니다'),
             backgroundColor: const Color(0xFFFF8126),
+            duration: const Duration(seconds: 1),
           ),
         );
       },

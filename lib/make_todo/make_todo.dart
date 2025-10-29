@@ -26,6 +26,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('위치를 입력해주세요.'),
+          duration: Duration(seconds: 1),
         ),
       );
       return;
@@ -328,6 +329,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('최소 하나의 카테고리를 선택해주세요.'),
+          duration: Duration(seconds: 2),
         ),
       );
       return;

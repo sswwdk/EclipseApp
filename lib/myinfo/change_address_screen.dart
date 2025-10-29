@@ -66,6 +66,7 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: const Color(0xFFFF8126),
+        duration: const Duration(seconds: 1),
       ),
     );
   }

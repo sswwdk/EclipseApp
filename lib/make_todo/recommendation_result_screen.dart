@@ -490,7 +490,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('일정표 제작하기 기능은 준비 중입니다.'),
-                        duration: Duration(seconds: 2),
+                        duration: Duration(seconds: 1),
                       ),
                     );
                   },

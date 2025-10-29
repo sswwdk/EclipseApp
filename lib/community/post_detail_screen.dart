@@ -498,7 +498,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       const SnackBar(
         content: Text('신고가 접수되었습니다. 검토 후 조치하겠습니다.'),
         backgroundColor: Color(0xFFFF8126),
-        duration: Duration(seconds: 3),
+        duration: Duration(seconds: 1),
       ),
     );
   }

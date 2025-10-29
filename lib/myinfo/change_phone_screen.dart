@@ -110,6 +110,7 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: const Color(0xFFFF8126),
+        duration: const Duration(seconds: 1),
       ),
     );
   }

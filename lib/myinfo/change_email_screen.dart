@@ -94,6 +94,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: const Color(0xFFFF8126),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
