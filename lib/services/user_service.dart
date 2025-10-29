@@ -126,13 +126,7 @@ class UserService {
       
       final response = await HttpInterceptor.post(
         '/api/users/register',
-        body: json.encode({
-          'headers': {
-            'content_type': 'application/json',
-            'jwt': null,
-          },
-          'body': bodyData,
-        }),
+        body: json.encode(bodyData),
       );
 
       if (response.statusCode == 200) {
