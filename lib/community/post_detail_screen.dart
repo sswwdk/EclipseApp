@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'chat_screen.dart';
+import '../widgets/common_dialogs.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> post;
@@ -482,50 +483,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   void _showReportDialog() {
-    showDialog(
+    CommonDialogs.showReportConfirmation(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text(
-            '게시글 신고하기',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: const Text(
-            '이 게시글을 신고하시겠습니까?\n신고된 게시글은 검토 후 조치됩니다.',
-            style: TextStyle(fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text(
-                '취소',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _showReportSuccess();
-              },
-              child: const Text(
-                '신고하기',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
+      title: '게시글 신고하기',
+      content: '이 게시글을 신고하시겠습니까?\n신고된 게시글은 검토 후 조치됩니다.',
+      onConfirm: () {
+        _showReportSuccess();
       },
     );
   }

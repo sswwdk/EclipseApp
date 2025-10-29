@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../login/login_screen.dart';
+import '../widgets/common_dialogs.dart';
 import '../make_todo/make_todo_main.dart';
 import '../myinfo/myinfo_screen.dart';
 import '../community/community_screen.dart';
@@ -249,34 +250,12 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _showLogoutDialog(BuildContext context) {
-    showDialog(
+    CommonDialogs.showLogoutConfirmation(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('로그아웃'),
-          content: const Text('정말 로그아웃하시겠습니까?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-              },
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-                // 로그인 화면으로 이동
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  (route) => false, // 모든 이전 화면 제거
-                );
-              },
-              child: const Text(
-                '로그아웃',
-                style: TextStyle(color: Color(0xFFFF8126)),
-              ),
-            ),
-          ],
+      onConfirm: () {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
         );
       },
     );

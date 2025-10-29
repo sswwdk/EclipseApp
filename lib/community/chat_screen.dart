@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/common_dialogs.dart';
 
 class ChatScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -411,58 +412,34 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showBlockDialog() {
-    showDialog(
+    CommonDialogs.showBlockConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('사용자 차단'),
-        content: Text('${widget.user['nickname']}님을 차단하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+      title: '사용자 차단',
+      content: '${widget.user['nickname']}님을 차단하시겠습니까?',
+      onConfirm: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${widget.user['nickname']}님을 차단했습니다'),
+            backgroundColor: const Color(0xFFFF8126),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${widget.user['nickname']}님을 차단했습니다'),
-                  backgroundColor: const Color(0xFFFF8126),
-                ),
-              );
-            },
-            child: const Text('차단', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   void _showReportDialog() {
-    showDialog(
+    CommonDialogs.showReportConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('사용자 신고'),
-        content: Text('${widget.user['nickname']}님을 신고하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+      title: '사용자 신고',
+      content: '${widget.user['nickname']}님을 신고하시겠습니까?',
+      onConfirm: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${widget.user['nickname']}님을 신고했습니다'),
+            backgroundColor: const Color(0xFFFF8126),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${widget.user['nickname']}님을 신고했습니다'),
-                  backgroundColor: const Color(0xFFFF8126),
-                ),
-              );
-            },
-            child: const Text('신고', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:whattodo/make_todo/place_detail_screen.dart';
+import 'place_detail_screen.dart';
+import 'make_todo_main.dart';
+import '../widgets/common_dialogs.dart';
 
 /// 추천 결과를 보여주는 화면
 class RecommendationResultScreen extends StatefulWidget {
@@ -368,7 +370,19 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
             if (!mounted) return;
-            Navigator.pop(context);
+            CommonDialogs.showConfirmation(
+              context: context,
+              title: '확인',
+              content: '처음으로 돌아가시겠습니까?',
+              confirmText: '확인',
+              onConfirm: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false,
+                );
+              },
+            );
           },
         ),
         title: const Text(
@@ -539,5 +553,6 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
       ),
     );
   }
+
 }
 

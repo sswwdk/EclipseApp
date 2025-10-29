@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../login/login_screen.dart';
 import '../login/find_account_screen.dart';
+import '../widgets/common_dialogs.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({Key? key}) : super(key: key);
@@ -40,50 +41,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   }
 
   void _showDeleteConfirmDialog() {
-    showDialog(
+    CommonDialogs.showDeleteAccountConfirmation(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            '정말 탈퇴하시겠습니까?',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: const Text(
-            '탈퇴하시면 모든 데이터가 삭제되며 복구할 수 없습니다.',
-            style: TextStyle(fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                '취소',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _processAccountDeletion();
-              },
-              child: const Text(
-                '탈퇴하기',
-                style: TextStyle(
-                  color: Color(0xFFFF8126),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
+      onConfirm: () {
+        _processAccountDeletion();
       },
     );
   }

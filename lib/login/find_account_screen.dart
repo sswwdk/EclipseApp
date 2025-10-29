@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/common_dialogs.dart';
 
 class FindAccountScreen extends StatefulWidget {
   const FindAccountScreen({Key? key}) : super(key: key);
@@ -66,25 +67,10 @@ class _FindAccountScreenState extends State<FindAccountScreen> {
   }
 
   void _showResultDialog(String title, String message) {
-    showDialog(
+    CommonDialogs.showInfo(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                '확인',
-                style: TextStyle(color: Color(0xFFFF8126)),
-              ),
-            ),
-          ],
-        );
-      },
+      title: title,
+      content: message,
     );
   }
 

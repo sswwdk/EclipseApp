@@ -226,7 +226,6 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text('인원 수 고르기', style: TextStyle(fontSize: 14, color: Colors.black54)),
       ),
       body: SafeArea(
         child: Column(

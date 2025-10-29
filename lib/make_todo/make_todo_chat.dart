@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:whattodo/services/openai_service.dart'; // 위에서 만든 서비스 import
 import 'package:whattodo/make_todo/recommendation_result_screen.dart';
+import '../widgets/common_dialogs.dart';
 
 /// 채팅 메시지 데이터 모델
 class ChatMessage {
@@ -268,143 +269,19 @@ class _ChatScreenState extends State<ChatScreen> {
     return positiveWords.any((word) => lowerMessage.contains(word));
   }
 
-  /// 뒤로가기 확인 다이얼로그 표시
-  void _showBackDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text(
-            '뒤로 가시겠습니까?',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: const Text(
-            '지금까지 대화가 삭제됩니다.',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-              },
-              child: const Text(
-                '취소',
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-                // 인원 수 선택 화면으로 이동 (2번 pop)
-                Navigator.of(context).pop(); // TaskSelectScreen 제거
-                Navigator.of(context).pop(); // PeopleCountScreen으로
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF7A21),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                '뒤로가기',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// 나가기 확인 다이얼로그 표시
-  void _showExitDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text(
-            '채팅을 나가시겠습니까?',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: const Text(
-            '지금까지 대화가 삭제됩니다.',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-              },
-              child: const Text(
-                '취소',
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-                // 홈 화면으로 이동 (모든 이전 화면 제거)
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF7A21),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                '나가기',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
         // 하드웨어 뒤로가기 버튼 또는 제스처로 뒤로가기 시도 시
-        _showBackDialog();
+        CommonDialogs.showBackConfirmation(
+          context: context,
+          onConfirm: () {
+            Navigator.of(context).pop(); // TaskSelectScreen 제거
+            Navigator.of(context).pop(); // PeopleCountScreen으로
+          },
+        );
         return false; // 기본 뒤로가기 동작 방지
       },
       child: Scaffold(
@@ -434,7 +311,15 @@ class _ChatScreenState extends State<ChatScreen> {
                       alignment: Alignment.centerLeft,
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                        onPressed: _showBackDialog,
+                        onPressed: () {
+                          CommonDialogs.showBackConfirmation(
+                            context: context,
+                            onConfirm: () {
+                              Navigator.of(context).pop(); // TaskSelectScreen 제거
+                              Navigator.of(context).pop(); // PeopleCountScreen으로
+                            },
+                          );
+                        },
                         padding: EdgeInsets.zero, // 내부 여백 제거
                         constraints: const BoxConstraints.tightFor(width: 40, height: 40), // 동일 높이
                         iconSize: 24,
@@ -447,7 +332,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: OutlinedButton(
-                        onPressed: _showExitDialog,
+                        onPressed: () {
+                          CommonDialogs.showExitConfirmation(
+                            context: context,
+                            onConfirm: () {
+                              Navigator.of(context).popUntil((route) => route.isFirst);
+                            },
+                          );
+                        },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFFFF7A21),
                           side: const BorderSide(
