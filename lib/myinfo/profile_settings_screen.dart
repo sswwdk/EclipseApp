@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'delete_account_screen.dart';
+import 'change_nickname_screen.dart';
+import 'change_password_screen.dart';
+import 'change_email_screen.dart';
+import 'change_address_screen.dart';
+import 'change_phone_screen.dart';
 
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({Key? key}) : super(key: key);
@@ -44,7 +49,7 @@ class ProfileSettingsScreen extends StatelessWidget {
             const SizedBox(height: 20),
             
             // 계정 설정 섹션
-            _buildAccountSection(),
+            _buildAccountSection(context),
             const SizedBox(height: 20),
             
             // 앱 기능 섹션
@@ -131,7 +136,7 @@ class ProfileSettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountSection() {
+  Widget _buildAccountSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -154,31 +159,61 @@ class ProfileSettingsScreen extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.person_outline,
             title: '닉네임 변경',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ChangeNicknameScreen(),
+                ),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.lock_outline,
             title: '비밀번호 변경',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ChangePasswordScreen(),
+                ),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.email_outlined,
             title: '이메일 변경',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ChangeEmailScreen(),
+                ),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.location_on_outlined,
             title: '집주소 변경',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ChangeAddressScreen(),
+                ),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.phone_outlined,
             title: '전화번호 변경',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ChangePhoneScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),

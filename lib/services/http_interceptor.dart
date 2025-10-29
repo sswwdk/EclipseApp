@@ -107,10 +107,13 @@ class HttpInterceptor {
       if (body is String && body.trim().isNotEmpty) {
         final decoded = json.decode(body);
         if (decoded is Map<String, dynamic>) {
-          // 이미 headers가 있으면 jwt만 갱신
+          // 이미 headers가 있으면 jwt만 갱신 (contentType은 그대로 유지)
           if (decoded.containsKey('headers') && decoded['headers'] is Map<String, dynamic>) {
             final hdr = Map<String, dynamic>.from(decoded['headers'] as Map);
-            hdr['content_type'] = hdr['content_type'] ?? 'application/json';
+            // contentType이 있으면 그대로 유지, 없으면 content_type으로 설정
+            if (!hdr.containsKey('contentType') && !hdr.containsKey('content_type')) {
+              hdr['contentType'] = 'application/json';
+            }
             if (TokenManager.accessToken != null) {
               hdr['jwt'] = TokenManager.accessToken;
             }
@@ -120,7 +123,7 @@ class HttpInterceptor {
           // body가 있고 headers가 없으면 headers 주입
           if (decoded.containsKey('body')) {
             decoded['headers'] = {
-              'content_type': 'application/json',
+              'contentType': 'application/json',
               'jwt': TokenManager.accessToken,
             };
             return json.encode(decoded);

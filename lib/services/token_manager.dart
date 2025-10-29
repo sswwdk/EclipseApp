@@ -5,6 +5,8 @@ class TokenManager {
   static const String baseUrl = 'http://192.168.14.51:8080';
   static String? _accessToken;
   static String? _refreshToken;
+  static String? _userName;
+  static String? _userId;
 
   /// 액세스 토큰 저장
   static void setTokens(String accessToken, String refreshToken) {
@@ -18,6 +20,22 @@ class TokenManager {
 
   /// 리프레시 토큰 가져오기
   static String? get refreshToken => _refreshToken;
+
+  /// 사용자 이름 가져오기
+  static String? get userName => _userName;
+
+  /// 사용자 ID 가져오기
+  static String? get userId => _userId;
+
+  /// 사용자 이름 저장
+  static void setUserName(String? name) {
+    _userName = name;
+  }
+
+  /// 사용자 ID 저장
+  static void setUserId(String? id) {
+    _userId = id;
+  }
 
   /// JWT 헤더 생성
   static Map<String, String> get jwtHeader {
@@ -34,6 +52,8 @@ class TokenManager {
   static void clearTokens() {
     _accessToken = null;
     _refreshToken = null;
+    _userName = null;
+    _userId = null;
     print('토큰 초기화 완료');
   }
 
@@ -55,13 +75,8 @@ class TokenManager {
       
       // 서버가 요구한 DTO 포맷으로 요청
       final envelope = {
-        'headers': {
-          'content_type': 'application/json',
-          'jwt': null,
-        },
-        'body': {
           'token': _refreshToken,
-        }
+          'id': userId
       };
 
       final response = await http.post(
@@ -79,9 +94,8 @@ class TokenManager {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-        final Map<String, dynamic> body = (data['body'] ?? {}) as Map<String, dynamic>;
-        // 다양한 키에 대응
-        final String? newAccessToken = body['token'] as String?;
+
+        final String? newAccessToken = data['token'] as String?;
         
         if (newAccessToken != null) {
           _accessToken = newAccessToken;
