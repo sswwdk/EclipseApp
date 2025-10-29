@@ -425,14 +425,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Stack(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: SizedBox(
+                  height: 44, // 상단 요소들의 공통 기준 높이
+                  child: Stack(
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back),
+                        icon: const Icon(Icons.arrow_back, color: Colors.black87),
                         onPressed: _showBackDialog,
+                        padding: EdgeInsets.zero, // 내부 여백 제거
+                        constraints: const BoxConstraints.tightFor(width: 40, height: 40), // 동일 높이
+                        iconSize: 24,
                       ),
                     ),
                     const Center(
@@ -444,12 +449,15 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: OutlinedButton(
                         onPressed: _showExitDialog,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.black87,
+                          foregroundColor: const Color(0xFFFF7A21),
                           side: const BorderSide(
-                            color: Colors.black38,
+                            color: Color(0xFFFF7A21),
                             width: 1.5,
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          minimumSize: const Size(0, 40), // 동일 높이
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -459,11 +467,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
+                            color: Color(0xFFFF7A21),
                           ),
                         ),
                       ),
                     ),
                   ],
+                  ),
                 ),
               ),
             ),
