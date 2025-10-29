@@ -849,19 +849,29 @@ class _ChatScreenState extends State<ChatScreen> {
           _currentStage = stage;
         }
         
-        // "네" 또는 "후보지 출력"을 눌렀을 때 후보지 고르러 가기 버튼 표시 (completed 단계에서만)
-        if (isYes && stage == 'completed') {
-          // 추천 결과가 있으면 후보지 고르러 가기 버튼 표시
+        // "네" 또는 "후보지 출력" 후 바로 추천 화면으로 이동 (completed 단계)
+        if ((isYes || response == "후보지 출력") && stage == 'completed') {
           if (recommendations != null && recommendations.isNotEmpty) {
             setState(() {
               _isLoading = false;
-              _showRecommendationButton = true;
+              _showRecommendationButton = false; // 버튼 사용 안 함
               _recommendations = recommendations;
             });
+            // 추천 화면으로 즉시 이동
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RecommendationResultScreen(
+                  recommendations: recommendations,
+                  selectedCategories: widget.selectedCategories,
+                ),
+              ),
+            );
           } else {
             // 추천 결과가 없으면 서버에 다시 요청
             setState(() {
               _isLoading = false;
+              _showRecommendationButton = false;
             });
             _requestRecommendations();
             return; // 함수 종료
