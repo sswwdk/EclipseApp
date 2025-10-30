@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whattodo/services/openai_service.dart'; // 위에서 만든 서비스 import
-import 'package:whattodo/make_todo/recommendation_result_screen.dart';
+import 'package:whattodo/make_todo/recommendation_screen.dart';
 import '../widgets/common_dialogs.dart';
 import 'make_todo_main.dart';
 
