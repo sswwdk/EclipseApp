@@ -1,70 +1,34 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'http_interceptor.dart';
 import 'token_manager.dart';
 
 class ServiceApi {
   static const String baseUrl = 'http://192.168.14.51:8080';
 
-  // 메인 로직 시작 (하루랑 채팅 시작 시)
+  // 메인 로직 시작 (하루랑 채팅 시작 시) - OpenAIService로 위임
   static Future<Map<String, dynamic>> startMainLogic(int numPeople, String category) async {
-    try {
-      // 서버가 기대하는 DTO 형식으로 요청 구성
-      final requestBody = {
-        'headers': {
-          'contentType': 'application/json',
-          'jwt': TokenManager.accessToken,
-        },
-        'body': {
-          'peopleCount': numPeople,
-          'selectedCategories': [category],
-        },
-      };
-
-      final response = await HttpInterceptor.post(
-        '/api/service/start',
-        body: json.encode(requestBody),
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(utf8.decode(response.bodyBytes));
-      } else {
-        throw Exception('메인 로직 시작 실패: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('메인 로직 시작 오류: $e');
-      throw Exception('네트워크 오류: $e');
-    }
+    final svc = OpenAIService();
+    final message = await svc.initialize(
+      playAddress: '',
+      peopleCount: numPeople,
+      selectedCategories: [category],
+    );
+    return {
+      'message': message,
+      'sessionId': svc.sessionId,
+      'status': 'success',
+    };
   }
 
   // 하루랑 채팅
   static Future<Map<String, dynamic>> chatWithHaru(String prompt, String userId) async {
-    try {
-      // 서버가 기대하는 DTO 형식으로 요청 구성
-      final requestBody = {
-        'headers': {
-          'contentType': 'application/json',
-          'jwt': TokenManager.accessToken,
-        },
-        'body': {
-          'sessionId': userId, // userId를 sessionId로 사용
-          'message': prompt,
-        },
-      };
-
-      final response = await HttpInterceptor.post(
-        '/api/service/chat',
-        body: json.encode(requestBody),
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(utf8.decode(response.bodyBytes));
-      } else {
-        throw Exception('채팅 실패: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('채팅 오류: $e');
-      throw Exception('네트워크 오류: $e');
+    final svc = OpenAIService();
+    // 기존 코드와의 호환을 위해 userId를 session으로 사용할 수 있게 초기화 보장
+    if (svc.sessionId == null) {
+      await svc.initialize(playAddress: '', peopleCount: 1, selectedCategories: const []);
     }
+    return await svc.sendMessage(prompt);
   }
 
   // 커뮤니티 공유
@@ -185,5 +149,140 @@ class ServiceApi {
       print('템플릿 조회 오류: $e');
       throw Exception('네트워크 오류: $e');
     }
+  }
+}
+
+/// 채팅 세션을 관리하는 서비스 (기존 OpenAIService 통합)
+class OpenAIService {
+  static const String baseUrl = 'http://192.168.14.51:8080';
+  String? _sessionId;
+  String? get sessionId => _sessionId;
+
+  Future<String> initialize({
+    required String playAddress,
+    required int peopleCount,
+    required List<String> selectedCategories,
+  }) async {
+    try {
+      final requestBody = {
+        'play_address': playAddress,
+        'peopleCount': peopleCount,
+        'selectedCategories': selectedCategories
+      };
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/service/start'),
+        headers: {
+          'Content-Type': 'application/json',
+          'jwt': TokenManager.accessToken ?? ''
+        },
+        body: jsonEncode(requestBody),
+      ).timeout(const Duration(seconds: 30), onTimeout: () {
+        throw Exception('서버 연결 시간 초과 (30초)');
+      });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        _sessionId = data['sessionId'] ?? data['body']?['sessionId'] ?? data['data']?['sessionId'];
+        final message = data['message'] ?? data['body']?['message'] ?? '대화를 시작합니다!';
+        return message;
+      } else {
+        throw Exception('초기화 실패: ${response.statusCode} - ${utf8.decode(response.bodyBytes)}');
+      }
+    } catch (e) {
+      throw Exception('초기화 중 오류 발생: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> sendMessage(String userMessage) async {
+    if (_sessionId == null) {
+      throw Exception('세션이 초기화되지 않았습니다.');
+    }
+
+    try {
+      final requestBody = {
+        'sessionId': _sessionId,
+        'message': userMessage,
+      };
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/service/chat'),
+        headers: {
+          'Content-Type': 'application/json',
+          'jwt': TokenManager.accessToken ?? ''
+        },
+        body: jsonEncode(requestBody),
+      ).timeout(const Duration(seconds: 30), onTimeout: () {
+        throw Exception('서버 연결 시간 초과 (30초)');
+      });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        return {
+          'status': data['status'] ?? 'success',
+          'message': data['message'] ?? '',
+          'stage': data['stage'] ?? 'collecting_details',
+          'tags': data['tags'] as List<dynamic>?,
+          'progress': data['progress'] as Map<String, dynamic>?,
+          'recommendations': data['recommendations'] as Map<String, dynamic>?,
+          'showYesNoButtons': data['showYesNoButtons'] ?? false,
+          'yesNoQuestion': data['yesNoQuestion'] as String?,
+          'currentCategory': data['currentCategory'] as String?,
+          'availableCategories': data['availableCategories'] as List<dynamic>?,
+        };
+      } else {
+        throw Exception('서버 응답 오류: ${response.statusCode} - ${utf8.decode(response.bodyBytes)}');
+      }
+    } catch (e) {
+      throw Exception('메시지 전송 중 오류 발생: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> requestRecommendations() async {
+    if (_sessionId == null) {
+      throw Exception('세션이 초기화되지 않았습니다.');
+    }
+
+    try {
+      final requestBody = {
+        'sessionId': _sessionId,
+        'message': '네',
+      };
+
+      final response = await HttpInterceptor.post(
+        '/api/confirm-results',
+        headers: {
+          'Content-Type': 'application/json',
+          'jwt': TokenManager.accessToken ?? ''
+        },
+        body: jsonEncode(requestBody),
+      ).timeout(const Duration(seconds: 30), onTimeout: () {
+        throw Exception('서버 연결 시간 초과 (30초)');
+      });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        return {
+          'status': data['status'] ?? 'success',
+          'message': data['message'] ?? '',
+          'stage': data['stage'] ?? 'completed',
+          'tags': data['tags'] as List<dynamic>?,
+          'progress': data['progress'] as Map<String, dynamic>?,
+          'recommendations': data['recommendations'] as Map<String, dynamic>?,
+          'showYesNoButtons': data['showYesNoButtons'] ?? false,
+          'yesNoQuestion': data['yesNoQuestion'] as String?,
+          'currentCategory': data['currentCategory'] as String?,
+          'availableCategories': data['availableCategories'] as List<dynamic>?,
+        };
+      } else {
+        throw Exception('서버 응답 오류: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('추천 결과 요청 중 오류 발생: $e');
+    }
+  }
+
+  void clearSession() {
+    _sessionId = null;
   }
 }
