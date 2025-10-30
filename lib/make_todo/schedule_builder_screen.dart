@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 class ScheduleBuilderScreen extends StatefulWidget {
   final Map<String, List<String>> selected; // 카테고리별 선택 목록
+  final bool previewOnly; // 미리보기 모드: 시간 숨김 + 단일 버튼
 
-  const ScheduleBuilderScreen({Key? key, required this.selected}) : super(key: key);
+  const ScheduleBuilderScreen({Key? key, required this.selected, this.previewOnly = false}) : super(key: key);
 
   @override
   State<ScheduleBuilderScreen> createState() => _ScheduleBuilderScreenState();
@@ -56,85 +57,131 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
               ),
             ],
           ),
-          child: ReorderableListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            buildDefaultDragHandles: false,
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return KeyedSubtree(
-                key: ValueKey(item.id),
-                child: _TimelineRow(
-                  item: item,
-                  index: index,
-                  isLast: index == items.length - 1,
-                  onDragHandle: item.type == _ItemType.place
-                      ? (child) => ReorderableDragStartListener(index: index, child: child)
-                      : null,
+          child: widget.previewOnly
+              ? ReorderableListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  buildDefaultDragHandles: false,
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return KeyedSubtree(
+                      key: ValueKey(item.id),
+                      child: _TimelineRow(
+                        item: item,
+                        index: index,
+                        isLast: index == items.length - 1,
+                        showDuration: !widget.previewOnly,
+                        onDragHandle: item.type == _ItemType.place
+                            ? (child) => ReorderableDragStartListener(index: index, child: child)
+                            : null,
+                      ),
+                    );
+                  },
+                  onReorder: (oldIndex, newIndex) {
+                    // 첫 항목(출발지)은 고정
+                    if (oldIndex == 0 || newIndex == 0) return;
+                    if (newIndex > oldIndex) newIndex -= 1;
+                    setState(() {
+                      final moved = _items.removeAt(oldIndex);
+                      _items.insert(newIndex, moved);
+                    });
+                  },
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return _TimelineRow(
+                      item: item,
+                      index: index,
+                      isLast: index == items.length - 1,
+                      showDuration: !widget.previewOnly,
+                      onDragHandle: null, // 전체 화면에서는 드래그 비활성화
+                    );
+                  },
                 ),
-              );
-            },
-            onReorder: (oldIndex, newIndex) {
-              // 첫 항목(출발지)은 고정
-              if (oldIndex == 0 || newIndex == 0) return;
-              if (newIndex > oldIndex) newIndex -= 1;
-              setState(() {
-                final moved = _items.removeAt(oldIndex);
-                _items.insert(newIndex, moved);
-              });
-            },
-          ),
         ),
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         color: Colors.white,
         child: SafeArea(
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('저장하기 기능은 준비 중입니다.')),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: Color(0xFFFF8126), width: 2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    foregroundColor: const Color(0xFFFF8126),
-                    minimumSize: const Size(double.infinity, 52),
+          child: widget.previewOnly
+              ? SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ScheduleBuilderScreen(
+                            selected: {
+                              for (final entry in widget.selected.entries) entry.key: List<String>.from(entry.value)
+                            },
+                            previewOnly: false,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF8126),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      minimumSize: const Size(double.infinity, 52),
+                    ),
+                    child: const Text(
+                      '경로 확정하기',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                   ),
-                  child: const Text(
-                    '저장하기',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('저장하기 기능은 준비 중입니다.')),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: Color(0xFFFF8126), width: 2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          foregroundColor: const Color(0xFFFF8126),
+                          minimumSize: const Size(double.infinity, 52),
+                        ),
+                        child: const Text(
+                          '저장하기',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('공유하기 기능은 준비 중입니다.')),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF8126),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          minimumSize: const Size(double.infinity, 52),
+                        ),
+                        child: const Text(
+                          '공유하기',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('공유하기 기능은 준비 중입니다.')),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF8126),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    minimumSize: const Size(double.infinity, 52),
-                  ),
-                  child: const Text(
-                    '공유하기',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -208,29 +255,32 @@ class _TimelineRow extends StatelessWidget {
   final int index;
   final bool isLast;
   final Widget Function(Widget child)? onDragHandle;
+  final bool showDuration;
 
-  const _TimelineRow({Key? key, required this.item, required this.index, this.isLast = false, this.onDragHandle}) : super(key: key);
+  const _TimelineRow({Key? key, required this.item, required this.index, this.isLast = false, this.onDragHandle, this.showDuration = true}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final double leftInfoWidth = showDuration ? 56 : 20; // 좌측 공간 더 축소(미리보기일 때)
+    final double gapBetween = showDuration ? 12 : 6; // 타임라인과 카드 간격 축소
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 56,
+            width: leftInfoWidth,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  _formatDuration(item, index),
+                  showDuration ? _formatDuration(item, index) : '',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: gapBetween),
           // 타임라인 바
           Column(
             children: [
@@ -299,10 +349,8 @@ class _TimelineRow extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (item.type == _ItemType.place)
-                    (onDragHandle != null)
-                        ? onDragHandle!(const Icon(Icons.drag_handle, color: Colors.grey, size: 18))
-                        : const Icon(Icons.drag_handle, color: Colors.grey, size: 18),
+                  if (item.type == _ItemType.place && onDragHandle != null)
+                    onDragHandle!(const Icon(Icons.drag_handle, color: Colors.grey, size: 18)),
                 ],
               ),
             ),

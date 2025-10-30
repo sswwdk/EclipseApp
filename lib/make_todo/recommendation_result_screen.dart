@@ -477,7 +477,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ScheduleBuilderScreen(selected: selectedByCategory),
+                        builder: (_) => ScheduleBuilderScreen(selected: selectedByCategory, previewOnly: true),
                       ),
                     );
                   },
