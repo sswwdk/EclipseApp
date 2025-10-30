@@ -43,16 +43,26 @@ class ApiService {
         'Content-Type': 'application/json',
         ...TokenManager.jwtHeader,
       };
-      
-      final response = await HttpInterceptor.get('/api/service/main/$id', headers: headers);
-      
+
+      final response = await HttpInterceptor.get(
+        '/api/service/detail/$id',
+        headers: headers,
+      );
+
       if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
-        if (data['success'] == true) {
-          return Restaurant.fromJson(data['data']);
-        } else {
-          throw Exception('API 응답 오류: ${data['message']}');
-        }
+        final dynamic decoded = json.decode(utf8.decode(response.bodyBytes));
+        final Map<String, dynamic> root = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+        final Map<String, dynamic> obj =
+            (root['data'] is Map<String, dynamic>) ? Map<String, dynamic>.from(root['data']) : root;
+
+        // 이 API에서는 태그/리뷰만 사용한다. 나머지는 기본값으로 반환
+        return Restaurant(
+          id: id,
+          name: '',
+          rating: _parseDouble(obj['rating']) ?? 0.0,
+          reviews: Review.fromList(obj['reviews']),
+          tags: _parseStringList(obj['tags']),
+        );
       } else if (response.statusCode == 404) {
         throw Exception('레스토랑을 찾을 수 없습니다');
       } else {
@@ -80,6 +90,9 @@ class Restaurant {
   final String? latitude;
   final String? longitude;
   final String? lastCrawl;
+  final double? rating;
+  final List<Review> reviews;
+  final List<String> tags;
 
   Restaurant({
     required this.id,
@@ -96,6 +109,9 @@ class Restaurant {
     this.latitude,
     this.longitude,
     this.lastCrawl,
+    this.rating,
+    this.reviews = const [],
+    this.tags = const [],
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
@@ -114,6 +130,9 @@ class Restaurant {
       latitude: json['latitude'],
       longitude: json['longitude'],
       lastCrawl: json['last_crawl'],
+      rating: _parseDouble(json['rating']),
+      reviews: Review.fromList(json['reviews']),
+      tags: _parseStringList(json['tags']),
     );
   }
 
@@ -134,12 +153,47 @@ class Restaurant {
       latitude: null,
       longitude: null,
       lastCrawl: null,
+      rating: _parseDouble(json['rating']),
+      reviews: Review.fromList(json['reviews']),
+      tags: _parseStringList(json['tags']),
     );
   }
 
   // 기존 코드와의 호환성을 위한 getter들
   String? get address => detailAddress != null ? '${si ?? ''} ${gu ?? ''} ${detailAddress ?? ''}' : null;
   String? get imageUrl => image;
-  double get rating => 4.0; // 기본값
   String? get description => subCategory;
+}
+
+class Review {
+  final String nickname;
+  final double rating;
+  final String content;
+
+  Review({required this.nickname, required this.rating, required this.content});
+
+  static List<Review> fromList(dynamic src) {
+    if (src is List) {
+      return src.whereType<Map<String, dynamic>>().map((m) => Review(
+        nickname: (m['nickname'] ?? m['user'] ?? '익명').toString(),
+        rating: _parseDouble(m['rating']) ?? 0.0,
+        content: (m['content'] ?? m['text'] ?? '').toString(),
+      )).toList();
+    }
+    return const [];
+  }
+}
+
+double? _parseDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  final s = v.toString();
+  return double.tryParse(s);
+}
+
+List<String> _parseStringList(dynamic v) {
+  if (v is List) {
+    return v.map((e) => e.toString()).toList();
+  }
+  return const [];
 }
