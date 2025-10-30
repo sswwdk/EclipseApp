@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../make_todo/recommendation_place_detail.dart';
+import '../services/like_service.dart';
+import '../services/token_manager.dart';
 
 /// 찜목록을 보여주는 화면
 class FavoriteListScreen extends StatefulWidget {
@@ -16,21 +18,11 @@ class _FavoriteListScreenState extends State<FavoriteListScreen> with SingleTick
   // 카테고리별 찜 상태 (카테고리 -> 장소 인덱스 -> 찜 여부)
   Map<String, Map<int, bool>> _favoriteStates = {};
   
-  // 찜 목록 데이터 (모킹 데이터)
+  // 찜 목록 데이터 (초기값은 비어 있음)
   final Map<String, List<String>> _favoritePlaces = {
-    '카페': [
-      '스타벅스 강남점',
-      '투썸플레이스 역삼점',
-      '이디야커피 논현점',
-    ],
-    '음식점': [
-      '맘스터치 테헤란로점',
-      '맥도날드 강남점',
-      '버거킹 신논현점',
-    ],
-    '콘텐츠': [
-      // 빈 리스트로 설정하여 "텅 비었습니다" 메시지 테스트
-    ],
+    '카페': [],
+    '음식점': [],
+    '콘텐츠': [],
   };
 
   @override
@@ -59,10 +51,26 @@ class _FavoriteListScreenState extends State<FavoriteListScreen> with SingleTick
   }
 
   /// 찜 버튼 토글
-  void _toggleFavorite(String category, int index) {
+  void _toggleFavorite(String category, int index) async {
+    final current = _favoriteStates[category]?[index] ?? false;
+    final next = !current;
     setState(() {
-      _favoriteStates[category]![index] = !(_favoriteStates[category]![index] ?? false);
+      _favoriteStates[category]![index] = next;
     });
+    try {
+      final userId = TokenManager.userId ?? '';
+      if (userId.isEmpty) return;
+      final placeId = (_favoritePlaces[category] ?? [])[index].toString();
+      if (next) {
+        await LikeService.likeStore(placeId, userId);
+      } else {
+        await LikeService.unlikeStore(placeId, userId);
+      }
+    } catch (e) {
+      setState(() {
+        _favoriteStates[category]![index] = current; // rollback
+      });
+    }
   }
 
   /// 카테고리별 장소 리스트 위젯 생성
@@ -209,13 +217,7 @@ class _FavoriteListScreenState extends State<FavoriteListScreen> with SingleTick
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        _generateAddress(),
-                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      const SizedBox(height: 4),
                     ],
                   ),
                 ),
@@ -241,45 +243,7 @@ class _FavoriteListScreenState extends State<FavoriteListScreen> with SingleTick
     }
   }
 
-  /// 랜덤 별점 생성 (하드코딩)
-  String _getRandomRating() {
-    final ratings = ['4.0', '4.2', '4.3', '4.5', '4.6', '4.7', '4.8', '4.9'];
-    return ratings[DateTime.now().microsecond % ratings.length];
-  }
-
-  /// 랜덤 리뷰 수 생성 (하드코딩)
-  String _getRandomReviewCount() {
-    final counts = ['234', '567', '1,234', '2,456', '892', '1,567', '3,201'];
-    return counts[DateTime.now().microsecond % counts.length];
-  }
-
-  /// 카테고리별 태그 생성 (하드코딩)
-  List<String> _generateTags(String category) {
-    switch (category) {
-      case '음식점':
-        return ['#맛집', '#가격 좋은', '#분위기 좋은', '#데이트 추천'];
-      case '카페':
-        return ['#커피 맛집', '#인테리어 예쁜', '#조용한', '#작업하기 좋은', '#디저트 맛있는'];
-      case '콘텐츠':
-        return ['#재미있는', '#최신작', '#평점 높은', '#추천작'];
-      default:
-        return ['#추천', '#인기', '#좋은 위치'];
-    }
-  }
-
-  /// 더미 주소 생성 (하드코딩)
-  String _generateAddress() {
-    final addresses = [
-      '서울시 강남구 테헤란로 123',
-      '서울시 마포구 홍대입구역 45',
-      '서울시 용산구 이태원로 78',
-      '서울시 종로구 인사동길 12',
-      '서울시 송파구 올림픽로 234',
-      '서울시 서초구 강남대로 567',
-      '서울시 영등포구 여의도동 89',
-    ];
-    return addresses[DateTime.now().microsecond % addresses.length];
-  }
+  // 하드코딩 데이터 제거됨
 
   @override
   Widget build(BuildContext context) {

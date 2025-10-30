@@ -3,6 +3,8 @@ import 'recommendation_place_detail.dart';
 import 'make_todo_main.dart';
 import '../home/home.dart';
 import 'schedule_builder_screen.dart';
+import '../services/like_service.dart';
+import '../services/token_manager.dart';
 import '../widgets/common_dialogs.dart';
 import 'result_choice_confirm.dart';
 
@@ -56,10 +58,25 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
   }
 
   /// 찜 버튼 토글
-  void _toggleFavorite(String category, int index) {
+  void _toggleFavorite(String category, int index, String categoryId) async {
+    final bool newState = !(_favoriteStates[category]![index] ?? false);
     setState(() {
-      _favoriteStates[category]![index] = !(_favoriteStates[category]![index] ?? false);
+      _favoriteStates[category]![index] = newState;
     });
+    try {
+      final userId = TokenManager.userId ?? '';
+      if (userId.isEmpty) return;
+      if (newState) {
+        await LikeService.likeStore(categoryId, userId);
+      } else {
+        await LikeService.unlikeStore(categoryId, userId);
+      }
+    } catch (e) {
+      // 서버 실패 시 UI 상태를 롤백
+      setState(() {
+        _favoriteStates[category]![index] = !newState;
+      });
+    }
   }
 
   /// 선택 버튼 토글
@@ -156,7 +173,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                         top: 12,
                         left: 12,
                         child: GestureDetector(
-                          onTap: () => _toggleFavorite(category, index),
+                          onTap: () => _toggleFavorite(category, index, place.toString()),
                           child: Container(
                             width: 40,
                             height: 40,

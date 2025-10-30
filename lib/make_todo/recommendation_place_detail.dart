@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/like_service.dart';
+import '../services/token_manager.dart';
 
 /// 매장 상세 정보를 보여주는 화면
 class PlaceDetailScreen extends StatefulWidget {
@@ -167,10 +169,25 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                             
                             // 하트 버튼
                             GestureDetector(
-                              onTap: () {
+                              onTap: () async {
+                                final next = !_isFavorite;
                                 setState(() {
-                                  _isFavorite = !_isFavorite;
+                                  _isFavorite = next;
                                 });
+                                try {
+                                  final userId = TokenManager.userId ?? '';
+                                  if (userId.isEmpty) return;
+                                  final categoryId = widget.placeName;
+                                  if (next) {
+                                    await LikeService.likeStore(categoryId, userId);
+                                  } else {
+                                    await LikeService.unlikeStore(categoryId, userId);
+                                  }
+                                } catch (e) {
+                                  setState(() {
+                                    _isFavorite = !next; // rollback
+                                  });
+                                }
                               },
                               child: Container(
                                 width: 40,

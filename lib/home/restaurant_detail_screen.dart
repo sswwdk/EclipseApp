@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_navigation_widget.dart';
 import '../services/api_service.dart';
+import '../services/like_service.dart';
+import '../services/token_manager.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   final Restaurant restaurant;
@@ -16,6 +18,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   List<String> _tags = const [];
   bool _loading = true;
   String? _error;
+  bool _isFavorite = false;
 
   @override
   void initState() {
@@ -64,8 +67,24 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.favorite_border, color: Colors.black),
-            onPressed: () {},
+            icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: _isFavorite ? Colors.red : Colors.black),
+            onPressed: () async {
+              final next = !_isFavorite;
+              setState(() => _isFavorite = next);
+              try {
+                final userId = TokenManager.userId ?? '';
+                if (userId.isEmpty) return;
+                final categoryId = restaurant.id;
+                if (next) {
+                  await LikeService.likeStore(categoryId, userId);
+                } else {
+                  await LikeService.unlikeStore(categoryId, userId);
+                }
+              } catch (e) {
+                setState(() => _isFavorite = !next);
+              }
+            },
           ),
           const SizedBox(width: 8), // 간격 추가
         ],

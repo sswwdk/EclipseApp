@@ -8,8 +8,8 @@ class LikeService {
   // 찜 보기
   static Future<Map<String, dynamic>> getLikes(String userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/like/$userId'),
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/service/my-like'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -27,20 +27,43 @@ class LikeService {
     }
   }
 
-  // 찜 취소
-  static Future<Map<String, dynamic>> unlikeStore(String storeId, String userId) async {
+  // 찜 등록 (서버 DTO: { category_id, user_id })
+  static Future<Map<String, dynamic>> likeStore(String categoryId, String userId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/api/like/$storeId'),
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/service/set-my-like'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
-        body: json.encode({'user_id': userId}),
+        body: json.encode({'category_id': categoryId, 'user_id': userId}),
       );
 
       if (response.statusCode == 200) {
-        return json.decode(utf8.decode(response.bodyBytes));
+        return{};
+      } else {
+        throw Exception('찜 등록 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('찜 등록 오류: $e');
+      throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  // 찜 취소
+  static Future<Map<String, dynamic>> unlikeStore(String categoryId, String userId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/service/set-my-like'),
+        headers: {
+          'Content-Type': 'application/json',
+          ...TokenManager.jwtHeader,
+        },
+        body: json.encode({'category_id': categoryId, 'user_id': userId}),
+      );
+
+      if (response.statusCode == 200) {
+        return {};
       } else {
         throw Exception('찜 취소 실패: ${response.statusCode}');
       }
