@@ -171,7 +171,7 @@ class _MainScreenState extends State<MainScreen> {
                 child: _buildRecommendationCard(
                   imagePlaceholder: restaurant.imageUrl ?? "레스토랑 이미지",
                   title: restaurant.name,
-                  rating: restaurant.rating,
+                  rating: restaurant.rating ?? 0.0,
                   reviewCount: 0, // API에서 리뷰 수가 없으므로 0으로 설정
                   tags: [
                     if (restaurant.description != null) restaurant.description!,
@@ -371,7 +371,7 @@ class _MainScreenState extends State<MainScreen> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
-        '#$tag',
+        '# $tag',
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
