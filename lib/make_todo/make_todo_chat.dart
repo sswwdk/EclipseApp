@@ -85,6 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       // FastAPI /api/start 호출
       final firstMessage = await _openAIService.initialize(
+        playAddress: widget.location,
         peopleCount: widget.peopleCount,
         selectedCategories: widget.selectedCategories,
       );

@@ -9,6 +9,7 @@ router = APIRouter(prefix="/api/service", tags=["service"])
 async def start_main_logic(request_data: dict):
     """메인 로직 시작 (하루랑 채팅 시작 시)"""
     try:
+        play_address = request_data.get("play_address")
         num_people = request_data.get("인원수")
         category = request_data.get("카테고리")
         
@@ -24,7 +25,8 @@ async def start_main_logic(request_data: dict):
             "message": "메인 로직이 시작되었습니다",
             "data": {
                 "num_people": num_people,
-                "category": category
+                "category": category,
+                "play_address": play_address,
             }
         }
         

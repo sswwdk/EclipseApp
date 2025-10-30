@@ -3,7 +3,7 @@
 """
 
 import re
-from typing import Dict, List
+from typing import Dict, List, Optional
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -182,7 +182,7 @@ def generate_recommendations_by_category(category: str, tags: List[str]) -> str:
     return generate_recommendations_by_category_hardcoded(category, tags)
 
 
-def generate_recommendations(selected_activities: List[str], collected_tags: Dict[str, List[str]]) -> str:
+def generate_recommendations(selected_activities: List[str], collected_tags: Dict[str, List[str]], location: Optional[str] = None) -> str:
     """
     모든 카테고리에 대한 최종 추천 생성
     
@@ -202,11 +202,17 @@ def generate_recommendations(selected_activities: List[str], collected_tags: Dic
     for category in selected_activities:
         if category in collected_tags and collected_tags[category]:
             category_recommendations = generate_recommendations_by_category(category, collected_tags[category])
-            all_recommendations.append(f"{category}: {category_recommendations}")
+            if location:
+                all_recommendations.append(f"{category} ({location}): {category_recommendations}")
+            else:
+                all_recommendations.append(f"{category}: {category_recommendations}")
         else:
             default_tags = ["일반적인", "추천", "인기"]
             category_recommendations = generate_recommendations_by_category(category, default_tags)
-            all_recommendations.append(f"{category}: {category_recommendations}")
+            if location:
+                all_recommendations.append(f"{category} ({location}): {category_recommendations}")
+            else:
+                all_recommendations.append(f"{category}: {category_recommendations}")
     
     final_recommendations = "\n".join(all_recommendations)
     return final_recommendations

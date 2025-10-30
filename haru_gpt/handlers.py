@@ -111,7 +111,8 @@ def handle_user_action_response(session: Dict, user_response: str) -> ChatRespon
             # 추천 결과 생성
             recommendations_text = generate_recommendations(
                 session["selectedCategories"],
-                session["collectedTags"]
+                session["collectedTags"],
+                location=session.get("play_address")
             )
             
             recommendations_dict = parse_recommendations(
