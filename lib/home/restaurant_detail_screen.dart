@@ -33,6 +33,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       setState(() {
         _reviews = res.reviews;
         _tags = res.tags;
+        _isFavorite = res.isFavorite;
         _loading = false;
       });
     } catch (e) {

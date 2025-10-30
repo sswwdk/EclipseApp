@@ -62,6 +62,7 @@ class ApiService {
           rating: _parseDouble(obj['rating']) ?? 0.0,
           reviews: Review.fromList(obj['reviews']),
           tags: _parseStringList(obj['tags']),
+          isFavorite: obj['is_like'] ?? false,
         );
       } else if (response.statusCode == 404) {
         throw Exception('레스토랑을 찾을 수 없습니다');
@@ -93,6 +94,7 @@ class Restaurant {
   final double? rating;
   final List<Review> reviews;
   final List<String> tags;
+  final bool isFavorite;
 
   Restaurant({
     required this.id,
@@ -112,6 +114,7 @@ class Restaurant {
     this.rating,
     this.reviews = const [],
     this.tags = const [],
+    this.isFavorite = false,
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
@@ -133,6 +136,7 @@ class Restaurant {
       rating: _parseDouble(json['rating']),
       reviews: Review.fromList(json['reviews']),
       tags: _parseStringList(json['tags']),
+      isFavorite: (json['is_like'] == true),
     );
   }
 
@@ -156,6 +160,7 @@ class Restaurant {
       rating: _parseDouble(json['rating']),
       reviews: Review.fromList(json['reviews']),
       tags: _parseStringList(json['tags']),
+      isFavorite: (json['is_like'] == true),
     );
   }
 
