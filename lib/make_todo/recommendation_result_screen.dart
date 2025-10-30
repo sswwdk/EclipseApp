@@ -219,27 +219,21 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // 태그
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: _generateTags(category).map((tag) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF8126),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              tag,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                      // 서브카테고리 배지
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF8126),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          '#${_subCategoryFor(category)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       // 주소
@@ -297,6 +291,20 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         return ['#재미있는', '#최신작', '#평점 높은', '#추천작'];
       default:
         return ['#추천', '#인기', '#좋은 위치'];
+    }
+  }
+
+  /// 간단한 서브카테고리 매핑 (데이터 없을 때 표시용)
+  String _subCategoryFor(String category) {
+    switch (category) {
+      case '음식점':
+        return '한식';
+      case '카페':
+        return '디저트';
+      case '콘텐츠':
+        return '영화';
+      default:
+        return category;
     }
   }
 
@@ -390,6 +398,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   isScrollable: false,
                   labelColor: const Color(0xFFFF7A21),
                   unselectedLabelColor: Colors.grey[600],
+                  dividerColor: const Color(0xFFFF7A21),
                   indicatorColor: const Color(0xFFFF7A21),
                   labelStyle: const TextStyle(
                     fontSize: 16,
@@ -471,12 +480,34 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    // TODO: 완료하기 기능 구현
+                    // 선택된 항목만 모아 요약 화면으로 이동
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('완료하기 기능은 준비 중입니다.'),
-                        duration: Duration(seconds: 2),
+                    final Map<String, List<String>> selectedByCategory = {};
+                    for (final category in widget.selectedCategories) {
+                      final places = (widget.recommendations[category] as List<dynamic>?) ?? [];
+                      final selectedIndexes = _selectedStates[category] ?? {};
+                      final picked = <String>[];
+                      for (int i = 0; i < places.length; i++) {
+                        if (selectedIndexes[i] == true) {
+                          picked.add(places[i].toString());
+                        }
+                      }
+                      if (picked.isNotEmpty) {
+                        selectedByCategory[category] = picked;
+                      }
+                    }
+
+                    if (selectedByCategory.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('선택된 장소가 없습니다.')),
+                      );
+                      return;
+                    }
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SelectedPlacesScreen(selected: selectedByCategory),
                       ),
                     );
                   },
@@ -509,5 +540,145 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
     );
   }
 
+}
+
+/// 선택된 장소만 모아 보여주는 화면
+class SelectedPlacesScreen extends StatelessWidget {
+  final Map<String, List<String>> selected;
+
+  const SelectedPlacesScreen({Key? key, required this.selected}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = selected.keys.toList();
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F7F7),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          '선택한 장소',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: categories.fold<int>(0, (sum, c) => sum + selected[c]!.length + 1),
+        itemBuilder: (context, i) {
+          // 섹션 헤더 및 카드 렌더링
+          int running = 0;
+          for (final category in categories) {
+            if (i == running) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(_iconForCategory(category), color: const Color(0xFFFF7A21)),
+                    const SizedBox(width: 6),
+                    Text(
+                      category,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFF7A21),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            running += 1; // 헤더 하나 반영
+            final items = selected[category]!;
+            if (i < running + items.length) {
+              final place = items[i - running];
+              return _SummaryCard(title: place, category: category);
+            }
+            running += items.length;
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  IconData _iconForCategory(String category) {
+    switch (category) {
+      case '음식점':
+        return Icons.restaurant;
+      case '카페':
+        return Icons.local_cafe;
+      case '콘텐츠':
+        return Icons.movie_filter;
+      default:
+        return Icons.place;
+    }
+  }
+}
+
+/// 요약 카드 (홈 카드 스타일, 버튼 없음)
+class _SummaryCard extends StatelessWidget {
+  final String title;
+  final String category;
+
+  const _SummaryCard({required this.title, required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _address(),
+              style: TextStyle(color: Colors.grey[700], fontSize: 13),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _address() {
+    final addresses = [
+      '서울시 강남구 테헤란로 123',
+      '서울시 마포구 홍대입구역 45',
+      '서울시 용산구 이태원로 78',
+      '서울시 종로구 인사동길 12',
+      '서울시 송파구 올림픽로 234',
+      '서울시 서초구 강남대로 567',
+      '서울시 영등포구 여의도동 89',
+    ];
+    return addresses[DateTime.now().microsecond % addresses.length];
+  }
 }
 
