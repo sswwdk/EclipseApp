@@ -171,7 +171,7 @@ class MyInfoScreen extends StatelessWidget {
         children: [
           _buildMenuItem(
             icon: Icons.favorite_outline,
-            title: '찜목록',
+            title: '찜 목록',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(

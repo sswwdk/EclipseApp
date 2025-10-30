@@ -103,9 +103,16 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                 builder: (context) => PlaceDetailScreen(
                   placeName: place.toString(),
                   category: category,
+                  initialFavorite: isFavorite,
                 ),
               ),
-            );
+            ).then((value) {
+              if (value is bool) {
+                setState(() {
+                  _favoriteStates[category]![index] = value;
+                });
+              }
+            });
           },
           borderRadius: BorderRadius.circular(12),
           child: Container(

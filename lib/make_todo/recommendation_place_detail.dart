@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 class PlaceDetailScreen extends StatefulWidget {
   final String placeName;
   final String category;
+  final bool initialFavorite;
 
   const PlaceDetailScreen({
     Key? key,
     required this.placeName,
     required this.category,
+    this.initialFavorite = false,
   }) : super(key: key);
 
   @override
@@ -17,6 +19,12 @@ class PlaceDetailScreen extends StatefulWidget {
 
 class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isFavorite = widget.initialFavorite;
+  }
 
   /// 카테고리에 따른 아이콘 반환
   IconData _getCategoryIcon(String category) {
@@ -89,7 +97,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     final tags = _generateTags(widget.category);
     final reviews = _generateReviews();
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _isFavorite);
+        return false;
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SingleChildScrollView(
             child: Column(
@@ -130,7 +143,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                           children: [
                             // 뒤로가기 버튼
                             GestureDetector(
-                              onTap: () => Navigator.pop(context),
+                              onTap: () => Navigator.pop(context, _isFavorite),
                               child: Container(
                                 width: 40,
                                 height: 40,
@@ -457,7 +470,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
