@@ -90,7 +90,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         final isFavorite = _favoriteStates[category]?[index] ?? false;
         final isSelected = _selectedStates[category]?[index] ?? false;
 
-        return GestureDetector(
+        return InkWell(
           onTap: () {
             // 매장 상세 화면으로 이동
             if (!mounted) return;
@@ -104,200 +104,155 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
               ),
             );
           },
+          borderRadius: BorderRadius.circular(12),
           child: Container(
             margin: const EdgeInsets.only(bottom: 16),
-            height: 240,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: Stack(
-            children: [
-              // 배경 이미지
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.grey[400]!,
-                          Colors.grey[600]!,
-                        ],
-                      ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        _getCategoryIcon(category),
-                        size: 80,
-                        color: Colors.white.withOpacity(0.3),
-                      ),
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 이미지 영역
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
                   ),
-                ),
-              ),
-              
-              // 하단 그라데이션 오버레이
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 140,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.7),
-                        Colors.black.withOpacity(0.9),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              
-              // 매장 정보
-              Positioned(
-                bottom: 12,
-                left: 16,
-                right: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 매장 이름
-                    Text(
-                      place.toString(),
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.2,
+                  child: Stack(
+                    children: [
+                      Container(
+                        height: 200,
+                        width: double.infinity,
+                        color: Colors.grey[200],
+                        alignment: Alignment.center,
+                        child: Text(
+                          '이미지를 불러올 수 없습니다',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    
-                    // 별점과 리뷰 수
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star,
-                          color: Color(0xFFFFC107),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${_getRandomRating()} (${_getRandomReviewCount()})',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    
-                    // 태그
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: _generateTags(category).map((tag) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            tag,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                      // 찜 버튼 (왼쪽 상단)
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: GestureDetector(
+                          onTap: () => _toggleFavorite(category, index),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
                               color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              isFavorite ? Icons.favorite : Icons.favorite_border,
+                              color: isFavorite ? Colors.red : Colors.grey[600],
+                              size: 22,
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 8),
-                    
-                    // 주소
-                    Text(
-                      _generateAddress(),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.9),
-                        height: 1.3,
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              
-              // 찜 버튼 (왼쪽 상단)
-              Positioned(
-                top: 12,
-                left: 12,
-                child: GestureDetector(
-                  onTap: () => _toggleFavorite(category, index),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : Colors.white,
-                      size: 22,
-                    ),
+                      // 선택 체크박스 (오른쪽 상단)
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: GestureDetector(
+                          onTap: () => _toggleSelection(category, index),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: isSelected 
+                                  ? const Color(0xFFFF8126) 
+                                  : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.check,
+                              color: isSelected ? Colors.white : Colors.grey[600],
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              
-              // 선택 체크박스 (오른쪽 상단)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () => _toggleSelection(category, index),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: isSelected 
-                          ? const Color(0xFFFF7A21) 
-                          : Colors.black.withOpacity(0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isSelected ? Icons.check : Icons.check,
-                      color: Colors.white,
-                      size: 22,
-                    ),
+                
+                // 내용 부분
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 제목
+                      Text(
+                        place.toString(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // 태그
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: _generateTags(category).map((tag) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF8126),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              tag,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 10),
+                      // 주소
+                      Text(
+                        _generateAddress(),
+                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
             ),
           ),
         );
