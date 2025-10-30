@@ -100,12 +100,16 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                     );
                   },
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     side: const BorderSide(color: Color(0xFFFF8126), width: 2),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     foregroundColor: const Color(0xFFFF8126),
+                    minimumSize: const Size(double.infinity, 52),
                   ),
-                  child: const Text('저장하기', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    '저장하기',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -119,10 +123,14 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF8126),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    minimumSize: const Size(double.infinity, 52),
                   ),
-                  child: const Text('공유하기', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    '공유하기',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                 ),
               ),
             ],

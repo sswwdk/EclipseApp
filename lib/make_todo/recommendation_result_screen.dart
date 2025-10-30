@@ -229,7 +229,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
-                          '#${_subCategoryFor(category)}',
+                          '# ${_subCategoryFor(category)}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
