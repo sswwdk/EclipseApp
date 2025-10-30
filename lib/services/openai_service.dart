@@ -16,12 +16,14 @@ class OpenAIService {
 
   /// 대화 초기화 - FastAPI /api/service/start 호출
   Future<String> initialize({
+    required String playAddress, // 위치 값
     required int peopleCount,
     required List<String> selectedCategories,
   }) async {
     try {
       // 서버가 기대하는 DTO 형식으로 요청 구성
       final requestBody = {
+          'play_address': playAddress, // 서버와 합의된 키 이름 (오타 수정)
           'peopleCount': peopleCount,
           'selectedCategories': selectedCategories
       };

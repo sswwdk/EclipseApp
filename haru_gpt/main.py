@@ -79,6 +79,7 @@ async def start_conversation(request: StartRequest):
         
         # 세션 데이터 초기화
         sessions[session_id] = {
+            "play_address": request.play_address,
             "peopleCount": request.peopleCount,
             "selectedCategories": request.selectedCategories,
             "collectedTags": {},  # 카테고리별 태그 저장
@@ -189,7 +190,8 @@ async def confirm_results(request: ChatRequest):
             # 추천 생성
             recommendations_text = generate_recommendations(
                 session["selectedCategories"],
-                session["collectedTags"]
+                session["collectedTags"],
+                location=session.get("play_address")
             )
             
             recommendations_dict = parse_recommendations(

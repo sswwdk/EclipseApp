@@ -10,6 +10,7 @@ class StartRequest(BaseModel):
     """대화 시작 요청 모델"""
     peopleCount: int                    # 함께할 인원 수
     selectedCategories: List[str]       # 선택한 활동 카테고리 (예: ["카페", "음식점"])
+    play_address: str                    # 활동 위치(주소)
 
 
 class ChatRequest(BaseModel):
