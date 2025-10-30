@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'place_detail_screen.dart';
 import 'make_todo_main.dart';
 import '../home/home.dart';
+import 'schedule_builder_screen.dart';
 import '../widgets/common_dialogs.dart';
 
 /// 추천 결과를 보여주는 화면
@@ -450,12 +451,33 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    // TODO: 일정표 제작하기 기능 구현
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('일정표 제작하기 기능은 준비 중입니다.'),
-                        duration: Duration(seconds: 1),
+                    final Map<String, List<String>> selectedByCategory = {};
+                    for (final category in widget.selectedCategories) {
+                      final places = (widget.recommendations[category] as List<dynamic>?) ?? [];
+                      final selectedIndexes = _selectedStates[category] ?? {};
+                      final picked = <String>[];
+                      for (int i = 0; i < places.length; i++) {
+                        if (selectedIndexes[i] == true) {
+                          picked.add(places[i].toString());
+                        }
+                      }
+                      if (picked.isNotEmpty) {
+                        selectedByCategory[category] = picked;
+                      }
+                    }
+
+                    if (selectedByCategory.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('선택된 장소가 없습니다.')),
+                      );
+                      return;
+                    }
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ScheduleBuilderScreen(selected: selectedByCategory),
                       ),
                     );
                   },
