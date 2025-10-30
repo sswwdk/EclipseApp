@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../make_todo/place_detail_screen.dart';
+import '../make_todo/recommendation_place_detail.dart';
 
 /// 찜목록을 보여주는 화면
 class FavoriteListScreen extends StatefulWidget {

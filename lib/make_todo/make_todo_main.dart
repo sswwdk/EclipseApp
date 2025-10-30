@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/token_manager.dart';
-import 'make_todo.dart';
+import 'make_todo_select.dart';
 import '../widgets/bottom_navigation_widget.dart';
-import 'recommendation_result_screen.dart';
+import 'recommendation_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'place_detail_screen.dart';
+import 'recommendation_place_detail.dart';
 import 'make_todo_main.dart';
 import '../home/home.dart';
 import 'schedule_builder_screen.dart';
 import '../widgets/common_dialogs.dart';
-import 'selected_places_screen.dart';
+import 'result_choice_confirm.dart';
 
 /// 추천 결과를 보여주는 화면
 class RecommendationResultScreen extends StatefulWidget {
