@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'place_detail_screen.dart';
 import 'make_todo_main.dart';
+import '../home/home.dart';
 import '../widgets/common_dialogs.dart';
 
 /// 추천 결과를 보여주는 화면
@@ -601,6 +602,54 @@ class SelectedPlacesScreen extends StatelessWidget {
           }
           return const SizedBox.shrink();
         },
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('일정표 히스토리에서 확인하실 수 있습니다.'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const MainScreen()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF7A21),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                '확인하기',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
