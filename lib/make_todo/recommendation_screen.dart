@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'recommendation_place_detail.dart';
+import '../home/restaurant_detail_screen.dart';
+import '../services/api_service.dart';
 import 'make_todo_main.dart';
 import '../home/home.dart';
 import 'default_template.dart';
@@ -132,14 +134,20 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         return InkWell(
           onTap: () {
             if (!mounted) return;
+            // 추천 아이템으로부터 상세 화면에 전달할 모델 구성
+            final restaurant = Restaurant(
+              id: placeId,
+              name: placeName,
+              detailAddress: placeAddress,
+              subCategory: placeCategory,
+              image: placeImage.isNotEmpty ? placeImage : null,
+              rating: null,
+            );
+
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => PlaceDetailScreen(
-                  placeName: placeName, // 🔥 실제 이름
-                  category: category,
-                  initialFavorite: isFavorite,
-                ),
+                builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
               ),
             ).then((value) {
               if (value is bool) {
