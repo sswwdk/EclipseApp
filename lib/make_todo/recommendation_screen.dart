@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'recommendation_place_detail.dart';
 import 'make_todo_main.dart';
 import '../home/home.dart';
-import 'schedule_builder_screen.dart';
+import 'default_template.dart';
 import 'route_confirm.dart';
 import '../services/like_service.dart';
 import '../services/token_manager.dart';

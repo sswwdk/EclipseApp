@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'schedule_builder_screen.dart';
+import 'default_template.dart';
+import 'choose_template.dart';
 
 class RouteConfirmScreen extends StatefulWidget {
   final Map<String, List<String>> selected; // 카테고리별 선택 목록
@@ -102,7 +103,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ScheduleBuilderScreen(
+                    builder: (_) => ChooseTemplateScreen(
                       selected: {
                         for (final entry in widget.selected.entries) entry.key: List<String>.from(entry.value)
                       },

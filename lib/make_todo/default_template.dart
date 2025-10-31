@@ -4,12 +4,16 @@ class ScheduleBuilderScreen extends StatefulWidget {
   final Map<String, List<String>> selected; // 카테고리별 선택 목록
   final String? originAddress; // 출발지 주소
   final String? originDetailAddress; // 출발지 상세 주소
+  final int? firstDurationMinutes; // 템플릿: 첫 이동 또는 첫 체류 시간
+  final int? otherDurationMinutes; // 템플릿: 이후 체류 시간
 
   const ScheduleBuilderScreen({
     Key? key,
     required this.selected,
     this.originAddress,
     this.originDetailAddress,
+    this.firstDurationMinutes,
+    this.otherDurationMinutes,
   }) : super(key: key);
 
   @override
@@ -48,7 +52,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          '일정표 만들기',
+          '일정표',
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -177,7 +181,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           icon: _iconFor(category),
           color: const Color(0xFFFF8126),
           type: _ItemType.place,
-          durationMinutes: items.length == 1 ? 45 : 20,
+          durationMinutes: items.length == 1
+              ? (widget.firstDurationMinutes ?? 45)
+              : (widget.otherDurationMinutes ?? 20),
         ));
       }
     });
@@ -440,7 +446,7 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
       _showSnackBar('현재 위치를 가져왔습니다.');
     } catch (e) {
       if (!mounted) return;
-      _showSnackBar('위치를 가져오는 중 오류가 발생했습니다: $e');
+      _showSnackBar('위를 가져오는 중 오류가 발생했습니다: $e');
     } finally {
       if (mounted) {
         setState(() {
