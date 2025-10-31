@@ -13,6 +13,7 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
   final TextEditingController _currentPhoneController = TextEditingController();
   final TextEditingController _newPhoneController = TextEditingController();
   final TextEditingController _confirmPhoneController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final FocusNode _newPhoneFocusNode = FocusNode();
   final FocusNode _confirmPhoneFocusNode = FocusNode();
   bool _isLoading = false;
@@ -29,6 +30,7 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
     _currentPhoneController.dispose();
     _newPhoneController.dispose();
     _confirmPhoneController.dispose();
+    _passwordController.dispose();
     _newPhoneFocusNode.dispose();
     _confirmPhoneFocusNode.dispose();
     super.dispose();
@@ -80,20 +82,20 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
       return;
     }
 
+    if (_passwordController.text.isEmpty) {
+      _showSnackBar('비밀번호를 입력해주세요.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // TODO: 서버에 전화번호 변경 요청
-      // final response = await UserService.changePhone(
-      //   _currentPhoneController.text.trim(),
-      //   _newPhoneController.text.trim(),
-      // );
-      
-      // 임시로 성공 처리
-      await Future.delayed(const Duration(seconds: 1));
-      
+      await UserService.changePhone(
+        password: _passwordController.text,
+        newPhone: _newPhoneController.text.trim(),
+      );
       _showSnackBar('전화번호가 변경되었습니다.');
       Navigator.of(context).pop();
     } catch (e) {
@@ -259,6 +261,31 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
               ),
               
               const SizedBox(height: 30),
+              
+              // 비밀번호 입력 필드
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: '현재 비밀번호',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F5F5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 20),
               
               // 변경하기 버튼
               Padding(
