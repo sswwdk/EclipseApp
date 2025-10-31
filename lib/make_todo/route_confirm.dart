@@ -447,6 +447,7 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                     onSubmitted: (_) => FocusScope.of(context).requestFocus(_detailAddressFocusNode),
                     decoration: InputDecoration(
                       hintText: '예: 서울시 강남구 테헤란로 123',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: const Color(0xFFF5F5F5),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -461,6 +462,7 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                     onSubmitted: (_) => _saveAddress(),
                     decoration: InputDecoration(
                       hintText: '상세 주소 (건물명, 동/호수 등)',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: const Color(0xFFF5F5F5),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
