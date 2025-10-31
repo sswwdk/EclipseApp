@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/wave_painter.dart';
 import '../services/user_service.dart';
+import '../services/token_manager.dart';
 
 class ChangeAddressScreen extends StatefulWidget {
   const ChangeAddressScreen({Key? key}) : super(key: key);
@@ -12,22 +13,46 @@ class ChangeAddressScreen extends StatefulWidget {
 class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _detailAddressController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final FocusNode _detailAddressFocusNode = FocusNode();
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // 현재 주소를 입력 필드에 미리 채우기 (실제로는 서버에서 가져와야 함)
-    _addressController.text = '서울시 강남구';
+    _prefillAddress();
   }
 
   @override
   void dispose() {
     _addressController.dispose();
     _detailAddressController.dispose();
+    _passwordController.dispose();
     _detailAddressFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _prefillAddress() async {
+    try {
+      final String? userId = TokenManager.userId;
+      if (userId == null || userId.isEmpty) return;
+      final Map<String, dynamic> res = await UserService.getMyInfo(userId);
+
+      // 다양한 응답 형태 지원
+      dynamic root = res;
+      if (root is Map<String, dynamic> && root['data'] is Map<String, dynamic>) {
+        root = root['data'];
+      }
+
+      if (root is Map<String, dynamic>) {
+        final String addr = (root['address'] ?? root['detail_address'] ?? '').toString();
+        if (addr.isNotEmpty) {
+          _addressController.text = addr;
+        }
+      }
+    } catch (_) {
+      // 프리필 실패는 무시
+    }
   }
 
   Future<void> _handleChangeAddress() async {
@@ -36,20 +61,21 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
       return;
     }
 
+    if (_passwordController.text.isEmpty) {
+      _showSnackBar('비밀번호를 입력해주세요.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // TODO: 서버에 주소 변경 요청
-      // final response = await UserService.changeAddress(
-      //   _addressController.text.trim(),
-      //   _detailAddressController.text.trim(),
-      // );
-      
-      // 임시로 성공 처리
-      await Future.delayed(const Duration(seconds: 1));
-      
+      await UserService.changeAddress(
+        password: _passwordController.text,
+        address: _addressController.text.trim(),
+        detailAddress: _detailAddressController.text.trim(),
+      );
       _showSnackBar('주소가 변경되었습니다.');
       Navigator.of(context).pop();
     } catch (e) {
@@ -177,6 +203,31 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
               ),
               
               const SizedBox(height: 30),
+              
+              // 비밀번호 입력 필드
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: '현재 비밀번호',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F5F5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 20),
               
               // 변경하기 버튼
               Padding(

@@ -198,16 +198,20 @@ class UserService {
   }
 
   // 닉네임 변경
-  static Future<Map<String, dynamic>> changeNickname(String newNickname) async {
+  static Future<Map<String, dynamic>> changeNickname(
+    String newNickname,
+    String password,
+    ) async {
     try {
       final String? userId = TokenManager.userId;
       final Map<String, dynamic> body = {
         'user_id': userId,
-        'nickname': newNickname,
+        'change_field': newNickname,
+        'password': password,
       };
 
       final response = await HttpInterceptor.put(
-        '/api/service/change-nickname',
+        '/api/service/change/nickname',
         body: json.encode(body),
       );
 
@@ -218,6 +222,126 @@ class UserService {
       }
     } catch (e) {
       print('닉네임 변경 오류: $e');
+      throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  // 비밀번호 변경
+  static Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final String? userId = TokenManager.userId;
+      final Map<String, dynamic> body = {
+        'user_id': userId,
+        'password': currentPassword,
+        'change_field': newPassword,
+      };
+
+      final response = await HttpInterceptor.put(
+        '/api/service/change/password',
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(utf8.decode(response.bodyBytes));
+      } else {
+        throw Exception('비밀번호 변경 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('비밀번호 변경 오류: $e');
+      throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  // 이메일 변경
+  static Future<Map<String, dynamic>> changeEmail({
+    required String password,
+    required String newEmail,
+  }) async {
+    try {
+      final String? userId = TokenManager.userId;
+      final Map<String, dynamic> body = {
+        'user_id': userId,
+        'change_field': newEmail,
+        'password': password,
+      };
+
+      final response = await HttpInterceptor.put(
+        '/api/service/change/email',
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(utf8.decode(response.bodyBytes));
+      } else {
+        throw Exception('이메일 변경 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('이메일 변경 오류: $e');
+      throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  // 주소 변경
+  static Future<Map<String, dynamic>> changeAddress({
+    required String password,
+    required String address,
+    String? detailAddress,
+  }) async {
+    try {
+      final String? userId = TokenManager.userId;
+      final Map<String, dynamic> body = {
+        'user_id': userId,
+        'change_field': address,
+        'password': password,
+      };
+      if (detailAddress != null && detailAddress.isNotEmpty) {
+        body['detail_address'] = detailAddress;
+      }
+
+      final response = await HttpInterceptor.put(
+        '/api/service/change/address',
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(utf8.decode(response.bodyBytes));
+      } else {
+        throw Exception('주소 변경 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('주소 변경 오류: $e');
+      throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  // 전화번호 변경
+  static Future<Map<String, dynamic>> changePhone({
+    required String password,
+    required String newPhone,
+  }) async {
+    try {
+      final String? userId = TokenManager.userId;
+      final Map<String, dynamic> body = {
+        'user_id': userId,
+        'change_field': newPhone.replaceAll("-",  ""),
+        'password': password,
+      };
+
+      final response = await HttpInterceptor.put(
+        '/api/service/change/phone',
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(utf8.decode(response.bodyBytes));
+      } else {
+        throw Exception('전화번호 변경 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('전화번호 변경 오류: $e');
       throw Exception('네트워크 오류: $e');
     }
   }

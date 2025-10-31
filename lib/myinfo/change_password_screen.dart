@@ -61,15 +61,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     });
 
     try {
-      // TODO: 서버에 비밀번호 변경 요청
-      // final response = await UserService.changePassword(
-      //   _currentPasswordController.text.trim(),
-      //   _newPasswordController.text.trim(),
-      // );
-      
-      // 임시로 성공 처리
-      await Future.delayed(const Duration(seconds: 1));
-      
+      await UserService.changePassword(
+        currentPassword: _currentPasswordController.text.trim(),
+        newPassword: _newPasswordController.text.trim(),
+      );
       _showSnackBar('비밀번호가 변경되었습니다.');
       Navigator.of(context).pop();
     } catch (e) {

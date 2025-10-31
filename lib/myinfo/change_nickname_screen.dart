@@ -12,6 +12,7 @@ class ChangeNicknameScreen extends StatefulWidget {
 
 class _ChangeNicknameScreenState extends State<ChangeNicknameScreen> {
   final TextEditingController _nicknameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -24,12 +25,18 @@ class _ChangeNicknameScreenState extends State<ChangeNicknameScreen> {
   @override
   void dispose() {
     _nicknameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _handleChangeNickname() async {
     if (_nicknameController.text.trim().isEmpty) {
       _showSnackBar('닉네임을 입력해주세요.');
+      return;
+    }
+
+    if (_passwordController.text.isEmpty) {
+      _showSnackBar('비밀번호를 입력해주세요.');
       return;
     }
 
@@ -43,7 +50,10 @@ class _ChangeNicknameScreenState extends State<ChangeNicknameScreen> {
     });
 
     try {
-      final Map<String, dynamic> res = await UserService.changeNickname(_nicknameController.text.trim());
+      final Map<String, dynamic> res = await UserService.changeNickname(
+        _nicknameController.text.trim(),
+        _passwordController.text,
+      );
       final dynamic direct = res['nickname'];
       final dynamic nested = (res['data'] is Map<String, dynamic>) ? (res['data']['nickname']) : null;
       final String updated = (direct ?? nested ?? _nicknameController.text.trim()).toString();
@@ -136,6 +146,37 @@ class _ChangeNicknameScreenState extends State<ChangeNicknameScreen> {
               ),
               
               const SizedBox(height: 30),
+              
+              // 비밀번호 입력 필드
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    if (!_isLoading) {
+                      _handleChangeNickname();
+                    }
+                  },
+                  decoration: InputDecoration(
+                    hintText: '현재 비밀번호',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F5F5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 20),
               
               // 변경하기 버튼
               Padding(

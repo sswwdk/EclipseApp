@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/wave_painter.dart';
 import '../services/user_service.dart';
+import '../services/token_manager.dart';
 
 class ChangeEmailScreen extends StatefulWidget {
   const ChangeEmailScreen({Key? key}) : super(key: key);
@@ -13,6 +14,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
   final TextEditingController _currentEmailController = TextEditingController();
   final TextEditingController _newEmailController = TextEditingController();
   final TextEditingController _confirmEmailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final FocusNode _newEmailFocusNode = FocusNode();
   final FocusNode _confirmEmailFocusNode = FocusNode();
   bool _isLoading = false;
@@ -20,8 +22,8 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
   @override
   void initState() {
     super.initState();
-    // 현재 이메일을 입력 필드에 미리 채우기 (실제로는 서버에서 가져와야 함)
-    _currentEmailController.text = 'example@gmail.com';
+    // 현재 이메일을 토큰 매니저에서 불러와 표시
+    _currentEmailController.text = TokenManager.userEmail ?? '';
   }
 
   @override
@@ -29,6 +31,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
     _currentEmailController.dispose();
     _newEmailController.dispose();
     _confirmEmailController.dispose();
+    _passwordController.dispose();
     _newEmailFocusNode.dispose();
     _confirmEmailFocusNode.dispose();
     super.dispose();
@@ -64,20 +67,17 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
       return;
     }
 
+    if (_passwordController.text.isEmpty) {
+      _showSnackBar('비밀번호를 입력해주세요.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // TODO: 서버에 이메일 변경 요청
-      // final response = await UserService.changeEmail(
-      //   _currentEmailController.text.trim(),
-      //   _newEmailController.text.trim(),
-      // );
-      
-      // 임시로 성공 처리
-      await Future.delayed(const Duration(seconds: 1));
-      
+      await UserService.changeEmail(password: _passwordController.text, newEmail: _newEmailController.text.trim());
       _showSnackBar('이메일이 변경되었습니다.');
       Navigator.of(context).pop();
     } catch (e) {
@@ -112,7 +112,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                 size: Size(MediaQuery.of(context).size.width, 200),
                 painter: WavePainter(),
               ),
-              
+    
               // 메인 타이틀
               const Padding(
                 padding: EdgeInsets.only(top: 30, bottom: 10),
@@ -148,6 +148,31 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                     hintStyle: TextStyle(color: Colors.grey[400]),
                     filled: true,
                     fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+              
+              // 비밀번호 입력 필드
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: '현재 비밀번호',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F5F5),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
