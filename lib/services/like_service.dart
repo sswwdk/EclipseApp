@@ -9,11 +9,12 @@ class LikeService {
   static Future<Map<String, dynamic>> getLikes(String userId) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/service/my-like'),
+        Uri.parse('$baseUrl/api/service/get-my-like'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
+        body: json.encode({'user_id': userId}),
       );
 
       if (response.statusCode == 200) {
