@@ -32,8 +32,8 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
   // 카테고리별 찜 상태 (카테고리 -> 장소 인덱스 -> 찜 여부)
   Map<String, Map<int, bool>> _favoriteStates = {};
 
-  // 카테고리별 선택 상태 (카테고리 -> 장소 인덱스 -> 선택 여부)
-  Map<String, Map<int, bool>> _selectedStates = {};
+  // 카테고리별 선택 상태 (카테고리 -> 선택된 장소 인덱스, null이면 미선택)
+  Map<String, int?> _selectedStates = {};
 
   @override
   void initState() {
@@ -50,7 +50,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
     // 초기 상태 설정
     for (var category in widget.selectedCategories) {
       _favoriteStates[category] = {};
-      _selectedStates[category] = {};
+      _selectedStates[category] = null;
     }
   }
 
@@ -82,11 +82,16 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
     }
   }
 
-  /// 선택 버튼 토글
+  /// 선택 버튼 토글 (카테고리별 단일 선택)
   void _toggleSelection(String category, int index) {
     setState(() {
-      _selectedStates[category]![index] =
-          !(_selectedStates[category]![index] ?? false);
+      if (_selectedStates[category] == index) {
+        // 같은 항목을 다시 클릭하면 해제
+        _selectedStates[category] = null;
+      } else {
+        // 다른 항목 선택
+        _selectedStates[category] = index;
+      }
     });
   }
 
@@ -122,7 +127,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         final placeId = place['id'] as String? ?? '';
 
         final isFavorite = _favoriteStates[category]?[index] ?? false;
-        final isSelected = _selectedStates[category]?[index] ?? false;
+        final isSelected = _selectedStates[category] == index;
 
         return InkWell(
           onTap: () {
@@ -533,15 +538,9 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                           (widget.recommendations[category]
                               as List<dynamic>?) ??
                           [];
-                      final selectedIndexes = _selectedStates[category] ?? {};
-                      final picked = <String>[];
-                      for (int i = 0; i < places.length; i++) {
-                        if (selectedIndexes[i] == true) {
-                          picked.add(places[i].toString());
-                        }
-                      }
-                      if (picked.isNotEmpty) {
-                        selectedByCategory[category] = picked;
+                      final selectedIndex = _selectedStates[category];
+                      if (selectedIndex != null && selectedIndex < places.length) {
+                        selectedByCategory[category] = [places[selectedIndex].toString()];
                       }
                     }
 
@@ -587,15 +586,9 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                           (widget.recommendations[category]
                               as List<dynamic>?) ??
                           [];
-                      final selectedIndexes = _selectedStates[category] ?? {};
-                      final picked = <String>[];
-                      for (int i = 0; i < places.length; i++) {
-                        if (selectedIndexes[i] == true) {
-                          picked.add(places[i].toString());
-                        }
-                      }
-                      if (picked.isNotEmpty) {
-                        selectedByCategory[category] = picked;
+                      final selectedIndex = _selectedStates[category];
+                      if (selectedIndex != null && selectedIndex < places.length) {
+                        selectedByCategory[category] = [places[selectedIndex].toString()];
                       }
                     }
 
