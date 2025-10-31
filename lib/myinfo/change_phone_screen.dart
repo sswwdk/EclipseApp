@@ -37,7 +37,7 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
   String _formatPhoneNumber(String phone) {
     // 숫자만 추출
     String numbers = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     // 010-XXXX-XXXX 형식으로 포맷팅
     if (numbers.length >= 11) {
       return '${numbers.substring(0, 3)}-${numbers.substring(3, 7)}-${numbers.substring(7, 11)}';
@@ -90,10 +90,10 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
       //   _currentPhoneController.text.trim(),
       //   _newPhoneController.text.trim(),
       // );
-      
+
       // 임시로 성공 처리
       await Future.delayed(const Duration(seconds: 1));
-      
+
       _showSnackBar('전화번호가 변경되었습니다.');
       Navigator.of(context).pop();
     } catch (e) {
@@ -128,7 +128,7 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                 size: Size(MediaQuery.of(context).size.width, 200),
                 painter: WavePainter(),
               ),
-              
+
               // 메인 타이틀
               const Padding(
                 padding: EdgeInsets.only(top: 30, bottom: 10),
@@ -141,18 +141,15 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               // 서브 타이틀
               const Text(
                 '새로운 전화번호를 입력해주세요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // 현재 전화번호 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -175,9 +172,9 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // 새 전화번호 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -195,7 +192,9 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                     if (formatted != value) {
                       _newPhoneController.value = TextEditingValue(
                         text: formatted,
-                        selection: TextSelection.collapsed(offset: formatted.length),
+                        selection: TextSelection.collapsed(
+                          offset: formatted.length,
+                        ),
                       );
                     }
                   },
@@ -215,9 +214,9 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // 전화번호 확인 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -237,7 +236,9 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                     if (formatted != value) {
                       _confirmPhoneController.value = TextEditingValue(
                         text: formatted,
-                        selection: TextSelection.collapsed(offset: formatted.length),
+                        selection: TextSelection.collapsed(
+                          offset: formatted.length,
+                        ),
                       );
                     }
                   },
@@ -257,9 +258,9 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
-              
+
               // 변경하기 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -280,7 +281,9 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                               strokeWidth: 2,
                             ),
                           )
@@ -295,16 +298,18 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // 취소 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFFF8126),
                       side: const BorderSide(
@@ -326,7 +331,7 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
             ],
           ),

@@ -147,7 +147,8 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
+                builder: (context) =>
+                    RestaurantDetailScreen(restaurant: restaurant),
               ),
             ).then((value) {
               if (value is bool) {
@@ -547,8 +548,11 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                               as List<dynamic>?) ??
                           [];
                       final selectedIndex = _selectedStates[category];
-                      if (selectedIndex != null && selectedIndex < places.length) {
-                        selectedByCategory[category] = [places[selectedIndex].toString()];
+                      if (selectedIndex != null &&
+                          selectedIndex < places.length) {
+                        selectedByCategory[category] = [
+                          places[selectedIndex].toString(),
+                        ];
                       }
                     }
 
@@ -595,8 +599,11 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                               as List<dynamic>?) ??
                           [];
                       final selectedIndex = _selectedStates[category];
-                      if (selectedIndex != null && selectedIndex < places.length) {
-                        selectedByCategory[category] = [places[selectedIndex].toString()];
+                      if (selectedIndex != null &&
+                          selectedIndex < places.length) {
+                        selectedByCategory[category] = [
+                          places[selectedIndex].toString(),
+                        ];
                       }
                     }
 

@@ -4,7 +4,7 @@ import 'token_manager.dart';
 
 class ApiService {
   static const String baseUrl = 'http://192.168.14.51:8080';
-  
+
   // 메인 화면 데이터 조회 (새로운 DTO 형식)
   static Future<List<Restaurant>> getRestaurants() async {
     try {
@@ -12,30 +12,29 @@ class ApiService {
         'Content-Type': 'application/json',
         ...TokenManager.jwtHeader,
       };
-      
-      final requestBody = {
-        'body': "qwerfgh",
-      };
 
-    final response = await HttpInterceptor.post(
-      '/api/service/main',
-      headers: headers,
-      body: json.encode(requestBody),
-    );
-      
-      final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-      final List<dynamic> categories = (data?['categories'] as List<dynamic>?) ?? const [];
+      final requestBody = {'body': "qwerfgh"};
+
+      final response = await HttpInterceptor.post(
+        '/api/service/main',
+        headers: headers,
+        body: json.encode(requestBody),
+      );
+
+      final Map<String, dynamic> data =
+          json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final List<dynamic> categories =
+          (data?['categories'] as List<dynamic>?) ?? const [];
       return categories
           .whereType<Map<String, dynamic>>()
           .map((json) => Restaurant.fromMainScreenJson(json))
           .toList();
-      
     } catch (e) {
       print('API 호출 오류: $e');
       throw Exception('네트워크 오류: $e');
     }
   }
-  
+
   // 특정 레스토랑 조회
   static Future<Restaurant> getRestaurant(String id) async {
     try {
@@ -51,9 +50,12 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final dynamic decoded = json.decode(utf8.decode(response.bodyBytes));
-        final Map<String, dynamic> root = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
-        final Map<String, dynamic> obj =
-            (root['data'] is Map<String, dynamic>) ? Map<String, dynamic>.from(root['data']) : root;
+        final Map<String, dynamic> root = decoded is Map<String, dynamic>
+            ? decoded
+            : <String, dynamic>{};
+        final Map<String, dynamic> obj = (root['data'] is Map<String, dynamic>)
+            ? Map<String, dynamic>.from(root['data'])
+            : root;
 
         // 이 API에서는 태그/리뷰만 사용한다. 나머지는 기본값으로 반환
         return Restaurant(
@@ -165,7 +167,9 @@ class Restaurant {
   }
 
   // 기존 코드와의 호환성을 위한 getter들
-  String? get address => detailAddress != null ? '${si ?? ''} ${gu ?? ''} ${detailAddress ?? ''}' : null;
+  String? get address => detailAddress != null
+      ? '${si ?? ''} ${gu ?? ''} ${detailAddress ?? ''}'
+      : null;
   String? get imageUrl => image;
   String? get description => subCategory;
 }
@@ -179,11 +183,16 @@ class Review {
 
   static List<Review> fromList(dynamic src) {
     if (src is List) {
-      return src.whereType<Map<String, dynamic>>().map((m) => Review(
-        nickname: (m['nickname'] ?? m['user'] ?? '익명').toString(),
-        rating: _parseDouble(m['rating']) ?? 0.0,
-        content: (m['content'] ?? m['text'] ?? '').toString(),
-      )).toList();
+      return src
+          .whereType<Map<String, dynamic>>()
+          .map(
+            (m) => Review(
+              nickname: (m['nickname'] ?? m['user'] ?? '익명').toString(),
+              rating: _parseDouble(m['rating']) ?? 0.0,
+              content: (m['content'] ?? m['text'] ?? '').toString(),
+            ),
+          )
+          .toList();
     }
     return const [];
   }

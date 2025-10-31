@@ -10,9 +10,11 @@ class ChangePasswordScreen extends StatefulWidget {
 }
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final FocusNode _newPasswordFocusNode = FocusNode();
   final FocusNode _confirmPasswordFocusNode = FocusNode();
   bool _isLoading = false;
@@ -66,10 +68,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       //   _currentPasswordController.text.trim(),
       //   _newPasswordController.text.trim(),
       // );
-      
+
       // 임시로 성공 처리
       await Future.delayed(const Duration(seconds: 1));
-      
+
       _showSnackBar('비밀번호가 변경되었습니다.');
       Navigator.of(context).pop();
     } catch (e) {
@@ -104,7 +106,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 size: Size(MediaQuery.of(context).size.width, 200),
                 painter: WavePainter(),
               ),
-              
+
               // 메인 타이틀
               const Padding(
                 padding: EdgeInsets.only(top: 30, bottom: 10),
@@ -117,18 +119,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               // 서브 타이틀
               const Text(
                 '보안을 위해 비밀번호를 변경해주세요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // 현재 비밀번호 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -154,7 +153,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureCurrentPassword ? Icons.visibility_off : Icons.visibility,
+                        _obscureCurrentPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: Colors.grey[600],
                       ),
                       onPressed: () {
@@ -166,9 +167,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // 새 비밀번호 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -178,7 +179,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   obscureText: _obscureNewPassword,
                   textInputAction: TextInputAction.next,
                   onSubmitted: (_) {
-                    FocusScope.of(context).requestFocus(_confirmPasswordFocusNode);
+                    FocusScope.of(
+                      context,
+                    ).requestFocus(_confirmPasswordFocusNode);
                   },
                   decoration: InputDecoration(
                     hintText: '새 비밀번호 (6자 이상)',
@@ -195,7 +198,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureNewPassword ? Icons.visibility_off : Icons.visibility,
+                        _obscureNewPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: Colors.grey[600],
                       ),
                       onPressed: () {
@@ -207,9 +212,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // 비밀번호 확인 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -238,7 +243,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                        _obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: Colors.grey[600],
                       ),
                       onPressed: () {
@@ -250,9 +257,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
-              
+
               // 변경하기 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -273,7 +280,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                               strokeWidth: 2,
                             ),
                           )
@@ -288,16 +297,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // 취소 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFFF8126),
                       side: const BorderSide(
@@ -319,7 +330,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
             ],
           ),

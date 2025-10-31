@@ -6,7 +6,10 @@ class ChatService {
   static const String baseUrl = 'http://192.168.14.51:8080';
 
   // 채팅 보기
-  static Future<Map<String, dynamic>> getChat(String userId, String otherId) async {
+  static Future<Map<String, dynamic>> getChat(
+    String userId,
+    String otherId,
+  ) async {
     try {
       final response = await HttpInterceptor.get('/api/chat/$userId/$otherId');
 
@@ -38,7 +41,11 @@ class ChatService {
   }
 
   // 채팅 보내기
-  static Future<Map<String, dynamic>> sendChat(String senderId, String receiverId, String message) async {
+  static Future<Map<String, dynamic>> sendChat(
+    String senderId,
+    String receiverId,
+    String message,
+  ) async {
     try {
       final response = await HttpInterceptor.post(
         '/api/chat',

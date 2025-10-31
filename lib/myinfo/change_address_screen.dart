@@ -11,7 +11,8 @@ class ChangeAddressScreen extends StatefulWidget {
 
 class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _detailAddressController = TextEditingController();
+  final TextEditingController _detailAddressController =
+      TextEditingController();
   final FocusNode _detailAddressFocusNode = FocusNode();
   bool _isLoading = false;
 
@@ -46,10 +47,10 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
       //   _addressController.text.trim(),
       //   _detailAddressController.text.trim(),
       // );
-      
+
       // 임시로 성공 처리
       await Future.delayed(const Duration(seconds: 1));
-      
+
       _showSnackBar('주소가 변경되었습니다.');
       Navigator.of(context).pop();
     } catch (e) {
@@ -84,7 +85,7 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                 size: Size(MediaQuery.of(context).size.width, 200),
                 painter: WavePainter(),
               ),
-              
+
               // 메인 타이틀
               const Padding(
                 padding: EdgeInsets.only(top: 30, bottom: 10),
@@ -97,18 +98,15 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                   ),
                 ),
               ),
-              
+
               // 서브 타이틀
               const Text(
                 '새로운 주소를 입력해주세요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // 주소 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -116,7 +114,9 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                   controller: _addressController,
                   textInputAction: TextInputAction.next,
                   onSubmitted: (_) {
-                    FocusScope.of(context).requestFocus(_detailAddressFocusNode);
+                    FocusScope.of(
+                      context,
+                    ).requestFocus(_detailAddressFocusNode);
                   },
                   decoration: InputDecoration(
                     hintText: '주소 (예: 서울시 강남구)',
@@ -144,9 +144,9 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // 상세 주소 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -175,9 +175,9 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
-              
+
               // 변경하기 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -198,7 +198,9 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                               strokeWidth: 2,
                             ),
                           )
@@ -213,16 +215,18 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // 취소 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFFF8126),
                       side: const BorderSide(
@@ -244,7 +248,7 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
             ],
           ),

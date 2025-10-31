@@ -5,7 +5,8 @@ import 'choose_template.dart';
 class RouteConfirmScreen extends StatefulWidget {
   final Map<String, List<String>> selected; // 카테고리별 선택 목록
 
-  const RouteConfirmScreen({Key? key, required this.selected}) : super(key: key);
+  const RouteConfirmScreen({Key? key, required this.selected})
+    : super(key: key);
 
   @override
   State<RouteConfirmScreen> createState() => _RouteConfirmScreenState();
@@ -74,9 +75,14 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                   isLast: index == items.length - 1,
                   showDuration: false, // 미리보기에서는 시간 숨김
                   onDragHandle: item.type == _ItemType.place
-                      ? (child) => ReorderableDragStartListener(index: index, child: child)
+                      ? (child) => ReorderableDragStartListener(
+                          index: index,
+                          child: child,
+                        )
                       : null,
-                  onTap: item.type == _ItemType.origin ? () => _showOriginAddressInput() : null,
+                  onTap: item.type == _ItemType.origin
+                      ? () => _showOriginAddressInput()
+                      : null,
                 ),
               );
             },
@@ -105,7 +111,8 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                   MaterialPageRoute(
                     builder: (_) => ChooseTemplateScreen(
                       selected: {
-                        for (final entry in widget.selected.entries) entry.key: List<String>.from(entry.value)
+                        for (final entry in widget.selected.entries)
+                          entry.key: List<String>.from(entry.value),
                       },
                       originAddress: _originAddress,
                       originDetailAddress: _originDetailAddress,
@@ -117,7 +124,9 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                 backgroundColor: const Color(0xFFFF8126),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 minimumSize: const Size(double.infinity, 52),
               ),
               child: const Text(
@@ -166,25 +175,29 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
       originSubtitle = '출발지';
     }
 
-    items.add(_ScheduleItem(
-      title: originTitle,
-      subtitle: originSubtitle,
-      icon: Icons.home_outlined,
-      color: Colors.grey[700]!,
-      type: _ItemType.origin,
-    ));
+    items.add(
+      _ScheduleItem(
+        title: originTitle,
+        subtitle: originSubtitle,
+        icon: Icons.home_outlined,
+        color: Colors.grey[700]!,
+        type: _ItemType.origin,
+      ),
+    );
 
     // 선택된 장소를 순서대로 나열 (카테고리 순서 유지)
     selected.forEach((category, places) {
       for (final place in places) {
-        items.add(_ScheduleItem(
-          title: place,
-          subtitle: category,
-          icon: _iconFor(category),
-          color: const Color(0xFFFF8126),
-          type: _ItemType.place,
-          durationMinutes: items.length == 1 ? 45 : 20,
-        ));
+        items.add(
+          _ScheduleItem(
+            title: place,
+            subtitle: category,
+            icon: _iconFor(category),
+            color: const Color(0xFFFF8126),
+            type: _ItemType.place,
+            durationMinutes: items.length == 1 ? 45 : 20,
+          ),
+        );
       }
     });
 
@@ -234,7 +247,15 @@ class _TimelineRow extends StatelessWidget {
   final bool showDuration;
   final VoidCallback? onTap;
 
-  const _TimelineRow({Key? key, required this.item, required this.index, this.isLast = false, this.onDragHandle, this.showDuration = true, this.onTap}) : super(key: key);
+  const _TimelineRow({
+    Key? key,
+    required this.item,
+    required this.index,
+    this.isLast = false,
+    this.onDragHandle,
+    this.showDuration = true,
+    this.onTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -269,11 +290,7 @@ class _TimelineRow extends StatelessWidget {
                 ),
               ),
               if (!isLast)
-                Container(
-                  width: 2,
-                  height: 60,
-                  color: Colors.grey[300],
-                ),
+                Container(width: 2, height: 60, color: Colors.grey[300]),
             ],
           ),
           const SizedBox(width: 12),
@@ -295,43 +312,52 @@ class _TimelineRow extends StatelessWidget {
                   border: Border.all(color: Colors.grey.withOpacity(0.15)),
                 ),
                 child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFEFE3),
-                      borderRadius: BorderRadius.circular(10),
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEFE3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(item.icon, color: const Color(0xFFFF8126)),
                     ),
-                    child: Icon(item.icon, color: const Color(0xFFFF8126)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.subtitle,
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            item.subtitle,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (item.type == _ItemType.place && onDragHandle != null)
-                    onDragHandle!(const Icon(Icons.drag_handle, color: Colors.grey, size: 18)),
-                  if (item.type == _ItemType.origin && onTap != null)
-                    const Icon(Icons.edit, color: Colors.grey, size: 18),
-                ],
-              ),
+                    if (item.type == _ItemType.place && onDragHandle != null)
+                      onDragHandle!(
+                        const Icon(
+                          Icons.drag_handle,
+                          color: Colors.grey,
+                          size: 18,
+                        ),
+                      ),
+                    if (item.type == _ItemType.origin && onTap != null)
+                      const Icon(Icons.edit, color: Colors.grey, size: 18),
+                  ],
+                ),
               ),
             ),
           ),
@@ -352,15 +378,21 @@ class OriginAddressInputScreen extends StatefulWidget {
   final String? initialAddress;
   final String? initialDetailAddress;
 
-  const OriginAddressInputScreen({Key? key, this.initialAddress, this.initialDetailAddress}) : super(key: key);
+  const OriginAddressInputScreen({
+    Key? key,
+    this.initialAddress,
+    this.initialDetailAddress,
+  }) : super(key: key);
 
   @override
-  State<OriginAddressInputScreen> createState() => _OriginAddressInputScreenState();
+  State<OriginAddressInputScreen> createState() =>
+      _OriginAddressInputScreenState();
 }
 
 class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _detailAddressController = TextEditingController();
+  final TextEditingController _detailAddressController =
+      TextEditingController();
   final FocusNode _detailAddressFocusNode = FocusNode();
   bool _isLoading = false;
 
@@ -392,13 +424,10 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     try {
       await Future.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
-      Navigator.pop(
-        context,
-        {
-          'address': _addressController.text.trim(),
-          'detailAddress': _detailAddressController.text.trim(),
-        },
-      );
+      Navigator.pop(context, {
+        'address': _addressController.text.trim(),
+        'detailAddress': _detailAddressController.text.trim(),
+      });
     } catch (_) {
       if (!mounted) return;
       _showSnackBar('주소 저장 중 오류가 발생했습니다.');
@@ -430,12 +459,18 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
         ),
         title: const Text(
           '출발지 입력',
-          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF8126)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFFFF8126)),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -445,14 +480,22 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                   TextField(
                     controller: _addressController,
                     textInputAction: TextInputAction.next,
-                    onSubmitted: (_) => FocusScope.of(context).requestFocus(_detailAddressFocusNode),
+                    onSubmitted: (_) => FocusScope.of(
+                      context,
+                    ).requestFocus(_detailAddressFocusNode),
                     decoration: InputDecoration(
                       hintText: '예: 서울시 강남구 테헤란로 123',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: const Color(0xFFF5F5F5),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -466,8 +509,14 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: const Color(0xFFF5F5F5),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -477,10 +526,18 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                       backgroundColor: const Color(0xFFFF8126),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       minimumSize: const Size(double.infinity, 52),
                     ),
-                    child: const Text('저장하기', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: const Text(
+                      '저장하기',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -488,5 +545,3 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     );
   }
 }
-
-
