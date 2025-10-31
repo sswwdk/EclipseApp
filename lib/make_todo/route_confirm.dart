@@ -3,7 +3,7 @@ import 'default_template.dart';
 import 'choose_template.dart';
 
 class RouteConfirmScreen extends StatefulWidget {
-  final Map<String, List<String>> selected; // 카테고리별 선택 목록
+  final Map<String, List<dynamic>> selected; // 카테고리별 선택 목록 (Map 또는 String)
 
   const RouteConfirmScreen({Key? key, required this.selected}) : super(key: key);
 
@@ -100,13 +100,24 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
+                // ChooseTemplateScreen으로 전달할 때는 기존 형식(List<String>)으로 변환
+                final Map<String, List<String>> convertedSelected = {};
+                for (final entry in widget.selected.entries) {
+                  convertedSelected[entry.key] = entry.value.map((place) {
+                    if (place is Map<String, dynamic>) {
+                      // Map인 경우 name 또는 id를 문자열로 변환
+                      return place['name'] as String? ?? place['id'] as String? ?? place.toString();
+                    } else {
+                      return place.toString();
+                    }
+                  }).toList();
+                }
+                
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => ChooseTemplateScreen(
-                      selected: {
-                        for (final entry in widget.selected.entries) entry.key: List<String>.from(entry.value)
-                      },
+                      selected: convertedSelected,
                       originAddress: _originAddress,
                       originDetailAddress: _originDetailAddress,
                     ),
@@ -151,7 +162,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
     }
   }
 
-  List<_ScheduleItem> _buildScheduleItems(Map<String, List<String>> selected) {
+  List<_ScheduleItem> _buildScheduleItems(Map<String, List<dynamic>> selected) {
     final List<_ScheduleItem> items = [];
     // 출발지(집)
     String originTitle = '현재 위치';
@@ -177,9 +188,25 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
     // 선택된 장소를 순서대로 나열 (카테고리 순서 유지)
     selected.forEach((category, places) {
       for (final place in places) {
+        // place가 Map인지 String인지 확인
+        String placeName;
+        String subCategory;
+        
+        if (place is Map<String, dynamic>) {
+          // Map 형태인 경우 실제 데이터 추출
+          placeName = place['name'] as String? ?? '알 수 없음';
+          subCategory = place['sub_category'] as String? ?? 
+                       place['category'] as String? ?? 
+                       category;
+        } else {
+          // String 형태인 경우 (기존 호환성 유지)
+          placeName = place.toString();
+          subCategory = category;
+        }
+        
         items.add(_ScheduleItem(
-          title: place,
-          subtitle: category,
+          title: placeName,
+          subtitle: subCategory,
           icon: _iconFor(category),
           color: const Color(0xFFFF8126),
           type: _ItemType.place,
@@ -319,10 +346,35 @@ class _TimelineRow extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          item.subtitle,
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        ),
+                        // 출발지 항목이 아닐 때만 주황색 태그로 표시
+                        if (item.type != _ItemType.origin)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF8126),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '# ${item.subtitle}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          )
+                        else
+                          // 출발지 항목은 회색 텍스트로 표시
+                          Text(
+                            item.subtitle,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
                       ],
                     ),
                   ),
