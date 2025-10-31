@@ -21,22 +21,24 @@ class RecommendationResultScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<RecommendationResultScreen> createState() => _RecommendationResultScreenState();
+  State<RecommendationResultScreen> createState() =>
+      _RecommendationResultScreenState();
 }
 
-class _RecommendationResultScreenState extends State<RecommendationResultScreen> with SingleTickerProviderStateMixin {
+class _RecommendationResultScreenState extends State<RecommendationResultScreen>
+    with SingleTickerProviderStateMixin {
   TabController? _tabController;
-  
+
   // 카테고리별 찜 상태 (카테고리 -> 장소 인덱스 -> 찜 여부)
   Map<String, Map<int, bool>> _favoriteStates = {};
-  
+
   // 카테고리별 선택 상태 (카테고리 -> 장소 인덱스 -> 선택 여부)
   Map<String, Map<int, bool>> _selectedStates = {};
 
   @override
   void initState() {
     super.initState();
-    
+
     // 카테고리가 2개 이상일 때만 TabController 생성
     if (widget.selectedCategories.length > 1) {
       _tabController = TabController(
@@ -44,7 +46,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         vsync: this,
       );
     }
-    
+
     // 초기 상태 설정
     for (var category in widget.selectedCategories) {
       _favoriteStates[category] = {};
@@ -83,22 +85,20 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
   /// 선택 버튼 토글
   void _toggleSelection(String category, int index) {
     setState(() {
-      _selectedStates[category]![index] = !(_selectedStates[category]![index] ?? false);
+      _selectedStates[category]![index] =
+          !(_selectedStates[category]![index] ?? false);
     });
   }
 
   /// 카테고리별 장소 리스트 위젯 생성
   Widget _buildPlacesList(String category) {
     final places = widget.recommendations[category] as List<dynamic>?;
-    
+
     if (places == null || places.isEmpty) {
       return Center(
         child: Text(
           '추천 장소가 없습니다.',
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 16,
-          ),
+          style: TextStyle(color: Colors.grey[600], fontSize: 16),
         ),
       );
     }
@@ -107,19 +107,31 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
       padding: const EdgeInsets.all(16),
       itemCount: places.length,
       itemBuilder: (context, index) {
-        final place = places[index];
+        // 🔥 Map으로 캐스팅하고 필드 추출
+        final place = places[index] as Map<String, dynamic>;
+        final placeName = place['name'] as String? ?? '알 수 없음';
+        final placeAddress =
+            place['address'] as String? ??
+            place['detail_address'] as String? ??
+            '주소 정보 없음';
+        final placeCategory =
+            place['category'] as String? ??
+            place['sub_category'] as String? ??
+            category;
+        final placeImage = place['image'] as String? ?? '';
+        final placeId = place['id'] as String? ?? '';
+
         final isFavorite = _favoriteStates[category]?[index] ?? false;
         final isSelected = _selectedStates[category]?[index] ?? false;
 
         return InkWell(
           onTap: () {
-            // 매장 상세 화면으로 이동
             if (!mounted) return;
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => PlaceDetailScreen(
-                  placeName: place.toString(),
+                  placeName: placeName, // 🔥 실제 이름
                   category: category,
                   initialFavorite: isFavorite,
                 ),
@@ -150,7 +162,6 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 이미지 영역
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
@@ -158,23 +169,52 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   ),
                   child: Stack(
                     children: [
-                      Container(
-                        height: 200,
-                        width: double.infinity,
-                        color: Colors.grey[200],
-                        alignment: Alignment.center,
-                        child: Text(
-                          '이미지를 불러올 수 없습니다',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      // 찜 버튼 (왼쪽 상단)
+                      // 🔥 이미지 표시
+                      placeImage.isNotEmpty
+                          ? Image.network(
+                              placeImage,
+                              height: 200,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 200,
+                                  width: double.infinity,
+                                  color: Colors.grey[200],
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '이미지를 불러올 수 없습니다',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              height: 200,
+                              width: double.infinity,
+                              color: Colors.grey[200],
+                              alignment: Alignment.center,
+                              child: Text(
+                                '이미지를 불러올 수 없습니다',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                      // 찜 버튼
                       Positioned(
                         top: 12,
                         left: 12,
                         child: GestureDetector(
-                          onTap: () => _toggleFavorite(category, index, place.toString()),
+                          onTap: () => _toggleFavorite(
+                            category,
+                            index,
+                            placeId,
+                          ), // 🔥 ID 전달
                           child: Container(
                             width: 40,
                             height: 40,
@@ -190,14 +230,16 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                               ],
                             ),
                             child: Icon(
-                              isFavorite ? Icons.favorite : Icons.favorite_border,
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
                               color: isFavorite ? Colors.red : Colors.grey[600],
                               size: 22,
                             ),
                           ),
                         ),
                       ),
-                      // 선택 체크박스 (오른쪽 상단)
+                      // 선택 체크박스
                       Positioned(
                         top: 12,
                         right: 12,
@@ -207,8 +249,8 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: isSelected 
-                                  ? const Color(0xFFFF8126) 
+                              color: isSelected
+                                  ? const Color(0xFFFF8126)
                                   : Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: [
@@ -221,7 +263,9 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                             ),
                             child: Icon(
                               Icons.check,
-                              color: isSelected ? Colors.white : Colors.grey[600],
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.grey[600],
                               size: 22,
                             ),
                           ),
@@ -230,16 +274,15 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                     ],
                   ),
                 ),
-                
-                // 내용 부분
+
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 제목
+                      // 🔥 매장 이름
                       Text(
-                        place.toString(),
+                        placeName,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -247,15 +290,18 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // 서브카테고리 배지
+                      // 🔥 실제 카테고리
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFF8126),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
-                          '# ${_subCategoryFor(category)}',
+                          '# $placeCategory',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -264,9 +310,9 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                         ),
                       ),
                       const SizedBox(height: 10),
-                      // 주소
+                      // 🔥 실제 주소
                       Text(
-                        _generateAddress(),
+                        placeAddress,
                         style: TextStyle(color: Colors.grey[700], fontSize: 13),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -398,7 +444,10 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                       ),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -480,7 +529,10 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                     if (!mounted) return;
                     final Map<String, List<String>> selectedByCategory = {};
                     for (final category in widget.selectedCategories) {
-                      final places = (widget.recommendations[category] as List<dynamic>?) ?? [];
+                      final places =
+                          (widget.recommendations[category]
+                              as List<dynamic>?) ??
+                          [];
                       final selectedIndexes = _selectedStates[category] ?? {};
                       final picked = <String>[];
                       for (int i = 0; i < places.length; i++) {
@@ -503,7 +555,8 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => RouteConfirmScreen(selected: selectedByCategory),
+                        builder: (_) =>
+                            RouteConfirmScreen(selected: selectedByCategory),
                       ),
                     );
                   },
@@ -518,10 +571,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   ),
                   child: const Text(
                     '일정표 제작하기',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -533,7 +583,10 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                     if (!mounted) return;
                     final Map<String, List<String>> selectedByCategory = {};
                     for (final category in widget.selectedCategories) {
-                      final places = (widget.recommendations[category] as List<dynamic>?) ?? [];
+                      final places =
+                          (widget.recommendations[category]
+                              as List<dynamic>?) ??
+                          [];
                       final selectedIndexes = _selectedStates[category] ?? {};
                       final picked = <String>[];
                       for (int i = 0; i < places.length; i++) {
@@ -556,7 +609,8 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => SelectedPlacesScreen(selected: selectedByCategory),
+                        builder: (_) =>
+                            SelectedPlacesScreen(selected: selectedByCategory),
                       ),
                     );
                   },
@@ -575,10 +629,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   ),
                   child: const Text(
                     '완료하기',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -588,7 +639,6 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
       ),
     );
   }
-
 }
 
 /// 선택된 장소만 모아 보여주는 화면
