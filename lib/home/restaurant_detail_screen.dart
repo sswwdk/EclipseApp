@@ -7,7 +7,8 @@ import '../services/token_manager.dart';
 class RestaurantDetailScreen extends StatefulWidget {
   final Restaurant restaurant;
 
-  const RestaurantDetailScreen({Key? key, required this.restaurant}) : super(key: key);
+  const RestaurantDetailScreen({Key? key, required this.restaurant})
+    : super(key: key);
 
   @override
   State<RestaurantDetailScreen> createState() => _RestaurantDetailScreenState();
@@ -68,8 +69,10 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: _isFavorite ? Colors.red : Colors.black),
+            icon: Icon(
+              _isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: _isFavorite ? Colors.red : Colors.black,
+            ),
             onPressed: () async {
               final next = !_isFavorite;
               setState(() => _isFavorite = next);
@@ -99,13 +102,19 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
               height: 250,
               width: double.infinity,
               child: ClipRRect(
-                child: (restaurant.imageUrl != null && restaurant.imageUrl!.isNotEmpty)
+                child:
+                    (restaurant.imageUrl != null &&
+                        restaurant.imageUrl!.isNotEmpty)
                     ? Image.network(
                         restaurant.imageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
                           color: Colors.grey[200],
-                          child: Icon(Icons.restaurant, size: 80, color: Colors.grey[400]),
+                          child: Icon(
+                            Icons.restaurant,
+                            size: 80,
+                            color: Colors.grey[400],
+                          ),
                         ),
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
@@ -113,7 +122,9 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                             color: Colors.grey[200],
                             child: Center(
                               child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(const Color(0xFFFF8126)),
+                                valueColor: AlwaysStoppedAnimation(
+                                  const Color(0xFFFF8126),
+                                ),
                               ),
                             ),
                           );
@@ -121,11 +132,15 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                       )
                     : Container(
                         color: Colors.grey[200],
-                        child: Icon(Icons.restaurant, size: 80, color: Colors.grey[400]),
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 80,
+                          color: Colors.grey[400],
+                        ),
                       ),
               ),
             ),
-            
+
             // 음식점 정보 섹션
             Container(
               margin: const EdgeInsets.all(16),
@@ -155,15 +170,14 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        restaurant.detailAddress ?? restaurant.address ?? '주소 정보 없음',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        restaurant.detailAddress ??
+                            restaurant.address ??
+                            '주소 정보 없음',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
                   ),
-                  
+
                   // 전화번호
                   if (restaurant.phone != null) ...[
                     const SizedBox(height: 12),
@@ -185,7 +199,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                       ],
                     ),
                   ],
-                  
+
                   // 평점 (서버 값만 표시, 없으면 0)
                   const SizedBox(height: 12),
                   Row(
@@ -198,14 +212,11 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                       const SizedBox(width: 8),
                       Text(
                         '평점: ${(restaurant.rating ?? 0.0).toStringAsFixed(1)}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
                   ),
-                  
+
                   // 영업시간
                   if (restaurant.businessHour != null) ...[
                     const SizedBox(height: 12),
@@ -230,9 +241,9 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                       ],
                     ),
                   ],
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // 태그들 (서버에서 받은 태그 사용)
                   if (_tags.isNotEmpty)
                     Wrap(
@@ -243,7 +254,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 ],
               ),
             ),
-            
+
             // 리뷰 섹션 (서버 데이터 표시, 없으면 안내)
             Container(
               margin: const EdgeInsets.all(16),
@@ -290,18 +301,18 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                         const SizedBox(height: 12),
                         const Divider(color: Colors.grey),
                         const SizedBox(height: 12),
-                      ]
+                      ],
                     ],
                   ],
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 80), // 하단바를 위한 공간
           ],
         ),
       ),
-      
+
       bottomNavigationBar: BottomNavigationWidget(
         currentIndex: 0,
         fromScreen: 'restaurant_detail',
@@ -343,15 +354,11 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             color: Colors.grey,
             shape: BoxShape.circle,
           ),
-          child: const Icon(
-            Icons.person,
-            color: Colors.white,
-            size: 20,
-          ),
+          child: const Icon(Icons.person, color: Colors.white, size: 20),
         ),
-        
+
         const SizedBox(width: 12),
-        
+
         // 리뷰 내용
         Expanded(
           child: Column(
@@ -374,10 +381,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
               const SizedBox(height: 4),
               Text(
                 content,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
             ],
           ),
@@ -390,11 +394,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     return Row(
       children: List.generate(5, (index) {
         if (index < rating.floor()) {
-          return const Icon(
-            Icons.star,
-            color: Color(0xFFFF8126),
-            size: 14,
-          );
+          return const Icon(Icons.star, color: Color(0xFFFF8126), size: 14);
         } else if (index < rating) {
           return const Icon(
             Icons.star_half,
@@ -402,11 +402,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             size: 14,
           );
         } else {
-          return Icon(
-            Icons.star_border,
-            color: Colors.grey[400],
-            size: 14,
-          );
+          return Icon(Icons.star_border, color: Colors.grey[400], size: 14);
         }
       }),
     );
