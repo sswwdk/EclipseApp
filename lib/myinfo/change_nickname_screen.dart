@@ -43,13 +43,11 @@ class _ChangeNicknameScreenState extends State<ChangeNicknameScreen> {
     });
 
     try {
-      // TODO: 서버에 닉네임 변경 요청
-      // final response = await UserService.changeNickname(_nicknameController.text.trim());
-      
-      // 임시로 성공 처리
-      await Future.delayed(const Duration(seconds: 1));
-      
-      TokenManager.setUserName(_nicknameController.text.trim());
+      final Map<String, dynamic> res = await UserService.changeNickname(_nicknameController.text.trim());
+      final dynamic direct = res['nickname'];
+      final dynamic nested = (res['data'] is Map<String, dynamic>) ? (res['data']['nickname']) : null;
+      final String updated = (direct ?? nested ?? _nicknameController.text.trim()).toString();
+      TokenManager.setUserName(updated);
       _showSnackBar('닉네임이 변경되었습니다.');
       Navigator.of(context).pop();
     } catch (e) {

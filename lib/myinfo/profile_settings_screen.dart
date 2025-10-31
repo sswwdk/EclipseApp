@@ -7,9 +7,14 @@ import 'change_address_screen.dart';
 import 'change_phone_screen.dart';
 import '../services/token_manager.dart';
 
-class ProfileSettingsScreen extends StatelessWidget {
+class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({Key? key}) : super(key: key);
 
+  @override
+  State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
+}
+
+class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,11 +174,11 @@ class ProfileSettingsScreen extends StatelessWidget {
             icon: Icons.person_outline,
             title: '닉네임 변경',
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ChangeNicknameScreen(),
-                ),
-              );
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (context) => const ChangeNicknameScreen()))
+                  .then((_) {
+                if (mounted) setState(() {}); // 돌아오면 최신 닉네임으로 리빌드
+              });
             },
           ),
           _buildDivider(),
