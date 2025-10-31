@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // 입력한 아이디를 저장
       final inputUserId = _idController.text.trim();
-      
+
       final response = await UserService.login(
         inputUserId,
         _passwordController.text.trim(),
@@ -49,10 +49,10 @@ class _LoginScreenState extends State<LoginScreen> {
       // 응답에서 토큰/사용자 정보 추출 및 저장
       final token1 = response['token1'];
       final token2 = response['token2'];
-      
+
       if (token1 != null && token2 != null) {
         TokenManager.setTokens(token1, token2);
-        
+
         // 사용자 정보에서 닉네임, ID, 이메일 추출
         String? nickname;
         String? userId;
@@ -60,26 +60,26 @@ class _LoginScreenState extends State<LoginScreen> {
         if (response['info'] != null) {
           final info = response['info'] as Map<String, dynamic>;
           nickname = info['nickname'] as String?;
-          userId = info['userID'] as String? ?? inputUserId; 
+          userId = info['userID'] as String? ?? inputUserId;
           email = info['email'] as String?;
-          
+
           // 디버깅을 위한 로그
           print('로그인 응답에서 추출된 닉네임: $nickname');
           print('로그인 응답에서 추출된 사용자 ID: $userId');
           print('로그인 응답에서 추출된 이메일: $email');
           print('전체 info 데이터: $info');
         }
-        
+
         // 닉네임이 없으면 username 사용
         if (nickname == null && response['info'] != null) {
           final info = response['info'] as Map<String, dynamic>;
           nickname = info['username'] as String?;
         }
-        
+
         TokenManager.setUserName(nickname);
         TokenManager.setUserId(userId);
         TokenManager.setUserEmail(email);
-        
+
         // TokenManager에 저장된 값 확인
         print('TokenManager에 저장된 닉네임: ${TokenManager.userName}');
         print('TokenManager에 저장된 사용자 ID: ${TokenManager.userId}');
@@ -130,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 size: Size(MediaQuery.of(context).size.width, 250),
                 painter: WavePainter(),
               ),
-              
+
               // 메인 타이틀
               const Padding(
                 padding: EdgeInsets.only(top: 40, bottom: 10),
@@ -143,18 +143,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               // 서브 타이틀
               const Text(
                 '당신을 위한 맞춤형 활동 추천',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              
+
               const SizedBox(height: 50),
-              
+
               // 아이디 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -181,9 +178,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // 비밀번호 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -214,9 +211,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // 로그인 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -237,7 +234,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                               strokeWidth: 2,
                             ),
                           )
@@ -252,28 +251,27 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // 아이디/비밀번호 찾기
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const FindAccountScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const FindAccountScreen(),
+                    ),
                   );
                 },
                 child: const Text(
                   '아이디/비밀번호 찾기',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ),
-              
+
               const SizedBox(height: 10),
-              
+
               // 또는 구분선
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -284,19 +282,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 15),
                       child: Text(
                         '또는',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ),
                     Expanded(child: Divider(color: Colors.grey[300])),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // 카카오 로그인 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -317,10 +312,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.chat_bubble,
-                          color: Colors.black,
-                        ),
+                        const Icon(Icons.chat_bubble, color: Colors.black),
                         const SizedBox(width: 12),
                         const Text(
                           '카카오톡으로 시작하기',
@@ -335,26 +327,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // 회원가입
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
                     '계정이 없으신가요? ',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                   GestureDetector(
                     onTap: () {
                       print('회원가입 버튼 클릭됨');
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SignUpScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const SignUpScreen(),
+                        ),
                       );
                     },
                     child: const Text(
@@ -368,7 +359,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 30),
             ],
           ),
