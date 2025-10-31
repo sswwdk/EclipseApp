@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 
 class ScheduleBuilderScreen extends StatefulWidget {
   final Map<String, List<String>> selected; // 카테고리별 선택 목록
-  final bool previewOnly; // 미리보기 모드: 시간 숨김 + 단일 버튼
   final String? originAddress; // 출발지 주소
   final String? originDetailAddress; // 출발지 상세 주소
+  final int? firstDurationMinutes; // 템플릿: 첫 이동 또는 첫 체류 시간
+  final int? otherDurationMinutes; // 템플릿: 이후 체류 시간
 
   const ScheduleBuilderScreen({
     Key? key,
     required this.selected,
-    this.previewOnly = false,
     this.originAddress,
     this.originDetailAddress,
+    this.firstDurationMinutes,
+    this.otherDurationMinutes,
   }) : super(key: key);
 
   @override
@@ -50,7 +52,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          '일정표 만들기',
+          '일정표',
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -74,38 +76,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
               ),
             ],
           ),
-          child: widget.previewOnly
-              ? ReorderableListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  buildDefaultDragHandles: false,
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return KeyedSubtree(
-                      key: ValueKey(item.id),
-                      child: _TimelineRow(
-                        item: item,
-                        index: index,
-                        isLast: index == items.length - 1,
-                        showDuration: !widget.previewOnly,
-                        onDragHandle: item.type == _ItemType.place
-                            ? (child) => ReorderableDragStartListener(index: index, child: child)
-                            : null,
-                        onTap: item.type == _ItemType.origin ? () => _showOriginAddressInput() : null,
-                      ),
-                    );
-                  },
-                  onReorder: (oldIndex, newIndex) {
-                    // 첫 항목(출발지)은 고정
-                    if (oldIndex == 0 || newIndex == 0) return;
-                    if (newIndex > oldIndex) newIndex -= 1;
-                    setState(() {
-                      final moved = _items.removeAt(oldIndex);
-                      _items.insert(newIndex, moved);
-                    });
-                  },
-                )
-              : ListView.builder(
+          child: ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   itemCount: items.length,
                   itemBuilder: (context, index) {
@@ -114,9 +85,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                       item: item,
                       index: index,
                       isLast: index == items.length - 1,
-                      showDuration: !widget.previewOnly,
-                      onDragHandle: null, // 전체 화면에서는 드래그 비활성화
-                      onTap: null, // 경로 확정 후에는 수정 불가능
+                      showDuration: true,
+                      onDragHandle: null, // 최종 화면에서는 드래그 비활성화
+                      onTap: null, // 최종 화면에서는 수정 불가
                     );
                   },
                 ),
@@ -126,39 +97,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         padding: const EdgeInsets.all(16),
         color: Colors.white,
         child: SafeArea(
-          child: widget.previewOnly
-              ? SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ScheduleBuilderScreen(
-                            selected: {
-                              for (final entry in widget.selected.entries) entry.key: List<String>.from(entry.value)
-                            },
-                            previewOnly: false,
-                            originAddress: _originAddress,
-                            originDetailAddress: _originDetailAddress,
-                          ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF8126),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      minimumSize: const Size(double.infinity, 52),
-                    ),
-                    child: const Text(
-                      '경로 확정하기',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                )
-              : Row(
+          child: Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
@@ -208,25 +147,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
     );
   }
 
-  Future<void> _showOriginAddressInput() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OriginAddressInputScreen(
-          initialAddress: _originAddress,
-          initialDetailAddress: _originDetailAddress,
-        ),
-      ),
-    );
-
-    if (result != null && result is Map<String, String?>) {
-      setState(() {
-        _originAddress = result['address'];
-        _originDetailAddress = result['detailAddress'];
-        _items = _buildScheduleItems(widget.selected);
-      });
-    }
-  }
+  // 최종 화면에서는 출발지 수정 기능이 없습니다.
 
   List<_ScheduleItem> _buildScheduleItems(Map<String, List<String>> selected) {
     final List<_ScheduleItem> items = [];
@@ -260,7 +181,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           icon: _iconFor(category),
           color: const Color(0xFFFF8126),
           type: _ItemType.place,
-          durationMinutes: items.length == 1 ? 45 : 20,
+          durationMinutes: items.length == 1
+              ? (widget.firstDurationMinutes ?? 45)
+              : (widget.otherDurationMinutes ?? 20),
         ));
       }
     });
@@ -523,7 +446,7 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
       _showSnackBar('현재 위치를 가져왔습니다.');
     } catch (e) {
       if (!mounted) return;
-      _showSnackBar('위치를 가져오는 중 오류가 발생했습니다: $e');
+      _showSnackBar('위를 가져오는 중 오류가 발생했습니다: $e');
     } finally {
       if (mounted) {
         setState(() {
