@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
 import 'terms_of_service_screen.dart';
 import 'favorite_list_screen.dart';
+import 'schedule_history_screen.dart';
 import '../home/home.dart';
 import '../login/login_screen.dart';
 import '../theme/app_theme.dart';
@@ -184,7 +185,13 @@ class MyInfoScreen extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.calendar_today_outlined,
             title: '일정표 히스토리',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ScheduleHistoryScreen(),
+                ),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
