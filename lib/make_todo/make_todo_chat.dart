@@ -4,6 +4,20 @@ import 'package:whattodo/make_todo/recommendation_screen.dart';
 import '../widgets/common_dialogs.dart';
 import 'make_todo_main.dart';
 
+/// 카테고리 아이콘 매핑 헬퍼 함수
+IconData _getCategoryIcon(String category) {
+  switch (category) {
+    case '음식점':
+      return Icons.restaurant;
+    case '카페':
+      return Icons.local_cafe;
+    case '콘텐츠':
+      return Icons.movie_filter;
+    default:
+      return Icons.check_circle_outline;
+  }
+}
+
 /// 채팅 메시지 데이터 모델
 class ChatMessage {
   final String text;
@@ -12,7 +26,6 @@ class ChatMessage {
   final List<String>? selectedCategories;
   final bool showYesNoButtons;
   final String? yesNoQuestion;
-  final String? currentCategory;
   final List<String>? availableCategories;
   bool isButtonActive; // 버튼 활성화 상태
   String? selectedButton; // 선택된 버튼 ('yes' 또는 'no', null이면 선택 안 됨)
@@ -24,7 +37,6 @@ class ChatMessage {
     this.selectedCategories,
     this.showYesNoButtons = false,
     this.yesNoQuestion,
-    this.currentCategory,
     this.availableCategories,
     this.isButtonActive = true, // 기본값은 활성화
     this.selectedButton, // 기본값은 null (선택 안 됨)
@@ -157,13 +169,7 @@ class _ChatScreenState extends State<ChatScreen> {
     
     _messageController.clear();
     _scrollToBottom();
-    
-    // 메시지 전송 후 텍스트 필드에 포커스 유지
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _messageFocusNode.requestFocus();
-      }
-    });
+    _maintainFocus();
     
     try {
       // FastAPI /api/chat 호출
@@ -176,7 +182,6 @@ class _ChatScreenState extends State<ChatScreen> {
         final recommendations = response['recommendations'] as Map<String, dynamic>?;
         final showYesNoButtons = response['showYesNoButtons'] as bool? ?? false;
         final yesNoQuestion = response['yesNoQuestion'] as String?;
-        final currentCategory = response['currentCategory'] as String?;
         final availableCategories = response['availableCategories'] as List<dynamic>?;
         
         // 현재 stage 업데이트
@@ -211,7 +216,6 @@ class _ChatScreenState extends State<ChatScreen> {
               timestamp: DateTime.now(),
               showYesNoButtons: showYesNoButtons,
               yesNoQuestion: yesNoQuestion,
-              currentCategory: currentCategory,
               availableCategories: availableCategories?.cast<String>(),
             ));
             _isLoading = false;
@@ -219,33 +223,11 @@ class _ChatScreenState extends State<ChatScreen> {
         }
         
         _scrollToBottom();
-        
-        // AI 응답 후에도 텍스트 필드에 포커스 유지
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _messageFocusNode.requestFocus();
-          }
-        });
+        _maintainFocus();
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _messages.add(ChatMessage(
-            text: '죄송합니다. 응답을 가져오는 중 오류가 발생했습니다.\n오류: $e',
-            isUser: false,
-            timestamp: DateTime.now(),
-          ));
-          _isLoading = false;
-        });
-        _scrollToBottom();
-        
-        // 에러 발생 후에도 텍스트 필드에 포커스 유지
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _messageFocusNode.requestFocus();
-          }
-        });
-      }
+      _addErrorMessage('죄송합니다. 응답을 가져오는 중 오류가 발생했습니다.\n오류: $e');
+      _maintainFocus();
     }
   }
 
@@ -260,6 +242,44 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     });
   }
+
+  /// 포커스 유지 헬퍼 함수
+  void _maintainFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _messageFocusNode.requestFocus();
+      }
+    });
+  }
+
+  /// 에러 메시지 추가 헬퍼 함수
+  void _addErrorMessage(String errorText) {
+    if (!mounted) return;
+    setState(() {
+      _messages.add(ChatMessage(
+        text: errorText,
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
+      _isLoading = false;
+    });
+    _scrollToBottom();
+  }
+
+  /// 뒤로가기 확인 헬퍼 함수
+  void _handleBackNavigation() {
+    CommonDialogs.showBackConfirmation(
+      context: context,
+      onConfirm: () {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+      },
+    );
+  }
+
 
   /// 긍정적 표현 체크
   bool _isPositiveResponse(String message) {
@@ -276,19 +296,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
+      return WillPopScope(
       onWillPop: () async {
-        // 하드웨어 뒤로가기 버튼 또는 제스처로 뒤로가기 시도 시
-        CommonDialogs.showBackConfirmation(
-          context: context,
-          onConfirm: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-              (route) => false,
-            );
-          },
-        );
+        _handleBackNavigation();
         return false; // 기본 뒤로가기 동작 방지
       },
       child: Scaffold(
@@ -298,52 +308,7 @@ class _ChatScreenState extends State<ChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 상단 헤더 (뒤로가기, 타이틀)
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.black.withOpacity(0.1),
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: SizedBox(
-                  height: 44, // 상단 요소들의 공통 기준 높이
-                  child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                      onPressed: () {
-                        CommonDialogs.showBackConfirmation(
-                          context: context,
-                          onConfirm: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(builder: (context) => const HomeScreen()),
-                              (route) => false,
-                            );
-                          },
-                        );
-                      },
-                        padding: EdgeInsets.zero, // 내부 여백 제거
-                        constraints: const BoxConstraints.tightFor(width: 40, height: 40), // 동일 높이
-                        iconSize: 24,
-                      ),
-                    ),
-                    const Center(
-                      child: Text('하루와 할 일 찾기',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                    ),
-                  ],
-                  ),
-                ),
-              ),
-            ),
+            _ChatHeader(onBackPressed: _handleBackNavigation),
 
             // 메시지 리스트
             Expanded(
@@ -354,40 +319,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemBuilder: (context, index) {
                   // 로딩 인디케이터 표시
                   if (index == _messages.length && _isLoading) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: const [
-                              BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A21)),
-                                ),
-                              ),
-                              SizedBox(width: 10),
-                              Text(
-                                '생각 중...',
-                                style: TextStyle(color: Color(0xFFFF7A21), fontWeight: FontWeight.w700),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
+                    return const _LoadingIndicator();
                   }
                   
                   final message = _messages[index];
@@ -442,53 +374,12 @@ class _ChatScreenState extends State<ChatScreen> {
               )
             else
               // 일반 채팅 입력창
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: const [
-                            BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
-                          ],
-                        ),
-                        child: TextField(
-                          controller: _messageController,
-                          focusNode: _messageFocusNode,
-                          enabled: !_isLoading && _currentStage != "completed", // 로딩 중이거나 완료 단계에는 입력 불가
-                          decoration: const InputDecoration(
-                            hintText: '메시지를 입력하세요...',
-                            hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          onSubmitted: (_) => _sendMessage(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: (_isLoading || _currentStage == "completed") ? null : _sendMessage, // 로딩 중이거나 완료 단계에는 버튼 비활성화
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: (_isLoading || _currentStage == "completed") ? Colors.grey : const Color(0xFFFF7A21),
-                          shape: BoxShape.circle,
-                          boxShadow: const [
-                            BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 4)),
-                          ],
-                        ),
-                        child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
+              _ChatInputField(
+                controller: _messageController,
+                focusNode: _messageFocusNode,
+                isLoading: _isLoading,
+                isCompleted: _currentStage == "completed",
+                onSend: _sendMessage,
               )
           ],
         ),
@@ -499,21 +390,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// 카테고리 칩 위젯 생성
   Widget _buildCategoryChip(String category) {
-    IconData icon;
-    switch (category) {
-      case '음식점':
-        icon = Icons.restaurant;
-        break;
-      case '카페':
-        icon = Icons.local_cafe;
-        break;
-      case '콘텐츠':
-        icon = Icons.movie_filter;
-        break;
-      default:
-        icon = Icons.check_circle_outline;
-    }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -527,7 +403,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: const Color(0xFFFF7A21), size: 18),
+          Icon(_getCategoryIcon(category), color: const Color(0xFFFF7A21), size: 18),
           const SizedBox(width: 6),
           Text(
             category,
@@ -718,7 +594,6 @@ class _ChatScreenState extends State<ChatScreen> {
         final recommendations = aiResponse['recommendations'] as Map<String, dynamic>?;
         final showYesNoButtons = aiResponse['showYesNoButtons'] as bool? ?? false;
         final yesNoQuestion = aiResponse['yesNoQuestion'] as String?;
-        final currentCategory = aiResponse['currentCategory'] as String?;
         final availableCategories = aiResponse['availableCategories'] as List<dynamic>?;
         
         // 현재 stage 업데이트
@@ -773,7 +648,6 @@ class _ChatScreenState extends State<ChatScreen> {
               timestamp: DateTime.now(),
               showYesNoButtons: showYesNoButtons,
               yesNoQuestion: yesNoQuestion,
-              currentCategory: currentCategory,
               availableCategories: availableCategories?.cast<String>(),
             ));
             _isLoading = false;
@@ -783,17 +657,8 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _messages.add(ChatMessage(
-            text: '죄송합니다. 응답을 가져오는 중 오류가 발생했습니다.\n오류: $e',
-            isUser: false,
-            timestamp: DateTime.now(),
-          ));
-          _isLoading = false;
-        });
-        _scrollToBottom();
-      }
+      _addErrorMessage('죄송합니다. 응답을 가져오는 중 오류가 발생했습니다.\n오류: $e');
+      _maintainFocus();
     }
   }
 
@@ -826,18 +691,169 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _messages.add(ChatMessage(
-            text: '추천 결과 생성 중 오류가 발생했습니다.\n오류: $e',
-            isUser: false,
-            timestamp: DateTime.now(),
-          ));
-          _isLoading = false;
-        });
-        _scrollToBottom();
-      }
+      _addErrorMessage('추천 결과 생성 중 오류가 발생했습니다.\n오류: $e');
     }
+  }
+}
+
+/// 채팅 헤더 위젯
+class _ChatHeader extends StatelessWidget {
+  final VoidCallback onBackPressed;
+
+  const _ChatHeader({required this.onBackPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.black.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: SizedBox(
+          height: 44,
+          child: Stack(
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                  onPressed: onBackPressed,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                  iconSize: 24,
+                ),
+              ),
+              const Center(
+                child: Text(
+                  '하루와 할 일 찾기',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 로딩 인디케이터 위젯
+class _LoadingIndicator extends StatelessWidget {
+  const _LoadingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: const [
+              BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A21)),
+                ),
+              ),
+              SizedBox(width: 10),
+              Text(
+                '생각 중...',
+                style: TextStyle(color: Color(0xFFFF7A21), fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 채팅 입력창 위젯
+class _ChatInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool isLoading;
+  final bool isCompleted;
+  final VoidCallback onSend;
+
+  const _ChatInputField({
+    required this.controller,
+    required this.focusNode,
+    required this.isLoading,
+    required this.isCompleted,
+    required this.onSend,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDisabled = isLoading || isCompleted;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
+                ],
+              ),
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                enabled: !isDisabled,
+                decoration: const InputDecoration(
+                  hintText: '메시지를 입력하세요...',
+                  hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                ),
+                onSubmitted: (_) => onSend(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: isDisabled ? null : onSend,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isDisabled ? Colors.grey : const Color(0xFFFF7A21),
+                shape: BoxShape.circle,
+                boxShadow: const [
+                  BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 4)),
+                ],
+              ),
+              child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1020,7 +1036,7 @@ class _ChipTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_iconFor(label), color: accent, size: 18),
+          Icon(_getCategoryIcon(label), color: accent, size: 18),
           const SizedBox(width: 6),
           Text(
             label, 
@@ -1035,17 +1051,4 @@ class _ChipTag extends StatelessWidget {
     );
   }
 
-  // 라벨에 맞는 기본 아이콘 연결 (간단 매핑)
-  static IconData _iconFor(String name) {
-    switch (name) {
-      case '음식점':
-        return Icons.restaurant;
-      case '카페':
-        return Icons.local_cafe;
-      case '콘텐츠':
-        return Icons.movie_filter;
-      default:
-        return Icons.check_circle_outline;
-    }
-  }
 }
