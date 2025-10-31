@@ -540,7 +540,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                 child: ElevatedButton(
                   onPressed: () {
                     if (!mounted) return;
-                    final Map<String, List<String>> selectedByCategory = {};
+                    final Map<String, List<dynamic>> selectedByCategory = {};
                     for (final category in widget.selectedCategories) {
                       final places =
                           (widget.recommendations[category]
@@ -548,7 +548,9 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                           [];
                       final selectedIndex = _selectedStates[category];
                       if (selectedIndex != null && selectedIndex < places.length) {
-                        selectedByCategory[category] = [places[selectedIndex].toString()];
+                        // 🔥 실제 Map 객체를 전달 (recommendation_screen.dart처럼)
+                        final place = places[selectedIndex] as Map<String, dynamic>;
+                        selectedByCategory[category] = [place];
                       }
                     }
 
@@ -596,6 +598,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                           [];
                       final selectedIndex = _selectedStates[category];
                       if (selectedIndex != null && selectedIndex < places.length) {
+                        // SelectedPlacesScreen은 여전히 List<String>을 기대하므로 toString() 유지
                         selectedByCategory[category] = [places[selectedIndex].toString()];
                       }
                     }
