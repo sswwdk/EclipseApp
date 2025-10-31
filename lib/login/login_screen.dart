@@ -38,8 +38,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // 입력한 아이디를 저장
+      final inputUserId = _idController.text.trim();
+      
       final response = await UserService.login(
-        _idController.text.trim(),
+        inputUserId,
         _passwordController.text.trim(),
       );
 
@@ -57,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (response['info'] != null) {
           final info = response['info'] as Map<String, dynamic>;
           nickname = info['nickname'] as String?;
-          userId = info['username'] as String?; // username을 userId로 사용
+          userId = info['userID'] as String? ?? inputUserId; 
           email = info['email'] as String?;
           
           // 디버깅을 위한 로그
