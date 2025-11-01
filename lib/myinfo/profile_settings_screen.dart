@@ -92,26 +92,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            // 프로필 사진
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Text(
-                  '프사',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            
             // 닉네임과 이메일
             Expanded(
               child: Column(
