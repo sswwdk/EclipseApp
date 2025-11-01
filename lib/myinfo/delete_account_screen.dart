@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../login/login_screen.dart';
 import '../login/find_account_screen.dart';
 import '../widgets/common_dialogs.dart';
+import '../services/user_service.dart';
+import '../services/token_manager.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({Key? key}) : super(key: key);
@@ -14,6 +16,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   int _selectedReason = 0; // 선택된 탈퇴 사유
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isDeleting = false;
 
   final List<String> _withdrawalReasons = [
     '기록 삭제 목적',
@@ -49,15 +52,52 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     );
   }
 
-  void _processAccountDeletion() {
-    // 실제 계정 삭제 로직
-    _showSnackBar('회원이 탈퇴되었습니다.');
-    
-    // 로그인 화면으로 이동
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
-    );
+  Future<void> _processAccountDeletion() async {
+    setState(() {
+      _isDeleting = true;
+    });
+
+    try {
+      final userId = TokenManager.userId ?? '';
+      if (userId.isEmpty) {
+        _showSnackBar('로그인이 필요합니다.');
+        setState(() {
+          _isDeleting = false;
+        });
+        return;
+      }
+
+      await UserService.deleteUser(userId, _passwordController.text);
+      
+      if (!mounted) return;
+      
+      // 토큰 초기화
+      TokenManager.clearTokens();
+      
+      _showSnackBar('회원이 탈퇴되었습니다.');
+      
+      if (!mounted) return;
+      
+      // 로그인 화면으로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isDeleting = false;
+      });
+      
+      String errorMessage = '회원 탈퇴 중 오류가 발생했습니다.';
+      if (e.toString().contains('비밀번호')) {
+        errorMessage = '비밀번호가 일치하지 않습니다.';
+      } else if (e.toString().contains('404')) {
+        errorMessage = '사용자를 찾을 수 없습니다.';
+      }
+      
+      _showSnackBar(errorMessage);
+    }
   }
 
   void _showSnackBar(String message) {
@@ -297,7 +337,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _deleteAccount,
+                  onPressed: _isDeleting ? null : _deleteAccount,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF8126),
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -306,14 +346,23 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    '탈퇴하기',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isDeleting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          '탈퇴하기',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
               
