@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../services/history_service.dart';
-import '../services/token_manager.dart';
 
 class ScheduleHistoryScreen extends StatefulWidget {
   const ScheduleHistoryScreen({Key? key}) : super(key: key);
@@ -27,29 +25,20 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
       _errorMessage = null;
     });
 
-    try {
-      final userId = TokenManager.userId ?? '';
-      if (userId.isEmpty) {
-        setState(() {
-          _errorMessage = '로그인이 필요합니다.';
-          _loading = false;
-        });
-        return;
-      }
-
-      final data = await HistoryService.getMyHistory(userId);
-      if (!mounted) return;
-      setState(() {
-        _items = _ScheduleHistoryItem.parseList(data);
-        _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString();
-        _loading = false;
-      });
-    }
+    // 하드코딩된 샘플 데이터
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (!mounted) return;
+    setState(() {
+      _items = [
+        _ScheduleHistoryItem(
+          id: '1',
+          dateText: '2024.01.15',
+          scheduleTitle: '메가커피 노량진점 → 카츠진 → 영등포 CGV',
+        ),
+      ];
+      _loading = false;
+    });
   }
 
   @override
@@ -173,41 +162,42 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            AspectRatio(
-              aspectRatio: 4 / 3,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: _buildImage(item.imageUrl),
+            // 일정표 정보
+            if (item.scheduleTitle != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColorWithOpacity10,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppTheme.primaryColorWithOpacity20,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      color: AppTheme.primaryColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        item.scheduleTitle!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                        softWrap: true,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildImage(String? url) {
-    if (url != null && url.isNotEmpty) {
-      return Image.network(
-        url,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _imagePlaceholder(),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return _imagePlaceholder(loading: true);
-        },
-      );
-    }
-    return _imagePlaceholder();
-  }
-
-  Widget _imagePlaceholder({bool loading = false}) {
-    return Container(
-      color: Colors.grey[200],
-      child: Center(
-        child: loading
-            ? const CircularProgressIndicator(color: AppTheme.primaryColor)
-            : Icon(Icons.image, color: Colors.grey[400], size: 48),
       ),
     );
   }
@@ -216,37 +206,13 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
 class _ScheduleHistoryItem {
   final String id;
   final String dateText;
-  final String? imageUrl;
+  final String? scheduleTitle;
 
-  const _ScheduleHistoryItem({required this.id, required this.dateText, this.imageUrl});
-
-  static List<_ScheduleHistoryItem> parseList(dynamic response) {
-    List<dynamic> items;
-    if (response is List) {
-      items = response;
-    } else if (response is Map<String, dynamic>) {
-      // 가능한 키들에 유연하게 대응
-      final dynamic data = response['data'] ?? response['histories'] ?? response['items'] ?? response['body'];
-      if (data is List) {
-        items = data;
-      } else {
-        items = [];
-      }
-    } else {
-      items = [];
-    }
-
-    return items.whereType<Map<String, dynamic>>().map((m) {
-      final String id = (m['id'] ?? m['history_id'] ?? '').toString();
-      final String date = (m['created_at'] ?? m['createdAt'] ?? m['date'] ?? '').toString();
-      final String? img = (m['image_url'] ?? m['image'] ?? m['thumbnail'] ?? m['photo'])?.toString();
-      return _ScheduleHistoryItem(
-        id: id.isEmpty ? DateTime.now().microsecondsSinceEpoch.toString() : id,
-        dateText: date.isEmpty ? '날짜 정보 없음' : date,
-        imageUrl: (img != null && img.isNotEmpty) ? img : null,
-      );
-    }).toList();
-  }
+  const _ScheduleHistoryItem({
+    required this.id,
+    required this.dateText,
+    this.scheduleTitle,
+  });
 }
 
 
