@@ -299,68 +299,26 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   width: 1,
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.schedule,
-                        color: AppTheme.primaryColor,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          schedule['title'],
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
-                          ),
-                          softWrap: true,
-                          overflow: TextOverflow.visible,
-                        ),
-                      ),
-                    ],
+                  Icon(
+                    Icons.schedule,
+                    color: AppTheme.primaryColor,
+                    size: 16,
                   ),
-                  const SizedBox(height: 8),
-                  
-                  // 일정 정보
-                  if (schedule['items'] != null) ...[
-                    ...(schedule['items'] as List<Map<String, dynamic>>).map((scheduleItem) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 3,
-                              height: 3,
-                              margin: const EdgeInsets.only(top: 6),
-                              decoration: const BoxDecoration(
-                                color: AppTheme.primaryColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                '${scheduleItem['time']} ${scheduleItem['place']}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.textSecondaryColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                softWrap: true,
-                                overflow: TextOverflow.visible,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ],
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      schedule['title'],
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
+                    ),
+                  ),
                 ],
               ),
             ),

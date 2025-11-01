@@ -193,68 +193,26 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   width: 1,
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.schedule,
-                        color: const Color(0xFFFF8126),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          widget.post['schedule']['title'],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFF8126),
-                          ),
-                          softWrap: true,
-                          overflow: TextOverflow.visible,
-                        ),
-                      ),
-                    ],
+                  Icon(
+                    Icons.schedule,
+                    color: const Color(0xFFFF8126),
+                    size: 20,
                   ),
-                  const SizedBox(height: 12),
-                  
-                  // 일정 정보
-                  if (widget.post['schedule']['items'] != null) ...[
-                    ...(widget.post['schedule']['items'] as List<Map<String, dynamic>>).map((scheduleItem) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 4,
-                              height: 4,
-                              margin: const EdgeInsets.only(top: 8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFFF8126),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${scheduleItem['time']} ${scheduleItem['place']}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                softWrap: true,
-                                overflow: TextOverflow.visible,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '일정표가 뜰 예정입니다',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFF8126),
+                      ),
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
+                    ),
+                  ),
                 ],
               ),
             ),
