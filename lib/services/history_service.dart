@@ -8,12 +8,13 @@ class HistoryService {
   // 내 히스토리 보기
   static Future<Map<String, dynamic>> getMyHistory(String userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/history/me/$userId'),
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/service/my-history'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
+        body: json.encode({'user_id': userId}),
       );
 
       if (response.statusCode == 200) {
@@ -31,7 +32,7 @@ class HistoryService {
   static Future<Map<String, dynamic>> deleteHistory(String userId, String historyId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/history/me/$userId'),
+        Uri.parse('$baseUrl/api/service/my-history'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
