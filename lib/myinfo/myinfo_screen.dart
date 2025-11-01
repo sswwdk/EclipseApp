@@ -4,6 +4,7 @@ import 'terms_of_service_screen.dart';
 import 'favorite_list_screen.dart';
 import 'schedule_history_screen.dart';
 import 'my_review_screen.dart';
+import 'my_posts_screen.dart';
 import '../home/home.dart';
 import '../login/login_screen.dart';
 import '../theme/app_theme.dart';
@@ -210,7 +211,13 @@ class MyInfoScreen extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.article_outlined,
             title: '내가 쓴 게시글',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const MyPostsScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
