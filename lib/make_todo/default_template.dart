@@ -24,6 +24,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   late List<_ScheduleItem> _items;
   String? _originAddress; // 출발지 주소
   String? _originDetailAddress; // 출발지 상세 주소
+  bool _isFullscreen = false; // 전체화면 모드 상태
 
   @override
   void initState() {
@@ -42,6 +43,84 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   Widget build(BuildContext context) {
     final List<_ScheduleItem> items = _items;
 
+    // 전체화면 모드일 때 별도 화면 표시
+    if (_isFullscreen) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF2F2F2),
+        body: Stack(
+          children: [
+            // 메인화면 컨텐츠 (전체화면)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return _TimelineRow(
+                      item: item,
+                      index: index,
+                      isLast: index == items.length - 1,
+                      showDuration: true,
+                      onDragHandle: null,
+                      onTap: null,
+                    );
+                  },
+                ),
+              ),
+            ),
+            // 우측 상단 X 버튼
+            Positioned(
+              top: 16,
+              right: 16,
+              child: SafeArea(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isFullscreen = false;
+                    });
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.black87,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 일반 모드
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       appBar: AppBar(
@@ -62,86 +141,124 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         centerTitle: true,
         actions: const [SizedBox(width: 48)],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-            ],
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return _TimelineRow(
+                    item: item,
+                    index: index,
+                    isLast: index == items.length - 1,
+                    showDuration: true,
+                    onDragHandle: null, // 최종 화면에서는 드래그 비활성화
+                    onTap: null, // 최종 화면에서는 수정 불가
+                  );
+                },
+              ),
+            ),
           ),
-          child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return _TimelineRow(
-                      item: item,
-                      index: index,
-                      isLast: index == items.length - 1,
-                      showDuration: true,
-                      onDragHandle: null, // 최종 화면에서는 드래그 비활성화
-                      onTap: null, // 최종 화면에서는 수정 불가
-                    );
-                  },
+          // 왼쪽 상단 전체화면 버튼
+          Positioned(
+            top: 16,
+            left: 16,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isFullscreen = true;
+                  });
+                },
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.fullscreen,
+                    color: Color(0xFFFF8126),
+                    size: 24,
+                  ),
                 ),
-        ),
+              ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         color: Colors.white,
         child: SafeArea(
           child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('저장하기 기능은 준비 중입니다.')),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: Color(0xFFFF8126), width: 2),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          foregroundColor: const Color(0xFFFF8126),
-                          minimumSize: const Size(double.infinity, 52),
-                        ),
-                        child: const Text(
-                          '저장하기',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('공유하기 기능은 준비 중입니다.')),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF8126),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          minimumSize: const Size(double.infinity, 52),
-                        ),
-                        child: const Text(
-                          '공유하기',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                      ),
-                    ),
-                  ],
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('저장하기 기능은 준비 중입니다.')),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: Color(0xFFFF8126), width: 2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    foregroundColor: const Color(0xFFFF8126),
+                    minimumSize: const Size(double.infinity, 52),
+                  ),
+                  child: const Text(
+                    '저장하기',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                 ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('공유하기 기능은 준비 중입니다.')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF8126),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    minimumSize: const Size(double.infinity, 52),
+                  ),
+                  child: const Text(
+                    '공유하기',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
