@@ -3,6 +3,7 @@ import 'profile_settings_screen.dart';
 import 'terms_of_service_screen.dart';
 import 'favorite_list_screen.dart';
 import 'schedule_history_screen.dart';
+import 'my_review_screen.dart';
 import '../home/home.dart';
 import '../login/login_screen.dart';
 import '../theme/app_theme.dart';
@@ -197,7 +198,13 @@ class MyInfoScreen extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.rate_review_outlined,
             title: '내가 쓴 리뷰',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const MyReviewScreen(),
+                ),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
