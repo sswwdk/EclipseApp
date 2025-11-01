@@ -178,25 +178,6 @@ class UserService {
     }
   }
 
-  // 선호 취향 선택
-  static Future<Map<String, dynamic>> updatePreferences(String userId, Map<String, dynamic> preferences) async {
-    try {
-      final response = await HttpInterceptor.put(
-        '/api/users/$userId/preferences',
-        body: json.encode(preferences),
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(utf8.decode(response.bodyBytes));
-      } else {
-        throw Exception('선호도 업데이트 실패: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('선호도 업데이트 오류: $e');
-      throw Exception('네트워크 오류: $e');
-    }
-  }
-
   // 닉네임 변경
   static Future<Map<String, dynamic>> changeNickname(
     String newNickname,
