@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'recommendation_place_detail.dart';
 import '../home/restaurant_detail_screen.dart';
-import '../services/api_service.dart';
-import 'make_todo_main.dart';
 import '../home/home.dart';
-import 'default_template.dart';
 import 'route_confirm.dart';
 import '../services/like_service.dart';
 import '../services/token_manager.dart';
+import '../services/api_service.dart';
 import '../widgets/common_dialogs.dart';
 import 'result_choice_confirm.dart';
 
@@ -355,60 +352,6 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
     }
   }
 
-  /// 랜덤 별점 생성 (하드코딩)
-  String _getRandomRating() {
-    final ratings = ['4.0', '4.2', '4.3', '4.5', '4.6', '4.7', '4.8', '4.9'];
-    return ratings[DateTime.now().microsecond % ratings.length];
-  }
-
-  /// 랜덤 리뷰 수 생성 (하드코딩)
-  String _getRandomReviewCount() {
-    final counts = ['234', '567', '1,234', '2,456', '892', '1,567', '3,201'];
-    return counts[DateTime.now().microsecond % counts.length];
-  }
-
-  /// 카테고리별 태그 생성 (하드코딩)
-  List<String> _generateTags(String category) {
-    switch (category) {
-      case '음식점':
-        return ['#맛집', '#가격 좋은', '#분위기 좋은', '#데이트 추천'];
-      case '카페':
-        return ['#커피 맛집', '#인테리어 예쁜', '#조용한', '#작업하기 좋은', '#디저트 맛있는'];
-      case '콘텐츠':
-        return ['#재미있는', '#최신작', '#평점 높은', '#추천작'];
-      default:
-        return ['#추천', '#인기', '#좋은 위치'];
-    }
-  }
-
-  /// 간단한 서브카테고리 매핑 (데이터 없을 때 표시용)
-  String _subCategoryFor(String category) {
-    switch (category) {
-      case '음식점':
-        return '한식';
-      case '카페':
-        return '디저트';
-      case '콘텐츠':
-        return '영화';
-      default:
-        return category;
-    }
-  }
-
-  /// 더미 주소 생성 (하드코딩)
-  String _generateAddress() {
-    final addresses = [
-      '서울시 강남구 테헤란로 123',
-      '서울시 마포구 홍대입구역 45',
-      '서울시 용산구 이태원로 78',
-      '서울시 종로구 인사동길 12',
-      '서울시 송파구 올림픽로 234',
-      '서울시 서초구 강남대로 567',
-      '서울시 영등포구 여의도동 89',
-    ];
-    return addresses[DateTime.now().microsecond % addresses.length];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -428,7 +371,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
               onConfirm: () {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  MaterialPageRoute(builder: (context) => const MainScreen()),
                   (route) => false,
                 );
               },

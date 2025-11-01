@@ -24,7 +24,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   late List<_ScheduleItem> _items;
   String? _originAddress; // 출발지 주소
   String? _originDetailAddress; // 출발지 상세 주소
-  bool _isFullscreen = false; // 전체화면 모드 상태
+  Map<int, int> _transportTypes = {}; // 각 구간별 교통수단 (key: segmentIndex, value: transportType)
 
   @override
   void initState() {
@@ -37,90 +37,16 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       _originDetailAddress = widget.originDetailAddress;
     }
     _items = _buildScheduleItems(widget.selected);
+    // 각 구간별로 기본 교통수단 설정 (대중교통)
+    for (int i = 0; i < _items.length - 1; i++) {
+      _transportTypes[i] = 1;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final List<_ScheduleItem> items = _items;
 
-    // 전체화면 모드일 때 별도 화면 표시
-    if (_isFullscreen) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFF2F2F2),
-        body: Stack(
-          children: [
-            // 메인화면 컨텐츠 (전체화면)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return _TimelineRow(
-                      item: item,
-                      index: index,
-                      isLast: index == items.length - 1,
-                      showDuration: true,
-                      onDragHandle: null,
-                      onTap: null,
-                    );
-                  },
-                ),
-              ),
-            ),
-            // 우측 상단 X 버튼
-            Positioned(
-              top: 16,
-              right: 16,
-              child: SafeArea(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isFullscreen = false;
-                    });
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.black87,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // 일반 모드
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       appBar: AppBar(
@@ -131,7 +57,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          '일정표',
+          '일정표 만들기',
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -139,76 +65,48 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           ),
         ),
         centerTitle: true,
-        actions: const [SizedBox(width: 48)],
-      ),
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return _TimelineRow(
-                    item: item,
-                    index: index,
-                    isLast: index == items.length - 1,
-                    showDuration: true,
-                    onDragHandle: null, // 최종 화면에서는 드래그 비활성화
-                    onTap: null, // 최종 화면에서는 수정 불가
-                  );
-                },
-              ),
-            ),
-          ),
-          // 왼쪽 상단 전체화면 버튼
-          Positioned(
-            top: 16,
-            left: 16,
-            child: SafeArea(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isFullscreen = true;
-                  });
-                },
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.fullscreen,
-                    color: Color(0xFFFF8126),
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+            onPressed: () {
+              // 메뉴 옵션
+            },
           ),
         ],
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        itemCount: items.length * 2 - 1,
+        itemBuilder: (context, index) {
+          if (index % 2 == 0) {
+            // 실제 아이템 (index를 2로 나눈 값)
+            int itemIndex = index ~/ 2;
+            final item = items[itemIndex];
+            return _TimelineRow(
+              item: item,
+              index: itemIndex,
+              isLast: itemIndex == items.length - 1,
+              showDuration: true,
+              onDragHandle: null,
+              onTap: null,
+            );
+          } else {
+            // 아이템 사이의 교통수단 정보
+            int itemIndex = index ~/ 2;
+            if (itemIndex < items.length - 1) {
+              return _TransportationCard(
+                segmentIndex: itemIndex,
+                selectedTransportType: _transportTypes[itemIndex] ?? 1,
+                onTransportTypeChanged: (type) {
+                  setState(() {
+                    _transportTypes[itemIndex] = type;
+                  });
+                },
+              );
+            }
+            return const SizedBox.shrink();
+          }
+        },
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
@@ -268,8 +166,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
 
   List<_ScheduleItem> _buildScheduleItems(Map<String, List<String>> selected) {
     final List<_ScheduleItem> items = [];
+    
     // 출발지(집)
-    String originTitle = '현재 위치';
+    String originTitle = '집';
     String originSubtitle = '출발지';
     
     if (_originAddress != null && _originAddress!.isNotEmpty) {
@@ -287,6 +186,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       icon: Icons.home_outlined,
       color: Colors.grey[700]!,
       type: _ItemType.origin,
+      time: null,
     ));
 
     // 선택된 장소를 순서대로 나열 (카테고리 순서 유지)
@@ -301,6 +201,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           durationMinutes: items.length == 1
               ? (widget.firstDurationMinutes ?? 45)
               : (widget.otherDurationMinutes ?? 20),
+          time: null,
         ));
       }
     });
@@ -332,6 +233,7 @@ class _ScheduleItem {
   final Color color;
   final _ItemType type;
   final int? durationMinutes;
+  final String? time;
 
   _ScheduleItem({
     required this.title,
@@ -340,6 +242,7 @@ class _ScheduleItem {
     required this.color,
     required this.type,
     this.durationMinutes,
+    this.time,
   });
 }
 
@@ -355,26 +258,28 @@ class _TimelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double leftInfoWidth = showDuration ? 56 : 20; // 좌측 공간 더 축소(미리보기일 때)
-    final double gapBetween = showDuration ? 12 : 6; // 타임라인과 카드 간격 축소
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: leftInfoWidth,
+            width: 60,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  showDuration ? _formatDuration(item, index) : '',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  item.time ?? '',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
                 ),
               ],
             ),
           ),
-          SizedBox(width: gapBetween),
+          const SizedBox(width: 8),
           // 타임라인 바
           Column(
             children: [
@@ -390,7 +295,14 @@ class _TimelineRow extends StatelessWidget {
                 Container(
                   width: 2,
                   height: 60,
-                  color: Colors.grey[300],
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.grey[300]!.withOpacity(0.3),
+                        Colors.grey[300]!,
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -402,55 +314,56 @@ class _TimelineRow extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: item.type == _ItemType.origin 
+                      ? Colors.grey[100] 
+                      : Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
                 ),
                 child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFEFE3),
-                      borderRadius: BorderRadius.circular(10),
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: item.type == _ItemType.origin
+                            ? Colors.grey[200]
+                            : const Color(0xFFFFEFE3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        item.icon, 
+                        color: item.type == _ItemType.origin 
+                            ? Colors.grey[700] 
+                            : const Color(0xFFFF8126), 
+                        size: 20
+                      ),
                     ),
-                    child: Icon(item.icon, color: const Color(0xFFFF8126)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.subtitle,
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            item.subtitle,
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (item.type == _ItemType.place && onDragHandle != null)
-                    onDragHandle!(const Icon(Icons.drag_handle, color: Colors.grey, size: 18)),
-                  if (item.type == _ItemType.origin && onTap != null)
-                    const Icon(Icons.edit, color: Colors.grey, size: 18),
-                ],
-              ),
+                    if (onTap != null)
+                      const Icon(Icons.more_vert, color: Colors.grey, size: 18),
+                  ],
+                ),
               ),
             ),
           ),
@@ -458,11 +371,218 @@ class _TimelineRow extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _formatDuration(_ScheduleItem item, int index) {
-    if (index == 0) return '';
-    final minutes = item.durationMinutes ?? 20;
-    return '약 $minutes\n분';
+// 교통수단 선택 카드
+class _TransportationCard extends StatelessWidget {
+  final int segmentIndex;
+  final int selectedTransportType;
+  final Function(int) onTransportTypeChanged;
+
+  const _TransportationCard({
+    Key? key,
+    required this.segmentIndex,
+    required this.selectedTransportType,
+    required this.onTransportTypeChanged,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 교통수단 선택 버튼
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _TransportButton(
+                  icon: Icons.directions_walk,
+                  label: '도보',
+                  isSelected: selectedTransportType == 0,
+                  onTap: () => onTransportTypeChanged(0),
+                ),
+                _TransportButton(
+                  icon: Icons.train,
+                  label: '대중교통',
+                  isSelected: selectedTransportType == 1,
+                  onTap: () => onTransportTypeChanged(1),
+                ),
+                _TransportButton(
+                  icon: Icons.directions_car,
+                  label: '자동차',
+                  isSelected: selectedTransportType == 2,
+                  onTap: () => onTransportTypeChanged(2),
+                ),
+              ],
+            ),
+          ),
+          
+          // 선택된 교통수단의 상세 정보
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            ),
+            child: _buildTransportDetails(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransportDetails() {
+    switch (selectedTransportType) {
+      case 0: // 도보
+        return Row(
+          children: [
+            const Icon(Icons.directions_walk, color: Color(0xFFFF8126), size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '도보 약 45분',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      case 1: // 대중교통
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.train, color: Color(0xFFFF8126), size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '대중교통 약 45분',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(Icons.train, color: Colors.green, size: 16),
+                ),
+                const SizedBox(width: 8),
+                const Text('2호선', style: TextStyle(fontSize: 13)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '집 근처 역 > 홍대입구역',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[100],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(Icons.directions_walk, color: Colors.blue, size: 16),
+                ),
+                const SizedBox(width: 8),
+                const Text('도보 5분', style: TextStyle(fontSize: 13)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '홍대입구역 1번 출구 > 홍대 CGV',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      case 2: // 자동차
+        return Row(
+          children: [
+            const Icon(Icons.directions_car, color: Color(0xFFFF8126), size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '자동차 약 30분',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+}
+
+// 교통수단 버튼
+class _TransportButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TransportButton({
+    Key? key,
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFF8126) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.grey[600],
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[600],
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
