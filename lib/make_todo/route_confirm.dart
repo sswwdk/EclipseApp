@@ -101,22 +101,16 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                // ChooseTemplateScreen으로 전달할 때는 기존 형식(List<String>)으로 변환
+                // 현재 화면(_items)의 순서를 기반으로 다음 화면에 전달할 데이터 구성
                 final Map<String, List<String>> convertedSelected = {};
-                for (final entry in widget.selected.entries) {
-                  convertedSelected[entry.key] = entry.value.map((place) {
-                    if (place is Map<String, dynamic>) {
-                      // Map인 경우 title을 우선 사용, 없으면 name, 그 다음 id
-                      return place['title'] as String? ?? 
-                             place['name'] as String? ?? 
-                             place['id'] as String? ?? 
-                             place.toString();
-                    } else {
-                      return place.toString();
-                    }
-                  }).toList();
+                for (final item in _items) {
+                  if (item.type != _ItemType.place) continue; // 출발지 제외
+                  final String categoryName = item.subtitle;
+                  final String placeName = item.title;
+                  convertedSelected.putIfAbsent(categoryName, () => []);
+                  convertedSelected[categoryName]!.add(placeName);
                 }
-                
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(
