@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'dart:async';
 import 'choose_template.dart';
 
 class RouteConfirmScreen extends StatefulWidget {
@@ -420,12 +422,18 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
   final TextEditingController _detailAddressController = TextEditingController();
   final FocusNode _detailAddressFocusNode = FocusNode();
   bool _isLoading = false;
+  bool _isLoadingGPS = false;
 
   @override
   void initState() {
     super.initState();
     _addressController.text = widget.initialAddress ?? '';
     _detailAddressController.text = widget.initialDetailAddress ?? '';
+    
+    // 화면 진입 시 자동으로 현재 위치 가져오기
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _getCurrentLocation();
+    });
   }
 
   @override
@@ -474,6 +482,72 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     );
   }
 
+  /// GPS를 사용하여 현재 위치 가져오기 (위경도만 서버로 전송)
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isLoadingGPS = true;
+    });
+
+    try {
+      // 위치 서비스 활성화 확인
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (!mounted) return;
+        _showSnackBar('위치 서비스가 비활성화되어 있습니다. 설정에서 위치 서비스를 활성화해주세요.');
+        setState(() {
+          _isLoadingGPS = false;
+        });
+        return;
+      }
+
+      // 위치 권한 확인
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (!mounted) return;
+          _showSnackBar('위치 권한이 거부되었습니다.');
+          setState(() {
+            _isLoadingGPS = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
+        _showSnackBar('위치 권한이 영구적으로 거부되었습니다. 설정에서 권한을 허용해주세요.');
+        setState(() {
+          _isLoadingGPS = false;
+        });
+        return;
+      }
+
+      // 현재 위치 가져오기
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      if (!mounted) return;
+
+      // 위경도만 표시 (서버로 전송할 수 있도록)
+      setState(() {
+        _addressController.text = '위도: ${position.latitude.toStringAsFixed(6)}, 경도: ${position.longitude.toStringAsFixed(6)}';
+        _detailAddressController.text = '';
+      });
+      _showSnackBar('위치 정보를 가져왔습니다. 위경도가 서버로 전송됩니다.');
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar('위치 정보를 가져오는 중 오류가 발생했습니다: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingGPS = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -499,6 +573,33 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
+                  
+                  // GPS 버튼
+                  ElevatedButton.icon(
+                    onPressed: _isLoadingGPS ? null : _getCurrentLocation,
+                    icon: _isLoadingGPS
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.my_location, size: 20),
+                    label: Text(_isLoadingGPS ? '위치 가져오는 중...' : '현재 위치로 설정'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF8126),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
                   TextField(
                     controller: _addressController,
                     textInputAction: TextInputAction.next,

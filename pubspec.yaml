@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   http: ^1.1.0  # 추가: HTTP 요청용
+  geolocator: ^13.0.1  # GPS 위치 정보 가져오기
 
 dev_dependencies:
   flutter_test:
