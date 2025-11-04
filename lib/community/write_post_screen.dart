@@ -315,7 +315,7 @@ class _WritePostScreenState extends State<WritePostScreen> {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                '${scheduleItem['time']} ${scheduleItem['place']}',
+                                scheduleItem['place'],
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[600],
@@ -383,8 +383,6 @@ class _WritePostScreenState extends State<WritePostScreen> {
   }
 
   Widget _buildSelectedTodoInfo() {
-    final todo = widget.selectedTodo!;
-    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -418,112 +416,18 @@ class _WritePostScreenState extends State<WritePostScreen> {
           ),
           const SizedBox(height: 12),
           
-          // 일정표 제목
-          Text(
-            todo['title'],
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          
-          // 날짜, 시간, 인원 정보
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${todo['date']} ${todo['time']}',
+          // 일정표가 뜰 예정 안내
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                '일정표가 뜰 예정',
                 style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
+                  fontSize: 16,
+                  color: Color(0xFFFF8126),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(width: 16),
-              Icon(
-                Icons.people,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${todo['people']}명',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          
-          // 카테고리
-          Wrap(
-            spacing: 6,
-            children: (todo['categories'] as List<String>).map((category) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF8126).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  category,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFFF8126),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 8),
-          
-          // 일정 정보
-          if (todo['schedule'] != null) ...[
-            const SizedBox(height: 8),
-            ...(todo['schedule'] as List<Map<String, dynamic>>).map((scheduleItem) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFF8126),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${scheduleItem['time']} ${scheduleItem['place']}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-            const SizedBox(height: 8),
-          ],
-          
-          // 설명
-          Text(
-            todo['description'],
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
             ),
           ),
         ],

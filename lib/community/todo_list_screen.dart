@@ -20,9 +20,9 @@ class _TodoListScreenState extends State<TodoListScreen> {
       'categories': ['카페', '음식점', '콘텐츠'],
       'description': '노량진 메가커피에서 시작해서 카츠진에서 저녁 먹고 영등포 CGV에서 영화 보기',
       'schedule': [
-        {'time': '19:00', 'place': '메가커피 노량진점', 'activity': '커피 마시며 대화'},
-        {'time': '20:30', 'place': '카츠진', 'activity': '일식 저녁 식사'},
-        {'time': '22:00', 'place': '영등포 CGV', 'activity': '영화 관람'},
+        {'place': '메가커피 노량진점', 'activity': '커피 마시며 대화'},
+        {'place': '카츠진', 'activity': '일식 저녁 식사'},
+        {'place': '영등포 CGV', 'activity': '영화 관람'},
       ],
     },
     {
@@ -34,9 +34,9 @@ class _TodoListScreenState extends State<TodoListScreen> {
       'categories': ['카페', '음식점', '콘텐츠'],
       'description': '홍대 스타벅스에서 만나서 망원시장에서 간식 먹고 홍대 클럽에서 놀기',
       'schedule': [
-        {'time': '18:30', 'place': '홍대 스타벅스', 'activity': '커피와 간단한 대화'},
-        {'time': '20:00', 'place': '망원시장', 'activity': '길거리 음식과 쇼핑'},
-        {'time': '22:00', 'place': '홍대 클럽', 'activity': '클럽에서 춤과 음악'},
+        {'place': '홍대 스타벅스', 'activity': '커피와 간단한 대화'},
+        {'place': '망원시장', 'activity': '길거리 음식과 쇼핑'},
+        {'place': '홍대 클럽', 'activity': '클럽에서 춤과 음악'},
       ],
     },
     {
@@ -45,12 +45,12 @@ class _TodoListScreenState extends State<TodoListScreen> {
       'date': '2024-01-17',
       'time': '14:00',
       'people': 1,
-      'categories': ['쇼핑', '콘텐츠', '문화'],
+      'categories': ['콘텐츠'],
       'description': '강남 이마트에서 쇼핑하고 코엑스 아쿠아리움 구경한 후 봉은사에서 산책',
       'schedule': [
-        {'time': '14:00', 'place': '강남 이마트', 'activity': '생활용품 쇼핑'},
-        {'time': '16:00', 'place': '코엑스 아쿠아리움', 'activity': '수족관 관람'},
-        {'time': '18:00', 'place': '봉은사', 'activity': '절에서 산책과 명상'},
+        {'place': '강남 이마트', 'activity': '생활용품 쇼핑'},
+        {'place': '코엑스 아쿠아리움', 'activity': '수족관 관람'},
+        {'place': '봉은사', 'activity': '절에서 산책과 명상'},
       ],
     },
     {
@@ -59,12 +59,12 @@ class _TodoListScreenState extends State<TodoListScreen> {
       'date': '2024-01-20',
       'time': '09:00',
       'people': 4,
-      'categories': ['콘텐츠', '쇼핑', '관광'],
+      'categories': ['콘텐츠'],
       'description': '잠실 롯데월드에서 놀이기구 타고 잠실 래미안에서 쇼핑 후 송파구청에서 공원 산책',
       'schedule': [
-        {'time': '09:00', 'place': '잠실 롯데월드', 'activity': '놀이기구와 어트랙션'},
-        {'time': '14:00', 'place': '잠실 래미안', 'activity': '쇼핑몰에서 쇼핑'},
-        {'time': '17:00', 'place': '송파구청', 'activity': '공원에서 산책과 휴식'},
+        {'place': '잠실 롯데월드', 'activity': '놀이기구와 어트랙션'},
+        {'place': '잠실 래미안', 'activity': '쇼핑몰에서 쇼핑'},
+        {'place': '송파구청', 'activity': '공원에서 산책과 휴식'},
       ],
     },
   ];
@@ -204,7 +204,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${todo['date']} ${todo['time']}',
+                      todo['date'],
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -228,10 +228,12 @@ class _TodoListScreenState extends State<TodoListScreen> {
                 ),
                 const SizedBox(height: 8),
                 
-                // 카테고리
+                // 카테고리 (카페, 음식점, 콘텐츠만 표시)
                 Wrap(
                   spacing: 6,
-                  children: (todo['categories'] as List<String>).map((category) {
+                  children: (todo['categories'] as List<String>)
+                      .where((category) => ['카페', '음식점', '콘텐츠'].contains(category))
+                      .map((category) {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
@@ -272,7 +274,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              '${scheduleItem['time']} ${scheduleItem['place']}',
+                              scheduleItem['place'],
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey[600],
