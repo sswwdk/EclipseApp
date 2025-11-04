@@ -8,15 +8,24 @@ class ScheduleHistoryScreen extends StatefulWidget {
   State<ScheduleHistoryScreen> createState() => _ScheduleHistoryScreenState();
 }
 
-class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
+class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   bool _loading = true;
   String? _errorMessage;
-  List<_ScheduleHistoryItem> _items = const [];
+  List<_ScheduleHistoryItem> _scheduleItems = const [];
+  List<_ScheduleHistoryItem> _otherItems = const [];
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadHistory();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadHistory() async {
@@ -30,13 +39,16 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
     
     if (!mounted) return;
     setState(() {
-      _items = [
+      // 일정표 탭 데이터
+      _scheduleItems = [
         _ScheduleHistoryItem(
           id: '1',
           dateText: '2024.01.15',
           scheduleTitle: '메가커피 노량진점 → 카츠진 → 영등포 CGV',
         ),
       ];
+      // 그냥 탭 데이터 (현재는 빈 리스트)
+      _otherItems = [];
       _loading = false;
     });
   }
@@ -62,22 +74,45 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: AppTheme.primaryColor,
+          preferredSize: const Size.fromHeight(49),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TabBar(
+                controller: _tabController,
+                labelColor: AppTheme.primaryColor,
+                unselectedLabelColor: AppTheme.textSecondaryColor,
+                indicatorColor: AppTheme.primaryColor,
+                indicatorWeight: 2,
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(text: '일정표'),
+                  Tab(text: '그냥'),
+                ],
+              ),
+              Container(
+                height: 1,
+                color: AppTheme.primaryColor,
+              ),
+            ],
           ),
         ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadHistory,
         color: AppTheme.primaryColor,
-        child: _buildBody(),
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildScheduleTab(),
+            _buildOtherTab(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildScheduleTab() {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(color: AppTheme.primaryColor),
@@ -111,7 +146,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
       );
     }
 
-    if (_items.isEmpty) {
+    if (_scheduleItems.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
@@ -126,7 +161,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       itemBuilder: (context, index) {
-        final item = _items[index];
+        final item = _scheduleItems[index];
         return _buildScheduleCard(item);
       },
       separatorBuilder: (_, __) => Padding(
@@ -136,7 +171,70 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
           thickness: 1,
         ),
       ),
-      itemCount: _items.length,
+      itemCount: _scheduleItems.length,
+    );
+  }
+
+  Widget _buildOtherTab() {
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppTheme.primaryColor),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadHistory,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('다시 시도'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_otherItems.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            '저장된 내용이 없습니다.',
+            style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      itemBuilder: (context, index) {
+        final item = _otherItems[index];
+        return _buildScheduleCard(item);
+      },
+      separatorBuilder: (_, __) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Divider(
+          color: AppTheme.dividerColor,
+          thickness: 1,
+        ),
+      ),
+      itemCount: _otherItems.length,
     );
   }
 
