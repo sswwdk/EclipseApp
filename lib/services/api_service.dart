@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'http_interceptor.dart';
 import 'token_manager.dart';
+import '../config/server_config.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
   
   // 메인 화면 데이터 조회 (새로운 DTO 형식)
   static Future<List<Restaurant>> getRestaurants() async {
@@ -24,7 +25,7 @@ class ApiService {
     );
       
       final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-      final List<dynamic> categories = (data?['categories'] as List<dynamic>?) ?? const [];
+      final List<dynamic> categories = (data['categories'] as List<dynamic>?) ?? const [];
       return categories
           .whereType<Map<String, dynamic>>()
           .map((json) => Restaurant.fromMainScreenJson(json))

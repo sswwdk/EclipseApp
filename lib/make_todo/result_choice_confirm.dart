@@ -3,7 +3,7 @@ import '../home/home.dart';
 
 /// 선택된 장소만 모아 보여주는 화면
 class SelectedPlacesScreen extends StatelessWidget {
-  final Map<String, List<String>> selected;
+  final Map<String, List<Map<String, dynamic>>> selected;
 
   const SelectedPlacesScreen({Key? key, required this.selected}) : super(key: key);
 
@@ -54,7 +54,18 @@ class SelectedPlacesScreen extends StatelessWidget {
             final items = selected[category]!;
             if (i < running + items.length) {
               final place = items[i - running];
-              return _SummaryCard(title: place, category: category);
+              // 서버 응답 형식에 따라 여러 필드명 시도
+              final placeName = place['title'] as String? ?? 
+                               place['name'] as String? ?? 
+                               '알 수 없음';
+              final placeAddress = place['address'] as String? ??
+                                 place['detail_address'] as String? ??
+                                 '주소 정보 없음';
+              return _SummaryCard(
+                title: placeName,
+                address: placeAddress,
+                category: category,
+              );
             }
             running += items.length;
           }
@@ -129,9 +140,14 @@ class SelectedPlacesScreen extends StatelessWidget {
 /// 요약 카드 (홈 카드 스타일, 버튼 없음)
 class _SummaryCard extends StatelessWidget {
   final String title;
+  final String address;
   final String category;
 
-  const _SummaryCard({required this.title, required this.category});
+  const _SummaryCard({
+    required this.title,
+    required this.address,
+    required this.category,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +180,7 @@ class _SummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              _address(),
+              address,
               style: TextStyle(color: Colors.grey[700], fontSize: 13),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -173,19 +189,6 @@ class _SummaryCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _address() {
-    final addresses = [
-      '서울시 강남구 테헤란로 123',
-      '서울시 마포구 홍대입구역 45',
-      '서울시 용산구 이태원로 78',
-      '서울시 종로구 인사동길 12',
-      '서울시 송파구 올림픽로 234',
-      '서울시 서초구 강남대로 567',
-      '서울시 영등포구 여의도동 89',
-    ];
-    return addresses[DateTime.now().microsecond % addresses.length];
   }
 }
 

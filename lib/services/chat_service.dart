@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'http_interceptor.dart';
-import 'token_manager.dart';
+import '../config/server_config.dart';
 
 class ChatService {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
 
   // 채팅 보기
   static Future<Map<String, dynamic>> getChat(String userId, String otherId) async {

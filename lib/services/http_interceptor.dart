@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'token_manager.dart';
+import '../config/server_config.dart';
 
 /// HTTP 요청을 가로채서 401 에러 시 자동으로 토큰 갱신 후 재시도하는 인터셉터
 class HttpInterceptor {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
 
   /// GET 요청을 보내고 401 에러 시 토큰 갱신 후 재시도
   static Future<http.Response> get(

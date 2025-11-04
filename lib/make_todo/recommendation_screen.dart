@@ -113,7 +113,20 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
       itemBuilder: (context, index) {
         // 🔥 Map으로 캐스팅하고 필드 추출
         final place = places[index] as Map<String, dynamic>;
-        final placeName = place['name'] as String? ?? '알 수 없음';
+        
+        // 디버깅: 서버 응답 데이터 확인 (첫 번째 항목만 출력)
+        if (index == 0) {
+          print('🔍 추천 데이터 구조 확인:');
+          print('   전체 필드: ${place.keys.toList()}');
+          print('   title: ${place['title']}');
+          print('   name: ${place['name']}');
+          print('   전체 데이터: $place');
+        }
+        
+        // 서버 응답 형식에 따라 여러 필드명 시도 (title, name 순서로)
+        final placeName = place['title'] as String? ?? 
+                         place['name'] as String? ?? 
+                         '알 수 없음';
         final placeAddress =
             place['address'] as String? ??
             place['detail_address'] as String? ??
@@ -122,7 +135,10 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
             place['category'] as String? ??
             place['sub_category'] as String? ??
             category;
-        final placeImage = place['image'] as String? ?? '';
+        // 이미지 필드도 여러 가능성 시도
+        final placeImage = place['image_url'] as String? ?? 
+                          place['image'] as String? ?? 
+                          '';
         final placeId = place['id'] as String? ?? '';
 
         final isFavorite = _favoriteStates[category]?[index] ?? false;
@@ -533,7 +549,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   onPressed: () {
                     // 선택된 항목만 모아 요약 화면으로 이동
                     if (!mounted) return;
-                    final Map<String, List<String>> selectedByCategory = {};
+                    final Map<String, List<Map<String, dynamic>>> selectedByCategory = {};
                     for (final category in widget.selectedCategories) {
                       final places =
                           (widget.recommendations[category]
@@ -541,8 +557,12 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                           [];
                       final selectedIndex = _selectedStates[category];
                       if (selectedIndex != null && selectedIndex < places.length) {
-                        // SelectedPlacesScreen은 여전히 List<String>을 기대하므로 toString() 유지
-                        selectedByCategory[category] = [places[selectedIndex].toString()];
+                        // Map 객체를 그대로 전달
+                        final place = places[selectedIndex] as Map<String, dynamic>;
+                        if (!selectedByCategory.containsKey(category)) {
+                          selectedByCategory[category] = [];
+                        }
+                        selectedByCategory[category]!.add(place);
                       }
                     }
 

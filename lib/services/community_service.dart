@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'token_manager.dart';
+import '../config/server_config.dart';
 
 class CommunityService {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
 
   // 모든 글 조회 (커뮤니티 메인 접속)
   static Future<Map<String, dynamic>> getAllPosts() async {

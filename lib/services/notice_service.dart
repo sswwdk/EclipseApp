@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'token_manager.dart';
+import '../config/server_config.dart';
 
 class NoticeService {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
 
   // 공지사항 목록
   static Future<Map<String, dynamic>> getAllNotices() async {

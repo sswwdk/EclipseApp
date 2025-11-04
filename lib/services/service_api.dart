@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'http_interceptor.dart';
 import 'token_manager.dart';
+import '../config/server_config.dart';
 
 class ServiceApi {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
 
   // 메인 로직 시작 (하루랑 채팅 시작 시) - OpenAIService로 위임
   static Future<Map<String, dynamic>> startMainLogic(int numPeople, String category) async {
@@ -154,7 +155,7 @@ class ServiceApi {
 
 /// 채팅 세션을 관리하는 서비스 (기존 OpenAIService 통합)
 class OpenAIService {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
   String? _sessionId;
   String? get sessionId => _sessionId;
 

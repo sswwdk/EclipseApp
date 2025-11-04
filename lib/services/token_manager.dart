@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/server_config.dart';
 
 class TokenManager {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
   static String? _accessToken;
   static String? _refreshToken;
   static String? _userName;

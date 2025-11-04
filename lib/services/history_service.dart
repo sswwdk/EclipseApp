@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'token_manager.dart';
+import '../config/server_config.dart';
 
 class HistoryService {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
 
   // 내 히스토리 보기
   static Future<Map<String, dynamic>> getMyHistory(String userId) async {

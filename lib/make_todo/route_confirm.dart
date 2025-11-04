@@ -194,7 +194,10 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
         
         if (place is Map<String, dynamic>) {
           // Map 형태인 경우 실제 데이터 추출
-          placeName = place['name'] as String? ?? '알 수 없음';
+          // 서버 응답 형식에 따라 여러 필드명 시도 (title, name 순서로)
+          placeName = place['title'] as String? ?? 
+                     place['name'] as String? ?? 
+                     '알 수 없음';
           subCategory = place['sub_category'] as String? ?? 
                        place['category'] as String? ?? 
                        category;
@@ -540,5 +543,3 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     );
   }
 }
-
-

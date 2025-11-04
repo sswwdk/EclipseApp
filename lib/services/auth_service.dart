@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'token_manager.dart';
+import '../config/server_config.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://192.168.14.51:8080';
+  static String get baseUrl => ServerConfig.baseUrl;
 
   // JWT 토큰 발급
   static Future<Map<String, dynamic>> issueToken(String username, String password) async {

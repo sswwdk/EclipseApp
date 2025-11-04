@@ -666,32 +666,6 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     );
   }
 
-  Future<void> _getCurrentLocation() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // TODO: 실제 위치 서비스 연동 (geolocator 패키지 등)
-      // 현재는 시뮬레이션
-      await Future.delayed(const Duration(seconds: 1));
-      
-      if (!mounted) return;
-      
-      // 임시로 현재 위치를 주소로 설정
-      _addressController.text = '서울시 강남구 테헤란로 123';
-      _showSnackBar('현재 위치를 가져왔습니다.');
-    } catch (e) {
-      if (!mounted) return;
-      _showSnackBar('위를 가져오는 중 오류가 발생했습니다: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -726,28 +700,6 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
-                  
-                  // 현재 위치 가져오기 버튼
-                  OutlinedButton.icon(
-                    onPressed: _getCurrentLocation,
-                    icon: const Icon(Icons.my_location, color: Color(0xFFFF8126)),
-                    label: const Text(
-                      '현재 위치 사용',
-                      style: TextStyle(
-                        color: Color(0xFFFF8126),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: Color(0xFFFF8126), width: 2),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 32),
                   
                   // 구분선
                   Row(
