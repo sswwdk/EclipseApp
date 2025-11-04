@@ -509,6 +509,13 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                       if (selectedIndex != null && selectedIndex < places.length) {
                         // 🔥 실제 Map 객체를 전달 (recommendation_screen.dart처럼)
                         final place = places[selectedIndex] as Map<String, dynamic>;
+                        
+                        // 디버깅: category_id 확인
+                        print('🔍 [$category] 선택된 장소 데이터:');
+                        print('   전체 필드: ${place.keys.toList()}');
+                        print('   category_id: ${place['category_id']}');
+                        print('   id: ${place['id']}');
+                        
                         selectedByCategory[category] = [place];
                       }
                     }
@@ -519,6 +526,9 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                       );
                       return;
                     }
+                    
+                    print('🔍 RouteConfirmScreen으로 전달할 데이터:');
+                    print('   카테고리 목록: ${selectedByCategory.keys.toList()}');
 
                     Navigator.push(
                       context,

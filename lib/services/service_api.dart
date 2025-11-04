@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'http_interceptor.dart';
@@ -151,6 +152,7 @@ class ServiceApi {
       throw Exception('네트워크 오류: $e');
     }
   }
+
 }
 
 /// 채팅 세션을 관리하는 서비스 (기존 OpenAIService 통합)

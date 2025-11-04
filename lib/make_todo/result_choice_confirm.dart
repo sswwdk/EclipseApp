@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import '../home/home.dart';
+import '../services/history_service.dart';
+import 'dart:async';
 
 /// 선택된 장소만 모아 보여주는 화면
-class SelectedPlacesScreen extends StatelessWidget {
+class SelectedPlacesScreen extends StatefulWidget {
   final Map<String, List<Map<String, dynamic>>> selected;
 
   const SelectedPlacesScreen({Key? key, required this.selected}) : super(key: key);
 
   @override
+  State<SelectedPlacesScreen> createState() => _SelectedPlacesScreenState();
+}
+
+class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
+  bool _isSaving = false;
+
+  @override
   Widget build(BuildContext context) {
-    final categories = selected.keys.toList();
+    final categories = widget.selected.keys.toList();
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
@@ -26,7 +35,7 @@ class SelectedPlacesScreen extends StatelessWidget {
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: categories.fold<int>(0, (sum, c) => sum + selected[c]!.length + 1),
+            itemCount: categories.fold<int>(0, (sum, c) => sum + widget.selected[c]!.length + 1),
         itemBuilder: (context, i) {
           // 섹션 헤더 및 카드 렌더링
           int running = 0;
@@ -51,7 +60,7 @@ class SelectedPlacesScreen extends StatelessWidget {
               );
             }
             running += 1; // 헤더 하나 반영
-            final items = selected[category]!;
+            final items = widget.selected[category]!;
             if (i < running + items.length) {
               final place = items[i - running];
               // 서버 응답 형식에 따라 여러 필드명 시도
@@ -88,18 +97,7 @@ class SelectedPlacesScreen extends StatelessWidget {
           child: SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('일정표 히스토리에서 확인하실 수 있습니다.'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const MainScreen()),
-                  (route) => false,
-                );
-              },
+              onPressed: _isSaving ? null : _handleConfirm,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF7A21),
                 foregroundColor: Colors.white,
@@ -109,18 +107,70 @@ class SelectedPlacesScreen extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                '확인하기',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      '확인하기',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// 확인하기 버튼 클릭 시 서버에 저장
+  Future<void> _handleConfirm() async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // 서버에 "그냥" 탭에 저장
+      await HistoryService.saveOtherHistory(widget.selected);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('일정표 히스토리 "그냥" 탭에 저장되었습니다.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      print('❌ 히스토리 저장 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('저장 중 오류가 발생했습니다: ${e.toString()}'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   IconData _iconForCategory(String category) {

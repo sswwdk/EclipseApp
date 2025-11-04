@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../services/history_service.dart';
+import '../services/token_manager.dart';
 
 class ScheduleHistoryScreen extends StatefulWidget {
   const ScheduleHistoryScreen({Key? key}) : super(key: key);
@@ -34,23 +36,113 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
       _errorMessage = null;
     });
 
-    // 하드코딩된 샘플 데이터
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    if (!mounted) return;
-    setState(() {
-      // 일정표 탭 데이터
-      _scheduleItems = [
-        _ScheduleHistoryItem(
-          id: '1',
-          dateText: '2024.01.15',
-          scheduleTitle: '메가커피 노량진점 → 카츠진 → 영등포 CGV',
-        ),
-      ];
-      // 그냥 탭 데이터 (현재는 빈 리스트)
-      _otherItems = [];
-      _loading = false;
-    });
+    try {
+      final userId = TokenManager.userId;
+      if (userId == null) {
+        if (!mounted) return;
+        setState(() {
+          _errorMessage = '로그인이 필요합니다.';
+          _loading = false;
+        });
+        return;
+      }
+
+      // 서버에서 히스토리 데이터 가져오기
+      final response = await HistoryService.getMyHistory(userId);
+
+      if (!mounted) return;
+
+      // 서버 응답 파싱
+      final List<_ScheduleHistoryItem> scheduleItems = [];
+      final List<_ScheduleHistoryItem> otherItems = [];
+
+      // 서버 응답 형식에 따라 파싱
+      // 예상 응답 형식:
+      // {
+      //   "schedules": [...],  // 일정표 탭 데이터
+      //   "others": [...]      // 그냥 탭 데이터
+      // }
+      // 또는
+      // {
+      //   "data": [
+      //     {"type": "schedule", ...},
+      //     {"type": "other", ...}
+      //   ]
+      // }
+
+      final schedules = response['schedules'] as List<dynamic>? ?? [];
+      final others = response['others'] as List<dynamic>? ?? [];
+      
+      // schedules가 없으면 data에서 type별로 분류
+      if (schedules.isEmpty && others.isEmpty) {
+        final data = response['data'] as List<dynamic>? ?? [];
+        for (final item in data) {
+          final itemMap = item as Map<String, dynamic>;
+          final type = itemMap['type'] as String? ?? 'schedule';
+          final id = itemMap['id']?.toString() ?? itemMap['history_id']?.toString() ?? '';
+          final date = itemMap['date'] as String? ?? '';
+          final scheduleTitle = itemMap['schedule_title'] as String? ?? itemMap['title'] as String? ?? '';
+          
+          final historyItem = _ScheduleHistoryItem(
+            id: id,
+            dateText: _formatDate(date),
+            scheduleTitle: scheduleTitle,
+          );
+
+          if (type == 'other' || type == '그냥') {
+            otherItems.add(historyItem);
+          } else {
+            scheduleItems.add(historyItem);
+          }
+        }
+      } else {
+        // schedules와 others로 명시적으로 분리된 경우
+        for (final item in schedules) {
+          final itemMap = item as Map<String, dynamic>;
+          scheduleItems.add(_ScheduleHistoryItem(
+            id: itemMap['id']?.toString() ?? itemMap['history_id']?.toString() ?? '',
+            dateText: _formatDate(itemMap['date'] as String? ?? ''),
+            scheduleTitle: itemMap['schedule_title'] as String? ?? itemMap['title'] as String? ?? '',
+          ));
+        }
+
+        for (final item in others) {
+          final itemMap = item as Map<String, dynamic>;
+          otherItems.add(_ScheduleHistoryItem(
+            id: itemMap['id']?.toString() ?? itemMap['history_id']?.toString() ?? '',
+            dateText: _formatDate(itemMap['date'] as String? ?? ''),
+            scheduleTitle: itemMap['schedule_title'] as String? ?? itemMap['title'] as String? ?? '',
+          ));
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _scheduleItems = scheduleItems;
+        _otherItems = otherItems;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      
+      print('❌ 히스토리 로드 실패: $e');
+      setState(() {
+        _errorMessage = '일정표 히스토리를 불러오는 중 오류가 발생했습니다.';
+        _loading = false;
+      });
+    }
+  }
+
+  /// 날짜 형식 변환 (YYYY-MM-DD -> YYYY.MM.DD)
+  String _formatDate(String dateStr) {
+    if (dateStr.isEmpty) return '';
+    try {
+      // YYYY-MM-DD 형식을 YYYY.MM.DD로 변환
+      return dateStr.replaceAll('-', '.');
+    } catch (e) {
+      return dateStr;
+    }
   }
 
   @override

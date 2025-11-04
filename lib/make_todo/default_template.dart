@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import '../services/history_service.dart';
+import '../services/service_api.dart';
+import '../services/token_manager.dart';
+import '../home/home.dart';
+import 'dart:async';
 
 class ScheduleBuilderScreen extends StatefulWidget {
   final Map<String, List<String>> selected; // 카테고리별 선택 목록
+  final Map<String, List<Map<String, dynamic>>>? selectedPlacesWithData; // 전체 매장 데이터
+  final Map<String, String>? categoryIdByName; // 카테고리명 -> 카테고리ID 매핑
   final String? originAddress; // 출발지 주소
   final String? originDetailAddress; // 출발지 상세 주소
   final int? firstDurationMinutes; // 템플릿: 첫 이동 또는 첫 체류 시간
@@ -10,6 +17,8 @@ class ScheduleBuilderScreen extends StatefulWidget {
   const ScheduleBuilderScreen({
     Key? key,
     required this.selected,
+    this.selectedPlacesWithData,
+    this.categoryIdByName,
     this.originAddress,
     this.originDetailAddress,
     this.firstDurationMinutes,
@@ -25,6 +34,8 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   String? _originAddress; // 출발지 주소
   String? _originDetailAddress; // 출발지 상세 주소
   Map<int, int> _transportTypes = {}; // 각 구간별 교통수단 (key: segmentIndex, value: transportType)
+  bool _isSaving = false;
+  bool _isSharing = false;
 
   @override
   void initState() {
@@ -116,11 +127,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('저장하기 기능은 준비 중입니다.')),
-                    );
-                  },
+                  onPressed: _isSaving ? null : _handleSave,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     side: const BorderSide(color: Color(0xFFFF8126), width: 2),
@@ -128,20 +135,25 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                     foregroundColor: const Color(0xFFFF8126),
                     minimumSize: const Size(double.infinity, 52),
                   ),
-                  child: const Text(
-                    '저장하기',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+                          ),
+                        )
+                      : const Text(
+                          '저장하기',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('공유하기 기능은 준비 중입니다.')),
-                    );
-                  },
+                  onPressed: _isSharing ? null : _handleShare,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF8126),
                     foregroundColor: Colors.white,
@@ -149,10 +161,19 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     minimumSize: const Size(double.infinity, 52),
                   ),
-                  child: const Text(
-                    '공유하기',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
+                  child: _isSharing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          '공유하기',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
                 ),
               ),
             ],
@@ -160,6 +181,140 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         ),
       ),
     );
+  }
+
+  /// 저장하기 버튼 클릭 시 서버에 일정표 저장
+  Future<void> _handleSave() async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await HistoryService.saveSchedule(
+        selectedPlaces: widget.selected,
+        selectedPlacesWithData: widget.selectedPlacesWithData,
+        categoryIdByName: widget.categoryIdByName,
+        originAddress: _originAddress,
+        originDetailAddress: _originDetailAddress,
+        transportTypes: _transportTypes,
+        firstDurationMinutes: widget.firstDurationMinutes,
+        otherDurationMinutes: widget.otherDurationMinutes,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('일정표 히스토리에 저장되었습니다.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // 홈 화면으로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      print('❌ 일정표 저장 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('저장 중 오류가 발생했습니다: ${e.toString()}'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  /// 공유하기 버튼 클릭 시 서버에 일정표 공유
+  Future<void> _handleShare() async {
+    setState(() {
+      _isSharing = true;
+    });
+
+    try {
+      final userId = TokenManager.userId;
+      if (userId == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('로그인이 필요합니다.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
+      // 일정표 정보를 문자열로 변환
+      final scheduleText = _buildScheduleText();
+
+      // 커뮤니티에 공유
+      await ServiceApi.shareToCommunity(scheduleText, userId);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('커뮤니티에 공유되었습니다.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      print('❌ 일정표 공유 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('공유 중 오류가 발생했습니다: ${e.toString()}'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSharing = false;
+        });
+      }
+    }
+  }
+
+  /// 일정표 정보를 텍스트로 변환
+  String _buildScheduleText() {
+    final buffer = StringBuffer();
+    
+    // 출발지
+    if (_originAddress != null && _originAddress!.isNotEmpty) {
+      buffer.writeln('출발지: $_originAddress');
+      if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty) {
+        buffer.writeln('상세 주소: $_originDetailAddress');
+      }
+    } else {
+      buffer.writeln('출발지: 집');
+    }
+    
+    buffer.writeln('');
+    buffer.writeln('일정:');
+    
+    // 장소 목록
+    int order = 1;
+    widget.selected.forEach((category, places) {
+      for (final place in places) {
+        buffer.writeln('$order. $place ($category)');
+        order++;
+      }
+    });
+    
+    return buffer.toString();
   }
 
   // 최종 화면에서는 출발지 수정 기능이 없습니다.
@@ -828,5 +983,3 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     );
   }
 }
-
-

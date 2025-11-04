@@ -20,6 +20,23 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // 디버깅: widget.selected의 실제 데이터 구조 확인
+    print('🔍 RouteConfirmScreen.initState - widget.selected 데이터:');
+    widget.selected.forEach((category, places) {
+      print('  [$category] 개수: ${places.length}');
+      if (places.isNotEmpty) {
+        final firstPlace = places[0];
+        print('    첫 번째 항목 타입: ${firstPlace.runtimeType}');
+        if (firstPlace is Map) {
+          print('    필드 목록: ${(firstPlace as Map).keys.toList()}');
+          print('    전체 데이터: $firstPlace');
+        } else {
+          print('    데이터: $firstPlace');
+        }
+      }
+    });
+    
     _items = _buildScheduleItems(widget.selected);
   }
 
@@ -101,24 +118,102 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
+                print('🔍 경로 확정하기 버튼 클릭');
+                print('🔍 widget.selected 데이터:');
+                widget.selected.forEach((category, places) {
+                  print('  [$category]:');
+                  for (var place in places) {
+                    if (place is Map) {
+                      print('    - 필드: ${(place as Map).keys.toList()}');
+                      print('    - category_id: ${place['category_id']}');
+                    }
+                  }
+                });
+                
+                // 원본 선택 데이터에서 placeName -> categoryName 매핑을 구축
+                final Map<String, String> placeToCategory = {};
+                widget.selected.forEach((category, places) {
+                  for (final place in places) {
+                    String placeName;
+                    if (place is Map<String, dynamic>) {
+                      placeName = place['title'] as String? ??
+                                  place['name'] as String? ??
+                                  place['id'] as String? ??
+                                  place.toString();
+                    } else {
+                      placeName = place.toString();
+                    }
+                    placeToCategory[placeName] = category;
+                  }
+                });
+
                 // 현재 화면(_items)의 순서를 기반으로 다음 화면에 전달할 데이터 구성
                 final Map<String, List<String>> convertedSelected = {};
+                final Map<String, List<Map<String, dynamic>>> selectedPlacesWithData = {};
+                
                 for (final item in _items) {
                   if (item.type != _ItemType.place) continue; // 출발지 제외
-                  final String categoryName = item.subtitle;
                   final String placeName = item.title;
+                  final String categoryName = placeToCategory[placeName] ?? item.categoryName ?? item.subtitle;
                   convertedSelected.putIfAbsent(categoryName, () => []);
                   convertedSelected[categoryName]!.add(placeName);
+                  
+                  // 전체 데이터도 함께 저장
+                  selectedPlacesWithData.putIfAbsent(categoryName, () => []);
+                  // widget.selected에서 원본 Map 데이터 찾기
+                  final originalPlaces = widget.selected[categoryName];
+                  if (originalPlaces != null) {
+                    for (final place in originalPlaces) {
+                      if (place is Map<String, dynamic>) {
+                        final name = place['title'] as String? ?? place['name'] as String? ?? '';
+                        if (name == placeName) {
+                          selectedPlacesWithData[categoryName]!.add(place);
+                          break;
+                        }
+                      }
+                    }
+                  }
                 }
+                
+                print('🔍 selectedPlacesWithData: $selectedPlacesWithData');
 
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ChooseTemplateScreen(
-                      selected: convertedSelected,
-                      originAddress: _originAddress,
-                      originDetailAddress: _originDetailAddress,
-                    ),
+                    builder: (_) {
+                      // 카테고리명 -> 카테고리ID 매핑 구성 (원본 데이터에서 추출)
+                      final Map<String, String> categoryIdByName = {};
+                      widget.selected.forEach((categoryName, places) {
+                        // 이미 해당 카테고리의 ID를 찾았다면 스킵
+                        if (categoryIdByName.containsKey(categoryName)) {
+                          return;
+                        }
+                        
+                        for (final place in places) {
+                          if (place is Map<String, dynamic>) {
+                            final String? catId =
+                                place['category_id'] as String? ??
+                                place['categoryId'] as String? ??
+                                place['categoryID'] as String?;
+                            if (catId != null && catId.isNotEmpty) {
+                              categoryIdByName[categoryName] = catId;
+                              break; // 현재 카테고리의 ID를 찾았으므로 내부 루프만 중단
+                            }
+                          }
+                        }
+                      });
+
+                      print('🔍 구축된 categoryIdByName: $categoryIdByName');
+                      print('🔍 isEmpty: ${categoryIdByName.isEmpty}');
+
+                      return ChooseTemplateScreen(
+                        selected: convertedSelected,
+                        selectedPlacesWithData: selectedPlacesWithData,
+                        categoryIdByName: categoryIdByName.isEmpty ? null : categoryIdByName,
+                        originAddress: _originAddress,
+                        originDetailAddress: _originDetailAddress,
+                      );
+                    },
                   ),
                 );
               },
@@ -212,6 +307,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
           color: const Color(0xFFFF8126),
           type: _ItemType.place,
           durationMinutes: items.length == 1 ? 45 : 20,
+          categoryName: category,
         ));
       }
     });
@@ -243,6 +339,7 @@ class _ScheduleItem {
   final Color color;
   final _ItemType type;
   final int? durationMinutes;
+  final String? categoryName; // 원래 카테고리명(그룹핑에 사용)
 
   _ScheduleItem({
     required this.title,
@@ -251,6 +348,7 @@ class _ScheduleItem {
     required this.color,
     required this.type,
     this.durationMinutes,
+    this.categoryName,
   });
 }
 

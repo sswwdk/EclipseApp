@@ -4,12 +4,16 @@ import '../theme/app_theme.dart';
 
 class ChooseTemplateScreen extends StatefulWidget {
   final Map<String, List<String>> selected;
+  final Map<String, List<Map<String, dynamic>>>? selectedPlacesWithData; // 전체 매장 데이터
+  final Map<String, String>? categoryIdByName; // 카테고리명 -> 카테고리ID 매핑(옵션)
   final String? originAddress;
   final String? originDetailAddress;
 
   const ChooseTemplateScreen({
     Key? key,
     required this.selected,
+    this.selectedPlacesWithData,
+    this.categoryIdByName,
     this.originAddress,
     this.originDetailAddress,
   }) : super(key: key);
@@ -112,6 +116,8 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
           selected: {
             for (final entry in widget.selected.entries) entry.key: List<String>.from(entry.value)
           },
+          selectedPlacesWithData: widget.selectedPlacesWithData,
+          categoryIdByName: widget.categoryIdByName,
           originAddress: widget.originAddress,
           originDetailAddress: widget.originDetailAddress,
           firstDurationMinutes: first,
@@ -202,5 +208,3 @@ class _TemplateTile extends StatelessWidget {
     );
   }
 }
-
-
