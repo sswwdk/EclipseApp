@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'default_template.dart';
 import 'choose_template.dart';
 
 class RouteConfirmScreen extends StatefulWidget {
@@ -105,8 +104,11 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                 for (final entry in widget.selected.entries) {
                   convertedSelected[entry.key] = entry.value.map((place) {
                     if (place is Map<String, dynamic>) {
-                      // Map인 경우 name 또는 id를 문자열로 변환
-                      return place['name'] as String? ?? place['id'] as String? ?? place.toString();
+                      // Map인 경우 title을 우선 사용, 없으면 name, 그 다음 id
+                      return place['title'] as String? ?? 
+                             place['name'] as String? ?? 
+                             place['id'] as String? ?? 
+                             place.toString();
                     } else {
                       return place.toString();
                     }
