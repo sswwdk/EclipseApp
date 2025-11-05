@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../home/home.dart';
+import '../home/restaurant_detail_screen.dart';
 import '../services/history_service.dart';
+import '../services/api_service.dart';
 import 'dart:async';
 
 /// 선택된 장소만 모아 보여주는 화면
@@ -74,6 +76,7 @@ class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
                 title: placeName,
                 address: placeAddress,
                 category: category,
+                place: place,  // 전체 place 데이터 전달
               );
             }
             running += items.length;
@@ -117,7 +120,7 @@ class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
                       ),
                     )
                   : const Text(
-                      '확인하기',
+                      '저장하기',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -192,50 +195,80 @@ class _SummaryCard extends StatelessWidget {
   final String title;
   final String address;
   final String category;
+  final Map<String, dynamic> place;
 
   const _SummaryCard({
     required this.title,
     required this.address,
     required this.category,
+    required this.place,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        // recommendation_screen.dart와 동일한 패턴으로 Restaurant 객체 생성
+        final placeId = place['id'] as String? ?? '';
+        final placeCategory = place['category'] as String? ?? 
+                             place['sub_category'] as String? ?? 
+                             category;
+        final placeImage = place['image_url'] as String? ?? 
+                          place['image'] as String? ?? 
+                          '';
+        
+        final restaurant = Restaurant(
+          id: placeId,
+          name: title,
+          detailAddress: address,
+          subCategory: placeCategory,
+          image: placeImage.isNotEmpty ? placeImage : null,
+          rating: null,
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              address,
-              style: TextStyle(color: Colors.grey[700], fontSize: 13),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                address,
+                style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
