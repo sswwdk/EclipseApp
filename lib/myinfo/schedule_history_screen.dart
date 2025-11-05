@@ -147,18 +147,21 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
             scheduleTitle: categoriesName.isNotEmpty ? categoriesName : null,
           );
           
-          // template_type에 따라 분류 (기본값은 일정표)
-          // template_type이 bool이거나 'default' 문자열일 수 있음
-          bool isScheduleType = true; // 기본값은 일정표
-          final templateTypeValue = itemMap['template_type'];
+          // 1) 휴리스틱: 'schedule_title' 등이 있으면 기본값을 '그냥'으로 간주
+          bool isScheduleType = !(itemMap.containsKey('schedule_title') || itemMap.containsKey('places'));
+          
+          // 2) template_type 값이 있으면 그것으로 명시적으로 덮어씀
+          final templateTypeValue = itemMap['template_type'] ?? itemMap['templateType'] ?? itemMap['type'];
           if (templateTypeValue != null) {
-            if (templateTypeValue is bool) {
-              isScheduleType = templateTypeValue;
-            } else if (templateTypeValue is String) {
-              // 'default' 또는 다른 값에 따라 분류
-              isScheduleType = templateTypeValue == 'default' || templateTypeValue == 'travel_planning';
+            final String t = templateTypeValue.toString().trim().toLowerCase();
+            if (t == '0' || t == 'default' || t == 'travel_planning') {
+              isScheduleType = true;
+            } else if (t == '1' || t == 'just' || t == 'other') {
+              isScheduleType = false;
             }
           }
+          
+          print('🔎 분류: template_type=${templateTypeValue}, isScheduleType=$isScheduleType, has_schedule_title=${itemMap.containsKey('schedule_title')}');
           
           if (isScheduleType) {
             scheduleItems.add(historyItem);

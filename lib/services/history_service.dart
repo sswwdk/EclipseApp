@@ -190,7 +190,7 @@ class HistoryService {
           ...TokenManager.jwtHeader,
         },
         body: json.encode({
-          'template_type': 'default',
+          'template_type': '0', // 0: 일정표
           'category': categories,
         }),
       ).timeout(
@@ -256,16 +256,19 @@ class HistoryService {
                              '';
           
           places.add({
-            'category': category,
-            'name': placeName,
-            'address': placeAddress,
-            'place_id': place['id'] as String? ?? '',
+            'category_name': placeName,
+            'duration': 60,
+            'transportation': '1',
+            'category_id': place['id'] as String? ?? '',
           });
         }
       }
 
       // 장소 이름들을 "→"로 연결하여 일정표 제목 생성
-      final scheduleTitle = places.map((p) => p['name'] as String).join(' → ');
+      final scheduleTitle = places
+          .map((p) => (p['category_name'] ?? p['name'] ?? '') as String)
+          .where((s) => s.isNotEmpty)
+          .join(' → ');
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/service/histories'),
@@ -275,9 +278,10 @@ class HistoryService {
         },
         body: json.encode({
           'user_id': userId,
+          'template_type': '1', // 1: 그냥
           'date': DateTime.now().toIso8601String().split('T')[0], // YYYY-MM-DD 형식
           'schedule_title': scheduleTitle,
-          'places': places,
+          'category': places,
         }),
       ).timeout(
         const Duration(seconds: 30),
