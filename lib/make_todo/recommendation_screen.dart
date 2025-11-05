@@ -31,8 +31,8 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
   // 카테고리별 찜 상태 (카테고리 -> 장소 인덱스 -> 찜 여부)
   Map<String, Map<int, bool>> _favoriteStates = {};
 
-  // 카테고리별 선택 상태 (카테고리 -> 선택된 장소 인덱스, null이면 미선택)
-  Map<String, int?> _selectedStates = {};
+  // 카테고리별 선택 상태 (카테고리 -> 선택된 장소 인덱스 Set, 최대 2개)
+  Map<String, Set<int>> _selectedStates = {};
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
     // 초기 상태 설정
     for (var category in widget.selectedCategories) {
       _favoriteStates[category] = {};
-      _selectedStates[category] = null;
+      _selectedStates[category] = {};
     }
   }
 
@@ -81,15 +81,26 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
     }
   }
 
-  /// 선택 버튼 토글 (카테고리별 단일 선택)
+  /// 선택 버튼 토글 (카테고리별 최대 2개 선택)
   void _toggleSelection(String category, int index) {
     setState(() {
-      if (_selectedStates[category] == index) {
-        // 같은 항목을 다시 클릭하면 해제
-        _selectedStates[category] = null;
+      final selectedSet = _selectedStates[category]!;
+      if (selectedSet.contains(index)) {
+        // 이미 선택된 항목을 다시 클릭하면 해제
+        selectedSet.remove(index);
       } else {
-        // 다른 항목 선택
-        _selectedStates[category] = index;
+        // 새로운 항목 선택
+        if (selectedSet.length >= 2) {
+          // 최대 2개까지만 선택 가능
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$category는 최대 2개까지 선택할 수 있습니다.'),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+          return;
+        }
+        selectedSet.add(index);
       }
     });
   }
@@ -142,7 +153,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         final placeId = place['id'] as String? ?? '';
 
         final isFavorite = _favoriteStates[category]?[index] ?? false;
-        final isSelected = _selectedStates[category] == index;
+        final isSelected = _selectedStates[category]?.contains(index) ?? false;
 
         return InkWell(
           onTap: () {
@@ -505,18 +516,23 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                           (widget.recommendations[category]
                               as List<dynamic>?) ??
                           [];
-                      final selectedIndex = _selectedStates[category];
-                      if (selectedIndex != null && selectedIndex < places.length) {
-                        // 🔥 실제 Map 객체를 전달 (recommendation_screen.dart처럼)
-                        final place = places[selectedIndex] as Map<String, dynamic>;
-                        
-                        // 디버깅: category_id 확인
-                        print('🔍 [$category] 선택된 장소 데이터:');
-                        print('   전체 필드: ${place.keys.toList()}');
-                        print('   category_id: ${place['category_id']}');
-                        print('   id: ${place['id']}');
-                        
-                        selectedByCategory[category] = [place];
+                      final selectedIndices = _selectedStates[category];
+                      if (selectedIndices != null && selectedIndices.isNotEmpty) {
+                        selectedByCategory[category] = [];
+                        for (final index in selectedIndices) {
+                          if (index < places.length) {
+                            // 🔥 실제 Map 객체를 전달
+                            final place = places[index] as Map<String, dynamic>;
+                            
+                            // 디버깅: category_id 확인
+                            print('🔍 [$category] 선택된 장소 데이터:');
+                            print('   전체 필드: ${place.keys.toList()}');
+                            print('   category_id: ${place['category_id']}');
+                            print('   id: ${place['id']}');
+                            
+                            selectedByCategory[category]!.add(place);
+                          }
+                        }
                       }
                     }
 
@@ -565,14 +581,16 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                           (widget.recommendations[category]
                               as List<dynamic>?) ??
                           [];
-                      final selectedIndex = _selectedStates[category];
-                      if (selectedIndex != null && selectedIndex < places.length) {
-                        // Map 객체를 그대로 전달
-                        final place = places[selectedIndex] as Map<String, dynamic>;
-                        if (!selectedByCategory.containsKey(category)) {
-                          selectedByCategory[category] = [];
+                      final selectedIndices = _selectedStates[category];
+                      if (selectedIndices != null && selectedIndices.isNotEmpty) {
+                        selectedByCategory[category] = [];
+                        for (final index in selectedIndices) {
+                          if (index < places.length) {
+                            // Map 객체를 그대로 전달
+                            final place = places[index] as Map<String, dynamic>;
+                            selectedByCategory[category]!.add(place);
+                          }
                         }
-                        selectedByCategory[category]!.add(place);
                       }
                     }
 
