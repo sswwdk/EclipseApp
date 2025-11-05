@@ -72,6 +72,8 @@ class HistoryService {
       print('📍 [CALL-$callId] selectedPlacesWithData: $selectedPlacesWithData');
       
       final List<Map<String, dynamic>> categories = [];
+      // 현재까지 추가된 카테고리 수 (첫 구간은 이동수단이 없으므로 이후 구간부터 매핑)
+      int addedCategoryCount = 0;
       
       // selectedPlaces의 각 카테고리별로 처리
       for (final entry in selectedPlaces.entries) {
@@ -110,19 +112,28 @@ class HistoryService {
                                       placeName;
               
               if (categoryId != null && categoryId.isNotEmpty) {
-                // transportation 코드는 0(도보),1(대중교통),2(자동차). 전달받은 구간 정보가 없으면 1로 기본값 처리
-                final String transportationCode = (transportTypes != null && transportTypes.isNotEmpty)
-                    ? (transportTypes.values.first.toString())
-                    : '1';
-                
+                // transportation 코드는 0(도보),1(대중교통),2(자동차)
+                // 첫 번째 카테고리는 이전 구간이 없으므로 기본값(1: 대중교통)
+                final String transportationCode = addedCategoryCount == 0
+                    ? '1'
+                    : ((transportTypes != null && transportTypes.containsKey(addedCategoryCount - 1))
+                        ? (transportTypes[addedCategoryCount - 1]!.toString())
+                        : '1');
+
+                // 첫 카테고리는 firstDurationMinutes, 그 외는 otherDurationMinutes 사용
+                final int durationMinutes = addedCategoryCount == 0
+                    ? (firstDurationMinutes ?? otherDurationMinutes ?? 60)
+                    : (otherDurationMinutes ?? 60);
+
                 categories.add({
                   'category_id': categoryId,
                   'category_name': matchedPlaceName,
-                  'duration': otherDurationMinutes ?? 60,
+                  'duration': durationMinutes,
                   'transportation': transportationCode,
                 });
                 
                 print('✅ 카테고리 추가: $matchedPlaceName (id: $categoryId)');
+                addedCategoryCount += 1;
               } else {
                 print('❌ 매장 ID가 없음: $matchedPlaceName');
               }
@@ -135,17 +146,24 @@ class HistoryService {
           if (categoryIdByName != null && categoryIdByName.containsKey(categoryName)) {
             final categoryId = categoryIdByName[categoryName];
             if (categoryId != null && categoryId.isNotEmpty) {
-              final String transportationCode = (transportTypes != null && transportTypes.isNotEmpty)
-                  ? (transportTypes.values.first.toString())
-                  : '1';
-              
+              final String transportationCode = addedCategoryCount == 0
+                  ? '1'
+                  : ((transportTypes != null && transportTypes.containsKey(addedCategoryCount - 1))
+                      ? (transportTypes[addedCategoryCount - 1]!.toString())
+                      : '1');
+
+              final int durationMinutes = addedCategoryCount == 0
+                  ? (firstDurationMinutes ?? otherDurationMinutes ?? 60)
+                  : (otherDurationMinutes ?? 60);
+
               categories.add({
                 'category_id': categoryId,
                 'category_name': categoryName,
-                'duration': otherDurationMinutes ?? 60,
+                'duration': durationMinutes,
                 'transportation': transportationCode,
               });
               print('✅ categoryIdByName에서 카테고리 추가: $categoryName (id: $categoryId)');
+              addedCategoryCount += 1;
             }
           } else {
             print('❌ 카테고리 "$categoryName"의 매장 ID를 찾을 수 없음');

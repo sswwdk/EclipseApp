@@ -13,6 +13,8 @@ class ScheduleBuilderScreen extends StatefulWidget {
   final String? originDetailAddress; // 출발지 상세 주소
   final int? firstDurationMinutes; // 템플릿: 첫 이동 또는 첫 체류 시간
   final int? otherDurationMinutes; // 템플릿: 이후 체류 시간
+  final bool isReadOnly; // 읽기 전용 모드 (편집 불가)
+  final Map<int, int>? initialTransportTypes; // 초기 교통수단 정보 (읽기 전용 모드용)
 
   const ScheduleBuilderScreen({
     Key? key,
@@ -23,6 +25,8 @@ class ScheduleBuilderScreen extends StatefulWidget {
     this.originDetailAddress,
     this.firstDurationMinutes,
     this.otherDurationMinutes,
+    this.isReadOnly = false,
+    this.initialTransportTypes,
   }) : super(key: key);
 
   @override
@@ -48,9 +52,15 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       _originDetailAddress = widget.originDetailAddress;
     }
     _items = _buildScheduleItems(widget.selected);
-    // 각 구간별로 기본 교통수단 설정 (대중교통)
-    for (int i = 0; i < _items.length - 1; i++) {
-      _transportTypes[i] = 1;
+    
+    // 교통수단 정보 설정 (읽기 전용 모드일 때는 초기값 사용, 아니면 기본값)
+    if (widget.isReadOnly && widget.initialTransportTypes != null) {
+      _transportTypes = Map<int, int>.from(widget.initialTransportTypes!);
+    } else {
+      // 각 구간별로 기본 교통수단 설정 (대중교통)
+      for (int i = 0; i < _items.length - 1; i++) {
+        _transportTypes[i] = 1;
+      }
     }
   }
 
@@ -67,9 +77,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '일정표 만들기',
-          style: TextStyle(
+        title: Text(
+          widget.isReadOnly ? '일정표 상세' : '일정표 만들기',
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -122,18 +132,19 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
               return _TransportationCard(
                 segmentIndex: itemIndex,
                 selectedTransportType: _transportTypes[itemIndex] ?? 1,
-                onTransportTypeChanged: (type) {
+                onTransportTypeChanged: widget.isReadOnly ? null : (type) {
                   setState(() {
                     _transportTypes[itemIndex] = type;
                   });
                 },
+                isReadOnly: widget.isReadOnly,
               );
             }
             return const SizedBox.shrink();
           }
         },
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: widget.isReadOnly ? null : Container(
         padding: const EdgeInsets.all(16),
         color: Colors.white,
         child: SafeArea(
@@ -621,13 +632,15 @@ class _TimelineRow extends StatelessWidget {
 class _TransportationCard extends StatelessWidget {
   final int segmentIndex;
   final int selectedTransportType;
-  final Function(int) onTransportTypeChanged;
+  final Function(int)? onTransportTypeChanged;
+  final bool isReadOnly;
 
   const _TransportationCard({
     Key? key,
     required this.segmentIndex,
     required this.selectedTransportType,
-    required this.onTransportTypeChanged,
+    this.onTransportTypeChanged,
+    this.isReadOnly = false,
   }) : super(key: key);
 
   @override
@@ -652,19 +665,19 @@ class _TransportationCard extends StatelessWidget {
                   icon: Icons.directions_walk,
                   label: '도보',
                   isSelected: selectedTransportType == 0,
-                  onTap: () => onTransportTypeChanged(0),
+                  onTap: isReadOnly ? null : () => onTransportTypeChanged?.call(0),
                 ),
                 _TransportButton(
                   icon: Icons.train,
                   label: '대중교통',
                   isSelected: selectedTransportType == 1,
-                  onTap: () => onTransportTypeChanged(1),
+                  onTap: isReadOnly ? null : () => onTransportTypeChanged?.call(1),
                 ),
                 _TransportButton(
                   icon: Icons.directions_car,
                   label: '자동차',
                   isSelected: selectedTransportType == 2,
-                  onTap: () => onTransportTypeChanged(2),
+                  onTap: isReadOnly ? null : () => onTransportTypeChanged?.call(2),
                 ),
               ],
             ),
@@ -787,14 +800,14 @@ class _TransportButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _TransportButton({
     Key? key,
     required this.icon,
     required this.label,
     required this.isSelected,
-    required this.onTap,
+    this.onTap,
   }) : super(key: key);
 
   @override
