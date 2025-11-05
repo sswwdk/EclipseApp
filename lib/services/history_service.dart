@@ -77,15 +77,22 @@ class HistoryService {
         final categoryName = entry.key;
         // entry.value는 현재 카테고리 내 선택 장소 목록이지만, 서버 전송 스키마에는 개수만 영향을 주지 않으므로 미사용
         
-        // selectedPlacesWithData에서 매장 ID 찾기
+        // selectedPlacesWithData에서 매장 ID와 상호명 찾기
         String? categoryId;
+        String? placeName; // 상호명
         
         if (selectedPlacesWithData != null && selectedPlacesWithData.containsKey(categoryName)) {
           final placesData = selectedPlacesWithData[categoryName]!;
           if (placesData.isNotEmpty) {
+            final firstPlace = placesData[0];
             // 첫 번째 매장의 id를 category_id로 사용
-            categoryId = placesData[0]['id'] as String?;
+            categoryId = firstPlace['id'] as String?;
+            // 첫 번째 매장의 상호명을 category_name으로 사용
+            placeName = firstPlace['title'] as String? ?? 
+                       firstPlace['name'] as String? ?? 
+                       categoryName; // fallback으로 카테고리명 사용
             print('✅ 매장 ID를 category_id로 사용: $categoryName -> $categoryId');
+            print('✅ 상호명을 category_name으로 사용: $placeName');
           }
         }
         
@@ -100,7 +107,7 @@ class HistoryService {
             : '1';
         categories.add({
           'category_id': categoryId,
-          'category_name': categoryName,
+          'category_name': placeName ?? categoryName, // 상호명 사용, 없으면 카테고리명 fallback
           'duration': otherDurationMinutes ?? 60,
           'transportation': transportationCode,
         });
