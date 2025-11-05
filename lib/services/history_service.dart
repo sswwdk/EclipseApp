@@ -9,16 +9,12 @@ class HistoryService {
   // 내 히스토리 보기
   static Future<Map<String, dynamic>> getMyHistory(String userId, {bool templateType = true}) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/my-history'),
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/users/me/histories'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
-        },
-        body: json.encode({
-          'user_id': userId,
-          'template_type': templateType,
-        }),
+        }
       );
 
       if (response.statusCode == 200) {
@@ -36,7 +32,7 @@ class HistoryService {
   static Future<Map<String, dynamic>> deleteHistory(String userId, String historyId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/service/my-history'),
+        Uri.parse('$baseUrl/api/service/histories'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -76,44 +72,90 @@ class HistoryService {
       print('📍 [CALL-$callId] selectedPlacesWithData: $selectedPlacesWithData');
       
       final List<Map<String, dynamic>> categories = [];
+      
+      // selectedPlaces의 각 카테고리별로 처리
       for (final entry in selectedPlaces.entries) {
         final categoryName = entry.key;
-        // entry.value는 현재 카테고리 내 선택 장소 목록이지만, 서버 전송 스키마에는 개수만 영향을 주지 않으므로 미사용
+        final selectedPlaceNames = entry.value; // 선택된 장소 이름 목록
         
-        // selectedPlacesWithData에서 매장 ID와 상호명 찾기
-        String? categoryId;
-        String? placeName; // 상호명
+        print('🔍 카테고리 처리: $categoryName, 선택된 장소 개수: ${selectedPlaceNames.length}');
         
+        // selectedPlacesWithData에서 해당 카테고리의 모든 장소 데이터 찾기
         if (selectedPlacesWithData != null && selectedPlacesWithData.containsKey(categoryName)) {
           final placesData = selectedPlacesWithData[categoryName]!;
-          if (placesData.isNotEmpty) {
-            final firstPlace = placesData[0];
-            // 첫 번째 매장의 id를 category_id로 사용
-            categoryId = firstPlace['id'] as String?;
-            // 첫 번째 매장의 상호명을 category_name으로 사용
-            placeName = firstPlace['title'] as String? ?? 
-                       firstPlace['name'] as String? ?? 
-                       categoryName; // fallback으로 카테고리명 사용
-            print('✅ 매장 ID를 category_id로 사용: $categoryName -> $categoryId');
-            print('✅ 상호명을 category_name으로 사용: $placeName');
+          print('🔍 placesData 개수: ${placesData.length}');
+          
+          // 선택된 각 장소에 대해 카테고리 항목 추가
+          for (final placeName in selectedPlaceNames) {
+            // placesData에서 해당 장소 이름과 일치하는 항목 찾기
+            Map<String, dynamic>? matchedPlace;
+            for (final place in placesData) {
+              final placeTitle = place['title'] as String? ?? place['name'] as String? ?? '';
+              if (placeTitle == placeName) {
+                matchedPlace = place;
+                break;
+              }
+            }
+            
+            // 일치하는 항목이 없으면 첫 번째 항목 사용 (fallback)
+            if (matchedPlace == null && placesData.isNotEmpty) {
+              matchedPlace = placesData[0];
+              print('⚠️ 장소 이름 일치하지 않음, 첫 번째 항목 사용: $placeName');
+            }
+            
+            if (matchedPlace != null) {
+              final categoryId = matchedPlace['id'] as String?;
+              final matchedPlaceName = matchedPlace['title'] as String? ?? 
+                                      matchedPlace['name'] as String? ?? 
+                                      placeName;
+              
+              if (categoryId != null && categoryId.isNotEmpty) {
+                // transportation 코드는 0(도보),1(대중교통),2(자동차). 전달받은 구간 정보가 없으면 1로 기본값 처리
+                final String transportationCode = (transportTypes != null && transportTypes.isNotEmpty)
+                    ? (transportTypes.values.first.toString())
+                    : '1';
+                
+                categories.add({
+                  'category_id': categoryId,
+                  'category_name': matchedPlaceName,
+                  'duration': otherDurationMinutes ?? 60,
+                  'transportation': transportationCode,
+                });
+                
+                print('✅ 카테고리 추가: $matchedPlaceName (id: $categoryId)');
+              } else {
+                print('❌ 매장 ID가 없음: $matchedPlaceName');
+              }
+            }
+          }
+        } else {
+          // selectedPlacesWithData가 없거나 해당 카테고리가 없는 경우
+          print('⚠️ selectedPlacesWithData에 카테고리 "$categoryName"이 없음');
+          // categoryIdByName에서 찾기 시도
+          if (categoryIdByName != null && categoryIdByName.containsKey(categoryName)) {
+            final categoryId = categoryIdByName[categoryName];
+            if (categoryId != null && categoryId.isNotEmpty) {
+              final String transportationCode = (transportTypes != null && transportTypes.isNotEmpty)
+                  ? (transportTypes.values.first.toString())
+                  : '1';
+              
+              categories.add({
+                'category_id': categoryId,
+                'category_name': categoryName,
+                'duration': otherDurationMinutes ?? 60,
+                'transportation': transportationCode,
+              });
+              print('✅ categoryIdByName에서 카테고리 추가: $categoryName (id: $categoryId)');
+            }
+          } else {
+            print('❌ 카테고리 "$categoryName"의 매장 ID를 찾을 수 없음');
+            // throw Exception('카테고리 "$categoryName"의 매장 ID를 찾을 수 없습니다.');
           }
         }
-        
-        if (categoryId == null || categoryId.isEmpty) {
-          print('❌ 매장 ID를 찾을 수 없음: $categoryName');
-          throw Exception('카테고리 "$categoryName"의 매장 ID를 찾을 수 없습니다.');
-        }
-        
-        // transportation 코드는 0(도보),1(대중교통),2(자동차). 전달받은 구간 정보가 없으면 1로 기본값 처리
-        final String transportationCode = (transportTypes != null && transportTypes.isNotEmpty)
-            ? (transportTypes.values.first.toString())
-            : '1';
-        categories.add({
-          'category_id': categoryId,
-          'category_name': placeName ?? categoryName, // 상호명 사용, 없으면 카테고리명 fallback
-          'duration': otherDurationMinutes ?? 60,
-          'transportation': transportationCode,
-        });
+      }
+      
+      if (categories.isEmpty) {
+        throw Exception('저장할 카테고리가 없습니다. 매장 ID를 찾을 수 없습니다.');
       }
 
       print('📍 최종 categories 데이터: $categories');
@@ -124,14 +166,13 @@ class HistoryService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/service/history'),
+        Uri.parse('$baseUrl/api/service/histories'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
         body: json.encode({
-          'user_id': userId,
-          'template_type': true,
+          'template_type': 'default',
           'category': categories,
         }),
       ).timeout(
@@ -155,16 +196,12 @@ class HistoryService {
   // 히스토리 상세 조회
   static Future<Map<String, dynamic>> getHistoryDetail(String userId, String mergeHistoryId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/my-history-detail'),
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/users/me/histories/detail/$mergeHistoryId'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
-        },
-        body: json.encode({
-          'user_id': userId,
-          'merge_history_id': mergeHistoryId,
-        }),
+        }
       );
 
       if (response.statusCode == 200) {
@@ -213,7 +250,7 @@ class HistoryService {
       final scheduleTitle = places.map((p) => p['name'] as String).join(' → ');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/service/history'),
+        Uri.parse('$baseUrl/api/service/histories'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,

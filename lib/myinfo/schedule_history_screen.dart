@@ -56,65 +56,124 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
       final List<_ScheduleHistoryItem> scheduleItems = [];
       final List<_ScheduleHistoryItem> otherItems = [];
 
-      // 서버 응답 형식에 따라 파싱
-      // 예상 응답 형식:
-      // {
-      //   "schedules": [...],  // 일정표 탭 데이터
-      //   "others": [...]      // 그냥 탭 데이터
-      // }
-      // 또는
-      // {
-      //   "data": [
-      //     {"type": "schedule", ...},
-      //     {"type": "other", ...}
-      //   ]
-      // }
+      // 디버깅: 전체 응답 출력
+      print('🔍 전체 응답: $response');
+      print('🔍 응답 타입: ${response.runtimeType}');
+      print('🔍 응답 키들: ${response.keys.toList()}');
 
-      final schedules = response['schedules'] as List<dynamic>? ?? [];
-      final others = response['others'] as List<dynamic>? ?? [];
+      // 서버 응답 형식: MergeUserHistory 객체들의 리스트
+      // 각 객체는 {id, visited_at, categories_name} 형식
+      // getMyHistory는 Map<String, dynamic>을 반환하므로 Map에서 데이터 추출
+      List<dynamic> data = [];
       
-      // schedules가 없으면 data에서 type별로 분류
-      if (schedules.isEmpty && others.isEmpty) {
-        final data = response['data'] as List<dynamic>? ?? [];
-        for (final item in data) {
-          final itemMap = item as Map<String, dynamic>;
-          final type = itemMap['type'] as String? ?? 'schedule';
-          final id = itemMap['id']?.toString() ?? itemMap['history_id']?.toString() ?? '';
-          final date = itemMap['date'] as String? ?? '';
-          final scheduleTitle = itemMap['schedule_title'] as String? ?? itemMap['title'] as String? ?? '';
-          
-          final historyItem = _ScheduleHistoryItem(
-            id: id,
-            dateText: _formatDate(date),
-            scheduleTitle: scheduleTitle,
-          );
-
-          if (type == 'other' || type == '그냥') {
-            otherItems.add(historyItem);
-          } else {
-            scheduleItems.add(historyItem);
+      // Map에서 다양한 키로 데이터 찾기
+      data = response['data'] as List<dynamic>? ?? 
+             response['histories'] as List<dynamic>? ?? 
+             response['items'] as List<dynamic>? ?? 
+             response['history'] as List<dynamic>? ??
+             [];
+      
+      // 만약 위의 키들에 없으면, Map의 모든 값이 리스트인 경우 찾기
+      if (data.isEmpty) {
+        for (final value in response.values) {
+          if (value is List && value.isNotEmpty) {
+            data = value;
+            print('🔍 리스트 데이터를 다른 키에서 찾음: ${response.keys.where((k) => response[k] == value).join(", ")}');
+            break;
           }
         }
-      } else {
-        // schedules와 others로 명시적으로 분리된 경우
-        for (final item in schedules) {
-          final itemMap = item as Map<String, dynamic>;
-          scheduleItems.add(_ScheduleHistoryItem(
-            id: itemMap['id']?.toString() ?? itemMap['history_id']?.toString() ?? '',
-            dateText: _formatDate(itemMap['date'] as String? ?? ''),
-            scheduleTitle: itemMap['schedule_title'] as String? ?? itemMap['title'] as String? ?? '',
-          ));
-        }
-
-        for (final item in others) {
-          final itemMap = item as Map<String, dynamic>;
-          otherItems.add(_ScheduleHistoryItem(
-            id: itemMap['id']?.toString() ?? itemMap['history_id']?.toString() ?? '',
-            dateText: _formatDate(itemMap['date'] as String? ?? ''),
-            scheduleTitle: itemMap['schedule_title'] as String? ?? itemMap['title'] as String? ?? '',
-          ));
+      }
+      
+      print('🔍 파싱된 데이터 리스트: $data');
+      print('🔍 데이터 개수: ${data.length}');
+      
+      for (final item in data) {
+        try {
+          // item이 Map인지 확인
+          if (item is! Map<String, dynamic>) {
+            print('⚠️ 아이템이 Map이 아님: $item (타입: ${item.runtimeType})');
+            continue;
+          }
+          
+          final itemMap = item;
+          
+          print('🔍 아이템 전체: $itemMap');
+          print('🔍 아이템 키들: ${itemMap.keys.toList()}');
+          
+          // MergeUserHistory 형식 파싱
+          final id = itemMap['id']?.toString() ?? 
+                    itemMap['history_id']?.toString() ?? 
+                    itemMap['merge_history_id']?.toString() ?? 
+                    '';
+          final categoriesName = itemMap['categories_name']?.toString() ?? 
+                                itemMap['category_name']?.toString() ?? 
+                                itemMap['name']?.toString() ?? 
+                                '';
+          
+          // visited_at 파싱 (datetime 문자열 또는 ISO 형식)
+          String dateStr = '';
+          if (itemMap['visited_at'] != null) {
+            final visitedAt = itemMap['visited_at'];
+            if (visitedAt is String) {
+              dateStr = visitedAt;
+            } else if (visitedAt is Map) {
+              // Python datetime 객체가 Map으로 올 수 있음
+              // {year: 2025, month: 11, day: 5} 형식일 수 있음
+              if (visitedAt.containsKey('year') && visitedAt.containsKey('month') && visitedAt.containsKey('day')) {
+                final year = visitedAt['year']?.toString() ?? '';
+                final month = visitedAt['month']?.toString().padLeft(2, '0') ?? '';
+                final day = visitedAt['day']?.toString().padLeft(2, '0') ?? '';
+                dateStr = '$year-$month-$day';
+              } else {
+                dateStr = visitedAt['date']?.toString() ?? visitedAt['iso']?.toString() ?? visitedAt.toString();
+              }
+            } else {
+              dateStr = visitedAt.toString();
+            }
+          } else if (itemMap['date'] != null) {
+            // date 필드도 확인
+            dateStr = itemMap['date'].toString();
+          }
+          
+          print('🔍 아이템 파싱 결과: id=$id, categories_name=$categoriesName, visited_at=$dateStr');
+          
+          // 날짜 형식 변환 (YYYY-MM-DD 형식으로 추출)
+          String formattedDate = _formatDate(dateStr);
+          
+          final historyItem = _ScheduleHistoryItem(
+            id: id.isNotEmpty ? id : DateTime.now().millisecondsSinceEpoch.toString(),
+            dateText: formattedDate.isNotEmpty ? formattedDate : '날짜 없음',
+            scheduleTitle: categoriesName.isNotEmpty ? categoriesName : null,
+          );
+          
+          // template_type에 따라 분류 (기본값은 일정표)
+          // template_type이 bool이거나 'default' 문자열일 수 있음
+          bool isScheduleType = true; // 기본값은 일정표
+          final templateTypeValue = itemMap['template_type'];
+          if (templateTypeValue != null) {
+            if (templateTypeValue is bool) {
+              isScheduleType = templateTypeValue;
+            } else if (templateTypeValue is String) {
+              // 'default' 또는 다른 값에 따라 분류
+              isScheduleType = templateTypeValue == 'default' || templateTypeValue == 'travel_planning';
+            }
+          }
+          
+          if (isScheduleType) {
+            scheduleItems.add(historyItem);
+            print('✅ 일정표 탭에 추가: $categoriesName');
+          } else {
+            otherItems.add(historyItem);
+            print('✅ 그냥 탭에 추가: $categoriesName');
+          }
+        } catch (e, stackTrace) {
+          print('❌ 아이템 파싱 오류: $e');
+          print('   스택 트레이스: $stackTrace');
+          print('   아이템: $item');
         }
       }
+      
+      print('🔍 최종 결과 - 일정표: ${scheduleItems.length}개, 그냥: ${otherItems.length}개');
 
       if (!mounted) return;
 
@@ -134,12 +193,23 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
     }
   }
 
-  /// 날짜 형식 변환 (YYYY-MM-DD -> YYYY.MM.DD)
+  /// 날짜 형식 변환 (YYYY-MM-DD 또는 ISO 형식 -> YYYY.MM.DD)
   String _formatDate(String dateStr) {
     if (dateStr.isEmpty) return '';
     try {
+      // ISO 형식 (2025-11-05T00:00:00)에서 날짜 부분만 추출
+      String datePart = dateStr;
+      if (dateStr.contains('T')) {
+        datePart = dateStr.split('T')[0];
+      } else if (dateStr.contains(' ')) {
+        datePart = dateStr.split(' ')[0];
+      }
+      
       // YYYY-MM-DD 형식을 YYYY.MM.DD로 변환
-      return dateStr.replaceAll('-', '.');
+      if (datePart.contains('-')) {
+        return datePart.replaceAll('-', '.');
+      }
+      return datePart;
     } catch (e) {
       return dateStr;
     }
@@ -331,6 +401,12 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
   }
 
   Widget _buildScheduleCard(_ScheduleHistoryItem item) {
+    // scheduleTitle을 화살표 기준으로 분리
+    List<String> places = [];
+    if (item.scheduleTitle != null && item.scheduleTitle!.isNotEmpty) {
+      places = item.scheduleTitle!.split('→').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -343,6 +419,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 날짜 표시
             Text(
               item.dateText,
               style: const TextStyle(
@@ -352,35 +429,60 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
               ),
             ),
             const SizedBox(height: 12),
-            // 일정표 정보
-            if (item.scheduleTitle != null)
+            // 일정표 정보 (화살표로 연결)
+            if (places.isNotEmpty)
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColorWithOpacity10,
-                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFFFFF5E8), // 연한 주황색 배경
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryColorWithOpacity20,
+                    color: AppTheme.primaryColor.withOpacity(0.3), // 얇은 주황색 테두리
                     width: 1,
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.schedule,
-                      color: AppTheme.primaryColor,
+                    // 시계 아이콘
+                    const Icon(
+                      Icons.access_time,
+                      color: Color(0xFFFF8126),
                       size: 16,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
+                    // 장소들을 화살표로 연결하여 표시
                     Expanded(
-                      child: Text(
-                        item.scheduleTitle!,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
-                        ),
-                        softWrap: true,
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: List.generate(places.length * 2 - 1, (index) {
+                          if (index % 2 == 0) {
+                            // 장소 이름
+                            final placeIndex = index ~/ 2;
+                            return Text(
+                              places[placeIndex],
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFFF8126),
+                              ),
+                            );
+                          } else {
+                            // 화살표
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                '→',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFFFF8126),
+                                ),
+                              ),
+                            );
+                          }
+                        }),
                       ),
                     ),
                   ],
