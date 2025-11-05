@@ -77,11 +77,25 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {
-              // 메뉴 옵션
+            onSelected: (value) {
+              if (value == 'home') {
+                _showGoHomeDialog();
+              }
             },
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem<String>(
+                value: 'home',
+                child: Row(
+                  children: [
+                    Icon(Icons.home, size: 20, color: Colors.black87),
+                    SizedBox(width: 8),
+                    Text('홈으로 돌아가기'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -181,6 +195,77 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         ),
       ),
     );
+  }
+
+  /// 홈으로 돌아가기 다이얼로그 표시
+  Future<void> _showGoHomeDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            '홈으로 돌아가기',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            '저장하지 않은 일정표는 다시 불러올 수 없습니다',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF8126),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                '홈으로 돌아가기',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true && mounted) {
+      // 모든 이전 화면을 제거하고 홈 화면으로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+        (route) => false,
+      );
+    }
   }
 
   /// 저장하기 버튼 클릭 시 서버에 일정표 저장
