@@ -413,13 +413,17 @@ class _TimelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 출발지(index == 0)와 마지막 항목은 핀을 왼쪽으로 정렬하기 위해 시간 표시 영역과 간격을 0으로 설정
+    final bool isOriginOrLast = index == 0 || isLast;
+    final double timeWidth = isOriginOrLast ? 0 : 60;
+    final double gapWidth = isOriginOrLast ? 0 : 8;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 60,
+            width: timeWidth,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -434,7 +438,7 @@ class _TimelineRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: gapWidth),
           // 타임라인 바
           Column(
             children: [

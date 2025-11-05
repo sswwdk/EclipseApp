@@ -364,8 +364,10 @@ class _TimelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double leftInfoWidth = showDuration ? 56 : 20;
-    final double gapBetween = showDuration ? 12 : 6;
+    // 출발지(index == 0)와 마지막 항목은 핀을 왼쪽으로 정렬하기 위해 leftInfoWidth를 0으로 설정
+    final bool isOriginOrLast = index == 0 || isLast;
+    final double leftInfoWidth = isOriginOrLast ? 0 : (showDuration ? 56 : 20);
+    final double gapBetween = isOriginOrLast ? 0 : (showDuration ? 12 : 6);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
