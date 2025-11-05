@@ -966,7 +966,7 @@ class _ChatBubble extends StatelessWidget {
                         disabledForegroundColor: selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.white,
                       ),
                       child: const Text(
-                        '네',
+                        '다음 질문',
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
