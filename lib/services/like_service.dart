@@ -9,13 +9,12 @@ class LikeService {
   // 찜 보기
   static Future<Map<String, dynamic>> getLikes(String userId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/service/get-my-like'),
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/users/me/likes'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
-        },
-        body: json.encode({'user_id': userId}),
+        }
       );
 
       if (response.statusCode == 200) {
@@ -33,12 +32,12 @@ class LikeService {
   static Future<Map<String, dynamic>> likeStore(String categoryId, String userId) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/service/set-my-like'),
+        Uri.parse('$baseUrl/api/users/me/likes'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
-        body: json.encode({'category_id': categoryId, 'user_id': userId}),
+        body: json.encode({'category_id': categoryId}),
       );
 
       if (response.statusCode == 200) {
@@ -56,12 +55,12 @@ class LikeService {
   static Future<Map<String, dynamic>> unlikeStore(String categoryId, String userId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/service/set-my-like'),
+        Uri.parse('$baseUrl/api/users/me/likes'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
-        body: json.encode({'category_id': categoryId, 'user_id': userId}),
+        body: json.encode({'category_id': categoryId}),
       );
 
       if (response.statusCode == 200) {

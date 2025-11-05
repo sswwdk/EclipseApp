@@ -10,7 +10,7 @@ class UserService {
   static Future<Map<String, dynamic>> login(String username, String password) async {
     try {
       final response = await HttpInterceptor.post(
-        '/api/users/session',
+        '/api/auth/session',
         body: json.encode({
             'id': username,
             'password': password
@@ -60,7 +60,7 @@ class UserService {
   static Future<Map<String, dynamic>> findId(String email) async {
     try {
       final response = await HttpInterceptor.post(
-        '/api/users/id',
+        '/api/auth/id',
         body: json.encode({'email': email}),
       );
 
@@ -79,7 +79,7 @@ class UserService {
   static Future<Map<String, dynamic>> findPassword(String username, String email) async {
     try {
       final response = await HttpInterceptor.post(
-        '/api/users/password',
+        '/api/auth/password',
         body: json.encode({
           'username': username,
           'email': email,
@@ -126,7 +126,7 @@ class UserService {
       if (birth != null && birth.isNotEmpty) bodyData['birth'] = birth;
       
       final response = await HttpInterceptor.post(
-        '/api/users/register',
+        '/api/auth/register',
         body: json.encode(bodyData),
       );
 
@@ -145,7 +145,7 @@ class UserService {
   static Future<Map<String, dynamic>> deleteUser(String userId, String password) async {
     try {
       final response = await HttpInterceptor.delete(
-        '/api/users/register',
+        '/api/users/me',
         body: json.encode({
           'user_id': userId,
           'password': password,
@@ -193,7 +193,7 @@ class UserService {
       };
 
       final response = await HttpInterceptor.put(
-        '/api/service/change/nickname',
+        '/api/users/me/nickname',
         body: json.encode(body),
       );
 
@@ -222,7 +222,7 @@ class UserService {
       };
 
       final response = await HttpInterceptor.put(
-        '/api/service/change/password',
+        '/api/users/me/password',
         body: json.encode(body),
       );
 
@@ -251,7 +251,7 @@ class UserService {
       };
 
       final response = await HttpInterceptor.put(
-        '/api/service/change/email',
+        '/api/users/me/email',
         body: json.encode(body),
       );
 
@@ -284,7 +284,7 @@ class UserService {
       }
 
       final response = await HttpInterceptor.put(
-        '/api/service/change/address',
+        '/api/users/me/address',
         body: json.encode(body),
       );
 
@@ -313,7 +313,7 @@ class UserService {
       };
 
       final response = await HttpInterceptor.put(
-        '/api/service/change/phone',
+        '/api/users/me/phone',
         body: json.encode(body),
       );
 

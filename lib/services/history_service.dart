@@ -7,7 +7,7 @@ class HistoryService {
   static String get baseUrl => ServerConfig.baseUrl;
 
   // 내 히스토리 보기
-  static Future<Map<String, dynamic>> getMyHistory(String userId) async {
+  static Future<Map<String, dynamic>> getMyHistory(String userId, {bool templateType = true}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/service/my-history'),
@@ -15,7 +15,10 @@ class HistoryService {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
-        body: json.encode({'user_id': userId}),
+        body: json.encode({
+          'user_id': userId,
+          'template_type': templateType,
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -128,7 +131,7 @@ class HistoryService {
         },
         body: json.encode({
           'user_id': userId,
-          'template_type': 'travel_planning',
+          'template_type': true,
           'category': categories,
         }),
       ).timeout(
@@ -149,9 +152,40 @@ class HistoryService {
     }
   }
 
+  // 히스토리 상세 조회
+  static Future<Map<String, dynamic>> getHistoryDetail(String userId, String mergeHistoryId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/service/my-history-detail'),
+        headers: {
+          'Content-Type': 'application/json',
+          ...TokenManager.jwtHeader,
+        },
+        body: json.encode({
+          'user_id': userId,
+          'merge_history_id': mergeHistoryId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(utf8.decode(response.bodyBytes));
+      } else {
+        throw Exception('히스토리 상세 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('히스토리 상세 조회 오류: $e');
+      throw Exception('네트워크 오류: $e');
+    }
+  }
+
   // 일정표 히스토리 "그냥" 탭에 저장
   static Future<void> saveOtherHistory(Map<String, List<Map<String, dynamic>>> selectedPlaces) async {
     try {
+      final userId = TokenManager.userId;
+      if (userId == null || userId.isEmpty) {
+        throw Exception('로그인이 필요합니다. user_id 없음');
+      }
+
       // 선택된 장소들을 서버 형식에 맞게 변환
       final List<Map<String, dynamic>> places = [];
       for (final entry in selectedPlaces.entries) {
@@ -185,6 +219,7 @@ class HistoryService {
           ...TokenManager.jwtHeader,
         },
         body: json.encode({
+          'user_id': userId,
           'date': DateTime.now().toIso8601String().split('T')[0], // YYYY-MM-DD 형식
           'schedule_title': scheduleTitle,
           'places': places,

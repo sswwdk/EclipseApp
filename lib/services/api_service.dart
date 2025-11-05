@@ -18,10 +18,9 @@ class ApiService {
         'body': "qwerfgh",
       };
 
-    final response = await HttpInterceptor.post(
-      '/api/service/main',
-      headers: headers,
-      body: json.encode(requestBody),
+    final response = await HttpInterceptor.get(
+      '/api/categories/',
+      headers: headers
     );
       
       final Map<String, dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
@@ -46,7 +45,7 @@ class ApiService {
       };
 
       final response = await HttpInterceptor.get(
-        '/api/service/detail/$id',
+        '/api/categories/$id',
         headers: headers,
       );
 
