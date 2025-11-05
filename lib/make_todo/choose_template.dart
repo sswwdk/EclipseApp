@@ -8,6 +8,7 @@ class ChooseTemplateScreen extends StatefulWidget {
   final Map<String, String>? categoryIdByName; // 카테고리명 -> 카테고리ID 매핑(옵션)
   final String? originAddress;
   final String? originDetailAddress;
+  final List<Map<String, dynamic>>? orderedPlaces; // 🔥 순서가 유지되는 장소 리스트
 
   const ChooseTemplateScreen({
     Key? key,
@@ -16,6 +17,7 @@ class ChooseTemplateScreen extends StatefulWidget {
     this.categoryIdByName,
     this.originAddress,
     this.originDetailAddress,
+    this.orderedPlaces,
   }) : super(key: key);
 
   @override
@@ -122,6 +124,7 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
           originDetailAddress: widget.originDetailAddress,
           firstDurationMinutes: first,
           otherDurationMinutes: other,
+          orderedPlaces: widget.orderedPlaces, // 🔥 순서가 유지되는 리스트 전달
         ),
       ),
     );

@@ -132,6 +132,8 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                 
                 // 원본 선택 데이터에서 placeName -> categoryName 매핑을 구축
                 final Map<String, String> placeToCategory = {};
+                final Map<String, Map<String, dynamic>> placeNameToData = {};
+                
                 widget.selected.forEach((category, places) {
                   for (final place in places) {
                     String placeName;
@@ -140,27 +142,56 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                                   place['name'] as String? ??
                                   place['id'] as String? ??
                                   place.toString();
+                      placeToCategory[placeName] = category;
+                      placeNameToData[placeName] = place;
                     } else {
                       placeName = place.toString();
+                      placeToCategory[placeName] = category;
                     }
-                    placeToCategory[placeName] = category;
                   }
                 });
 
-                // 현재 화면(_items)의 순서를 기반으로 다음 화면에 전달할 데이터 구성
+                // 🔥 순서를 유지하는 리스트 생성 (화면 순서 그대로)
+                final List<Map<String, dynamic>> orderedPlaces = [];
+                
+                print('🔍 [경로 확정] _items 순서:');
+                for (int i = 0; i < _items.length; i++) {
+                  final item = _items[i];
+                  print('  [$i] ${item.title} (${item.type})');
+                }
+                
+                for (final item in _items) {
+                  if (item.type != _ItemType.place) continue; // 출발지 제외
+                  
+                  final String placeName = item.title;
+                  final String categoryName = placeToCategory[placeName] ?? item.categoryName ?? item.subtitle;
+                  final Map<String, dynamic>? placeData = placeNameToData[placeName];
+                  
+                  orderedPlaces.add({
+                    'id': placeData?['id'] as String? ?? '', // 🔥 id를 최상위 레벨로 추가
+                    'name': placeName,
+                    'category': categoryName,
+                    'data': placeData ?? {},
+                  });
+                }
+                
+                print('🔍 [경로 확정] orderedPlaces 생성 완료:');
+                for (int i = 0; i < orderedPlaces.length; i++) {
+                  print('  [$i] ${orderedPlaces[i]['name']} (id: ${orderedPlaces[i]['id']})');
+                }
+                
+                // 기존 호환성을 위한 Map 구조도 생성
                 final Map<String, List<String>> convertedSelected = {};
                 final Map<String, List<Map<String, dynamic>>> selectedPlacesWithData = {};
                 
                 for (final item in _items) {
-                  if (item.type != _ItemType.place) continue; // 출발지 제외
+                  if (item.type != _ItemType.place) continue;
                   final String placeName = item.title;
                   final String categoryName = placeToCategory[placeName] ?? item.categoryName ?? item.subtitle;
                   convertedSelected.putIfAbsent(categoryName, () => []);
                   convertedSelected[categoryName]!.add(placeName);
                   
-                  // 전체 데이터도 함께 저장
                   selectedPlacesWithData.putIfAbsent(categoryName, () => []);
-                  // widget.selected에서 원본 Map 데이터 찾기
                   final originalPlaces = widget.selected[categoryName];
                   if (originalPlaces != null) {
                     for (final place in originalPlaces) {
@@ -174,8 +205,6 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                     }
                   }
                 }
-                
-                print('🔍 selectedPlacesWithData: $selectedPlacesWithData');
 
                 Navigator.push(
                   context,
@@ -212,6 +241,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                         categoryIdByName: categoryIdByName.isEmpty ? null : categoryIdByName,
                         originAddress: _originAddress,
                         originDetailAddress: _originDetailAddress,
+                        orderedPlaces: orderedPlaces, // 🔥 순서가 유지되는 리스트 전달
                       );
                     },
                   ),

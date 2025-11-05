@@ -15,6 +15,7 @@ class ScheduleBuilderScreen extends StatefulWidget {
   final int? otherDurationMinutes; // 템플릿: 이후 체류 시간
   final bool isReadOnly; // 읽기 전용 모드 (편집 불가)
   final Map<int, int>? initialTransportTypes; // 초기 교통수단 정보 (읽기 전용 모드용)
+  final List<Map<String, dynamic>>? orderedPlaces; // 🔥 순서가 유지되는 장소 리스트
 
   const ScheduleBuilderScreen({
     Key? key,
@@ -27,6 +28,7 @@ class ScheduleBuilderScreen extends StatefulWidget {
     this.otherDurationMinutes,
     this.isReadOnly = false,
     this.initialTransportTypes,
+    this.orderedPlaces,
   }) : super(key: key);
 
   @override
@@ -51,7 +53,16 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
     if (widget.originDetailAddress != null) {
       _originDetailAddress = widget.originDetailAddress;
     }
+    
+    print('🔍 [ScheduleBuilderScreen] initState');
+    print('🔍 orderedPlaces: ${widget.orderedPlaces}');
+    
     _items = _buildScheduleItems(widget.selected);
+    
+    print('🔍 [ScheduleBuilderScreen] _items 생성 완료:');
+    for (int i = 0; i < _items.length; i++) {
+      print('  [$i] ${_items[i].title} (${_items[i].type})');
+    }
     
     // 교통수단 정보 설정 (읽기 전용 모드일 때는 초기값 사용, 아니면 기본값)
     if (widget.isReadOnly && widget.initialTransportTypes != null) {
@@ -289,6 +300,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       await HistoryService.saveSchedule(
         selectedPlaces: widget.selected,
         selectedPlacesWithData: widget.selectedPlacesWithData,
+        orderedPlaces: widget.orderedPlaces, // 🔥 순서가 유지되는 리스트 전달
         categoryIdByName: widget.categoryIdByName,
         originAddress: _originAddress,
         originDetailAddress: _originDetailAddress,
@@ -440,11 +452,15 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       time: null,
     ));
 
-    // 선택된 장소를 순서대로 나열 (카테고리 순서 유지)
-    selected.forEach((category, places) {
-      for (final place in places) {
+    // 🔥 orderedPlaces가 있으면 순서대로 사용, 없으면 기존 방식
+    if (widget.orderedPlaces != null && widget.orderedPlaces!.isNotEmpty) {
+      // 순서가 유지되는 리스트 사용
+      for (final placeData in widget.orderedPlaces!) {
+        final placeName = placeData['name'] as String? ?? '알 수 없음';
+        final category = placeData['category'] as String? ?? '기타';
+        
         items.add(_ScheduleItem(
-          title: place,
+          title: placeName,
           subtitle: category,
           icon: _iconFor(category),
           color: const Color(0xFFFF8126),
@@ -455,7 +471,24 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           time: null,
         ));
       }
-    });
+    } else {
+      // 기존 방식: 카테고리별로 그룹화됨 (하위 호환성)
+      selected.forEach((category, places) {
+        for (final place in places) {
+          items.add(_ScheduleItem(
+            title: place,
+            subtitle: category,
+            icon: _iconFor(category),
+            color: const Color(0xFFFF8126),
+            type: _ItemType.place,
+            durationMinutes: items.length == 1
+                ? (widget.firstDurationMinutes ?? 45)
+                : (widget.otherDurationMinutes ?? 20),
+            time: null,
+          ));
+        }
+      });
+    }
 
     return items;
   }
@@ -509,10 +542,9 @@ class _TimelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 출발지(index == 0)와 마지막 항목은 핀을 왼쪽으로 정렬하기 위해 시간 표시 영역과 간격을 0으로 설정
-    final bool isOriginOrLast = index == 0 || isLast;
-    final double timeWidth = isOriginOrLast ? 0 : 60;
-    final double gapWidth = isOriginOrLast ? 0 : 8;
+    // 모든 항목의 박스 크기를 동일하게 유지
+    final double timeWidth = 0;
+    final double gapWidth = 0;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -647,18 +679,18 @@ class _TransportationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 교통수단 선택 버튼
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
-            ),
-            child: Row(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 교통수단 선택 버튼
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _TransportButton(
@@ -681,20 +713,20 @@ class _TransportationCard extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          
-          // 선택된 교통수단의 상세 정보
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            
+            // 선택된 교통수단의 상세 정보
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              ),
+              child: _buildTransportDetails(),
             ),
-            child: _buildTransportDetails(),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

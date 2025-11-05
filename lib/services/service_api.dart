@@ -180,7 +180,7 @@ class OpenAIService {
           'jwt': TokenManager.accessToken ?? ''
         },
         body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 30), onTimeout: () {
+      ).timeout(const Duration(seconds: 60), onTimeout: () {
         throw Exception('서버 연결 시간 초과 (30초)');
       });
 
@@ -215,7 +215,7 @@ class OpenAIService {
           'jwt': TokenManager.accessToken ?? ''
         },
         body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 30), onTimeout: () {
+      ).timeout(const Duration(seconds: 60), onTimeout: () {
         throw Exception('서버 연결 시간 초과 (30초)');
       });
 
@@ -259,7 +259,7 @@ class OpenAIService {
           'jwt': TokenManager.accessToken ?? ''
         },
         body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 30), onTimeout: () {
+      ).timeout(const Duration(seconds: 60), onTimeout: () {
         throw Exception('서버 연결 시간 초과 (30초)');
       });
 

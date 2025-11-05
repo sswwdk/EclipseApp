@@ -66,6 +66,7 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
           builder: (context) => ScheduleBuilderScreen(
             selected: scheduleData['selectedPlaces'] as Map<String, List<String>>,
             selectedPlacesWithData: scheduleData['selectedPlacesWithData'] as Map<String, List<Map<String, dynamic>>>?,
+            orderedPlaces: scheduleData['orderedPlaces'] as List<Map<String, dynamic>>?, // 🔥 순서 유지
             categoryIdByName: scheduleData['categoryIdByName'] as Map<String, String>?,
             originAddress: scheduleData['originAddress'] as String?,
             originDetailAddress: scheduleData['originDetailAddress'] as String?,
@@ -95,6 +96,7 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
     final Map<String, List<String>> selectedPlaces = {};
     final Map<String, List<Map<String, dynamic>>> selectedPlacesWithData = {};
     final Map<String, String> categoryIdByName = {};
+    final List<Map<String, dynamic>> orderedPlaces = []; // 🔥 순서를 유지하는 리스트
     final Map<int, int> transportTypes = {};
     String? originAddress;
     String? originDetailAddress;
@@ -109,60 +111,93 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
       originDetailAddress = data['origin_detail_address'] as String?;
     }
 
-    // 각 카테고리 처리
-    for (int i = 0; i < categories.length; i++) {
-      final category = categories[i] as Map<String, dynamic>;
-      final categoryName = category['category_name'] as String? ?? '';
-      final categoryId = category['category_id'] as String? ?? '';
-      final duration = category['duration'] as int? ?? 60;
-      int transportation = 1; // 기본값: 대중교통
-      if (category['transportation'] != null) {
-        if (category['transportation'] is int) {
-          transportation = category['transportation'] as int;
-        } else if (category['transportation'] is String) {
-          transportation = int.tryParse(category['transportation'] as String) ?? 1;
-        }
-      }
+    print('🔍 서버에서 받은 categories: $categories');
+    
+    // 🔥 categories_name에서 정확한 순서 추출 (서버가 categories 순서를 보장하지 않음)
+    final categoriesNameStr = data['categories_name'] as String? ?? '';
+    final orderedNames = categoriesNameStr.split('→').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    
+    print('🔍 categories_name에서 추출한 순서: $orderedNames');
 
+    // 카테고리 데이터를 Map으로 변환 (이름 -> 데이터)
+    final Map<String, Map<String, dynamic>> categoryDataByName = {};
+    for (final category in categories) {
+      final categoryMap = category as Map<String, dynamic>;
+      final categoryName = categoryMap['category_name'] as String? ?? '';
       if (categoryName.isNotEmpty) {
-        // selectedPlaces에 추가
-        if (!selectedPlaces.containsKey(categoryName)) {
-          selectedPlaces[categoryName] = [];
-        }
-        selectedPlaces[categoryName]!.add(categoryName);
-
-        // selectedPlacesWithData에 추가
-        if (!selectedPlacesWithData.containsKey(categoryName)) {
-          selectedPlacesWithData[categoryName] = [];
-        }
-        selectedPlacesWithData[categoryName]!.add({
-          'id': categoryId,
-          'title': categoryName,
-          'name': categoryName,
-        });
-
-        // categoryIdByName에 추가
-        if (categoryId.isNotEmpty) {
-          categoryIdByName[categoryName] = categoryId;
-        }
-
-        // 교통수단 정보 저장
-        if (i > 0) {
-          transportTypes[i - 1] = transportation;
-        }
-
-        // 첫 번째 체류 시간 설정
-        if (i == 0) {
-          firstDurationMinutes = duration;
-        } else {
-          otherDurationMinutes = duration;
-        }
+        categoryDataByName[categoryName] = categoryMap;
       }
     }
+
+    // 🔥 orderedNames 순서대로 처리 (정확한 순서 보장!)
+    for (int i = 0; i < orderedNames.length; i++) {
+      final categoryName = orderedNames[i];
+      final categoryData = categoryDataByName[categoryName];
+      
+      if (categoryData == null) {
+        print('⚠️ [$i] $categoryName: 데이터를 찾을 수 없음');
+        continue;
+      }
+
+      final categoryId = categoryData['category_id'] as String? ?? '';
+      final duration = categoryData['duration'] as int? ?? 60;
+      int transportation = 1; // 기본값: 대중교통
+      if (categoryData['transportation'] != null) {
+        if (categoryData['transportation'] is int) {
+          transportation = categoryData['transportation'] as int;
+        } else if (categoryData['transportation'] is String) {
+          transportation = int.tryParse(categoryData['transportation'] as String) ?? 1;
+        }
+      }
+
+      print('🔍 [$i] categoryName: $categoryName, transportation: $transportation');
+
+      // 🔥 orderedPlaces에 순서대로 추가 (categories_name 순서 기준!)
+      orderedPlaces.add({
+        'id': categoryId,
+        'name': categoryName,
+        'category': categoryName,
+      });
+
+      // selectedPlaces에 추가 (하위 호환성)
+      if (!selectedPlaces.containsKey(categoryName)) {
+        selectedPlaces[categoryName] = [];
+      }
+      selectedPlaces[categoryName]!.add(categoryName);
+
+      // selectedPlacesWithData에 추가 (하위 호환성)
+      if (!selectedPlacesWithData.containsKey(categoryName)) {
+        selectedPlacesWithData[categoryName] = [];
+      }
+      selectedPlacesWithData[categoryName]!.add({
+        'id': categoryId,
+        'title': categoryName,
+        'name': categoryName,
+      });
+
+      // categoryIdByName에 추가
+      if (categoryId.isNotEmpty) {
+        categoryIdByName[categoryName] = categoryId;
+      }
+
+      // 🔥 교통수단 정보 저장
+      transportTypes[i] = transportation;
+
+      // 첫 번째 체류 시간 설정
+      if (i == 0) {
+        firstDurationMinutes = duration;
+      } else {
+        otherDurationMinutes = duration;
+      }
+    }
+
+    print('🔍 생성된 orderedPlaces: $orderedPlaces');
+    print('🔍 생성된 transportTypes: $transportTypes');
 
     return {
       'selectedPlaces': selectedPlaces,
       'selectedPlacesWithData': selectedPlacesWithData,
+      'orderedPlaces': orderedPlaces, // 🔥 순서가 유지되는 리스트 반환
       'categoryIdByName': categoryIdByName,
       'originAddress': originAddress,
       'originDetailAddress': originDetailAddress,
