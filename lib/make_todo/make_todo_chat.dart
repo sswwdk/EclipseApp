@@ -811,27 +811,49 @@ class _ChatInputField extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
-                ],
-              ),
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                enabled: !isDisabled,
-                decoration: const InputDecoration(
-                  hintText: '메시지를 입력하세요...',
-                  hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  inputDecorationTheme: const InputDecorationTheme(
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                  ),
                 ),
-                onSubmitted: (_) => onSend(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    enabled: !isDisabled,
+                    style: const TextStyle(color: Colors.black87),
+                    decoration: const InputDecoration(
+                      hintText: '메시지를 입력하세요...',
+                      hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 12),
+                      isDense: true,
+                    ),
+                    onSubmitted: (_) => onSend(),
+                  ),
+                ),
               ),
             ),
           ),
