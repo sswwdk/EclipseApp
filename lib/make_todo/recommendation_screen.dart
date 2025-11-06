@@ -126,12 +126,22 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         // 🔥 Map으로 캐스팅하고 필드 추출
         final place = places[index] as Map<String, dynamic>;
         
-        // 디버깅: 서버 응답 데이터 확인 (첫 번째 항목만 출력)
-        if (index == 0) {
-          print('🔍 추천 데이터 구조 확인:');
+        // 선택 상태 확인
+        final isSelected = _selectedStates[category]?.contains(index) ?? false;
+        
+        // 디버깅: 선택된 항목의 서버 응답 데이터 확인
+        if (isSelected) {
+          final placeName = place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
+          print('🔍 [선택된 항목] 추천 데이터 구조 확인 (index: $index):');
+          print('   이름: $placeName');
           print('   전체 필드: ${place.keys.toList()}');
           print('   title: ${place['title']}');
           print('   name: ${place['name']}');
+          print('   latitude: ${place['latitude']}');
+          print('   longitude: ${place['longitude']}');
+          print('   lat: ${place['lat']}');
+          print('   lng: ${place['lng']}');
+          print('   id: ${place['id']}');
           print('   전체 데이터: $place');
         }
         
@@ -154,7 +164,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         final placeId = place['id'] as String? ?? '';
 
         final isFavorite = _favoriteStates[category]?[index] ?? false;
-        final isSelected = _selectedStates[category]?.contains(index) ?? false;
+        // isSelected는 위에서 이미 선언됨
 
         return InkWell(
           onTap: () {
@@ -526,15 +536,30 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                             // 🔥 실제 Map 객체를 전달
                             final place = places[index] as Map<String, dynamic>;
                             
-                            // 디버깅: category_id 확인
-                            print('🔍 [$category] 선택된 장소 데이터:');
+                            // 디버깅: 선택된 모든 장소의 데이터 확인 (위경도 포함)
+                            print('🔍 [$category] 선택된 장소 #${index + 1} 데이터:');
+                            print('   이름: ${place['title'] ?? place['name']}');
                             print('   전체 필드: ${place.keys.toList()}');
-                            print('   category_id: ${place['category_id']}');
                             print('   id: ${place['id']}');
+                            print('   lat: ${place['lat']}');
+                            print('   lng: ${place['lng']}');
+                            print('   latitude: ${place['latitude']}');
+                            print('   longitude: ${place['longitude']}');
+                            print('   category_id: ${place['category_id']}');
+                            
+                            // 위경도가 있는지 확인
+                            final hasLatLng = place['lat'] != null || place['latitude'] != null;
+                            final hasLng = place['lng'] != null || place['longitude'] != null;
+                            if (hasLatLng && hasLng) {
+                              print('   ✅ 위경도 정보 있음');
+                            } else {
+                              print('   ⚠️ 위경도 정보 없음');
+                            }
                             
                             selectedByCategory[category]!.add(place);
                           }
                         }
+                        print('🔍 [$category] 총 ${selectedIndices.length}개 장소 선택됨');
                       }
                     }
 
