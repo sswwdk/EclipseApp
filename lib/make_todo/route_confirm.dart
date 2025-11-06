@@ -6,7 +6,8 @@ import 'choose_template.dart';
 class RouteConfirmScreen extends StatefulWidget {
   final Map<String, List<dynamic>> selected; // 카테고리별 선택 목록 (Map 또는 String)
 
-  const RouteConfirmScreen({Key? key, required this.selected}) : super(key: key);
+  const RouteConfirmScreen({Key? key, required this.selected})
+    : super(key: key);
 
   @override
   State<RouteConfirmScreen> createState() => _RouteConfirmScreenState();
@@ -20,7 +21,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // 디버깅: widget.selected의 실제 데이터 구조 확인
     print('🔍 RouteConfirmScreen.initState - widget.selected 데이터:');
     widget.selected.forEach((category, places) {
@@ -36,7 +37,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
         }
       }
     });
-    
+
     _items = _buildScheduleItems(widget.selected);
   }
 
@@ -92,9 +93,14 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                   isLast: index == items.length - 1,
                   showDuration: false, // 미리보기에서는 시간 숨김
                   onDragHandle: item.type == _ItemType.place
-                      ? (child) => ReorderableDragStartListener(index: index, child: child)
+                      ? (child) => ReorderableDragStartListener(
+                          index: index,
+                          child: child,
+                        )
                       : null,
-                  onTap: item.type == _ItemType.origin ? () => _showOriginAddressInput() : null,
+                  onTap: item.type == _ItemType.origin
+                      ? () => _showOriginAddressInput()
+                      : null,
                 ),
               );
             },
@@ -136,44 +142,56 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                   for (int i = 0; i < places.length; i++) {
                     final place = places[i];
                     if (place is Map) {
-                      print('    [$i] 장소 이름: ${place['title'] ?? place['name']}');
+                      print(
+                        '    [$i] 장소 이름: ${place['title'] ?? place['name']}',
+                      );
                       print('       id: ${place['id']}');
-                      print('       lat: ${place['lat']}, lng: ${place['lng']}');
-                      print('       latitude: ${place['latitude']}, longitude: ${place['longitude']}');
+                      print(
+                        '       lat: ${place['lat']}, lng: ${place['lng']}',
+                      );
+                      print(
+                        '       latitude: ${place['latitude']}, longitude: ${place['longitude']}',
+                      );
                       print('       category_id: ${place['category_id']}');
                       print('       필드: ${place.keys.toList()}');
                     }
                   }
                 });
-                
+
                 // 원본 선택 데이터에서 placeName -> categoryName 매핑을 구축
                 // 🔥 같은 이름의 가게가 여러 개 있을 수 있으므로, ID를 포함한 고유 키 사용
                 final Map<String, String> placeToCategory = {};
                 final Map<String, Map<String, dynamic>> placeNameToData = {};
-                final List<Map<String, dynamic>> allPlaces = []; // 🔥 모든 선택된 장소를 순서대로 저장
-                
+                final List<Map<String, dynamic>> allPlaces =
+                    []; // 🔥 모든 선택된 장소를 순서대로 저장
+
                 widget.selected.forEach((category, places) {
                   for (final place in places) {
                     String placeName;
                     if (place is Map<String, dynamic>) {
-                      placeName = place['title'] as String? ??
-                                  place['name'] as String? ??
-                                  place['id'] as String? ??
-                                  place.toString();
-                      
+                      placeName =
+                          place['title'] as String? ??
+                          place['name'] as String? ??
+                          place['id'] as String? ??
+                          place.toString();
+
                       // 🔥 ID를 포함한 고유 키 생성 (같은 이름의 가게가 여러 개 있을 수 있음)
                       final String placeId = place['id'] as String? ?? '';
-                      final String uniqueKey = placeId.isNotEmpty 
-                          ? '$placeName|$placeId' 
+                      final String uniqueKey = placeId.isNotEmpty
+                          ? '$placeName|$placeId'
                           : '$placeName|${place.hashCode}';
-                      
+
                       placeToCategory[uniqueKey] = category;
                       placeNameToData[uniqueKey] = place;
                       allPlaces.add(place); // 🔥 모든 장소를 순서대로 저장
-                      
-                      print('🔍 [경로 확정] 장소 추가: $placeName (id: $placeId, uniqueKey: $uniqueKey)');
+
+                      print(
+                        '🔍 [경로 확정] 장소 추가: $placeName (id: $placeId, uniqueKey: $uniqueKey)',
+                      );
                       print('   lat: ${place['lat']}, lng: ${place['lng']}');
-                      print('   latitude: ${place['latitude']}, longitude: ${place['longitude']}');
+                      print(
+                        '   latitude: ${place['latitude']}, longitude: ${place['longitude']}',
+                      );
                     } else {
                       placeName = place.toString();
                       placeToCategory[placeName] = category;
@@ -183,92 +201,115 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
 
                 // 🔥 순서를 유지하는 리스트 생성 (화면 순서 그대로)
                 final List<Map<String, dynamic>> orderedPlaces = [];
-                
+
                 print('🔍 [경로 확정] _items 순서:');
                 for (int i = 0; i < _items.length; i++) {
                   final item = _items[i];
                   print('  [$i] ${item.title} (${item.type})');
                 }
-                
-                // 🔥 _items의 순서대로 orderedPlaces 생성하되, 각 item에 해당하는 실제 데이터 찾기
-                // allPlaces를 순회하면서 _items의 순서와 매칭
-                int allPlacesIndex = 0;
+
+                // ❌ 기존 방식 삭제
+                /*
+int allPlacesIndex = 0;
+for (final item in _items) {
+  if (item.type != _ItemType.place) continue;
+  
+  final String placeName = item.title;
+  
+  Map<String, dynamic>? matchedPlace;
+  String? matchedCategory;
+  
+  for (int i = allPlacesIndex; i < allPlaces.length; i++) {
+    // ...
+  }
+  // ...
+}
+*/
+
+                // ✅ 새로운 방식: placeNameToData에서 직접 찾기 (uniqueKey 사용)
                 for (final item in _items) {
-                  if (item.type != _ItemType.place) continue; // 출발지 제외
-                  
+                  if (item.type != _ItemType.place) continue;
+
                   final String placeName = item.title;
-                  
-                  // 🔥 item.title과 일치하는 place를 allPlaces에서 순서대로 찾기
+
+                  // 🔥 placeNameToData에서 해당 장소 찾기 (이름으로)
                   Map<String, dynamic>? matchedPlace;
                   String? matchedCategory;
-                  
-                  // allPlaces에서 순서대로 검색 (이미 사용한 것은 건너뛰기)
-                  for (int i = allPlacesIndex; i < allPlaces.length; i++) {
-                    final place = allPlaces[i];
-                    final dataPlaceName = place['title'] as String? ?? 
-                                        place['name'] as String? ?? '';
-                    if (dataPlaceName == placeName) {
-                      matchedPlace = place;
-                      // category 찾기
-                      for (final entry in widget.selected.entries) {
-                        if (entry.value.contains(place)) {
-                          matchedCategory = entry.key;
-                          break;
-                        }
-                      }
-                      allPlacesIndex = i + 1; // 다음 검색은 여기서부터
+
+                  // uniqueKey로 먼저 찾기
+                  for (final entry in placeNameToData.entries) {
+                    final uniqueKey = entry.key;
+                    final placeData = entry.value;
+                    final dataName =
+                        placeData['title'] as String? ??
+                        placeData['name'] as String? ??
+                        '';
+
+                    if (dataName == placeName) {
+                      matchedPlace = placeData;
+                      matchedCategory = placeToCategory[uniqueKey];
                       break;
                     }
                   }
-                  
-                  // 여전히 못 찾았으면 기본값 사용
-                  final String categoryName = matchedCategory ?? 
-                                             item.categoryName ?? 
-                                             item.subtitle;
-                  
-                  // 위경도 정보 추출 (서버에서 보낼 수 있는 여러 필드명 확인)
-                  final String? latitude = matchedPlace?['latitude'] as String? ?? 
-                                           matchedPlace?['lat'] as String?;
-                  final String? longitude = matchedPlace?['longitude'] as String? ?? 
-                                            matchedPlace?['lng'] as String?;
-                  
+
+                  final String categoryName =
+                      matchedCategory ?? item.categoryName ?? item.subtitle;
+
+                  // 🔥 위경도 정보 추출 (dynamic 타입으로 처리)
+                  dynamic latValue =
+                      matchedPlace?['lat'] ?? matchedPlace?['latitude'];
+                  dynamic lngValue =
+                      matchedPlace?['lng'] ?? matchedPlace?['longitude'];
+
                   orderedPlaces.add({
-                    'id': matchedPlace?['id'] as String? ?? '', // 🔥 id를 최상위 레벨로 추가
+                    'id': matchedPlace?['id'] as String? ?? '',
                     'name': placeName,
                     'category': categoryName,
-                    'latitude': latitude, // 🔥 위경도를 최상위 레벨에 명시적으로 추가
-                    'longitude': longitude,
-                    'data': matchedPlace ?? {},
+                    'latitude': latValue, // ✅ dynamic으로 전달
+                    'longitude': lngValue, // ✅ dynamic으로 전달
+                    'data': {
+                      ...?(matchedPlace ?? {}),
+                      'lat': latValue, // ✅ data에도 좌표 보존
+                      'lng': lngValue, // ✅ data에도 좌표 보존
+                    },
                   });
-                  
+
                   print('🔍 [경로 확정] orderedPlaces 추가: $placeName');
                   print('   id: ${matchedPlace?['id']}');
-                  print('   lat: ${matchedPlace?['lat']}, lng: ${matchedPlace?['lng']}');
-                  print('   latitude: ${matchedPlace?['latitude']}, longitude: ${matchedPlace?['longitude']}');
+                  print('   latitude: $latValue, longitude: $lngValue');
                 }
-                
+
                 print('🔍 [경로 확정] orderedPlaces 생성 완료:');
                 for (int i = 0; i < orderedPlaces.length; i++) {
-                  print('  [$i] ${orderedPlaces[i]['name']} (id: ${orderedPlaces[i]['id']})');
+                  print(
+                    '  [$i] ${orderedPlaces[i]['name']} (id: ${orderedPlaces[i]['id']})',
+                  );
                 }
-                
+
                 // 기존 호환성을 위한 Map 구조도 생성
                 final Map<String, List<String>> convertedSelected = {};
-                final Map<String, List<Map<String, dynamic>>> selectedPlacesWithData = {};
-                
+                final Map<String, List<Map<String, dynamic>>>
+                selectedPlacesWithData = {};
+
                 for (final item in _items) {
                   if (item.type != _ItemType.place) continue;
                   final String placeName = item.title;
-                  final String categoryName = placeToCategory[placeName] ?? item.categoryName ?? item.subtitle;
+                  final String categoryName =
+                      placeToCategory[placeName] ??
+                      item.categoryName ??
+                      item.subtitle;
                   convertedSelected.putIfAbsent(categoryName, () => []);
                   convertedSelected[categoryName]!.add(placeName);
-                  
+
                   selectedPlacesWithData.putIfAbsent(categoryName, () => []);
                   final originalPlaces = widget.selected[categoryName];
                   if (originalPlaces != null) {
                     for (final place in originalPlaces) {
                       if (place is Map<String, dynamic>) {
-                        final name = place['title'] as String? ?? place['name'] as String? ?? '';
+                        final name =
+                            place['title'] as String? ??
+                            place['name'] as String? ??
+                            '';
                         if (name == placeName) {
                           selectedPlacesWithData[categoryName]!.add(place);
                           break;
@@ -289,7 +330,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                         if (categoryIdByName.containsKey(categoryName)) {
                           return;
                         }
-                        
+
                         for (final place in places) {
                           if (place is Map<String, dynamic>) {
                             final String? catId =
@@ -310,7 +351,9 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                       return ChooseTemplateScreen(
                         selected: convertedSelected,
                         selectedPlacesWithData: selectedPlacesWithData,
-                        categoryIdByName: categoryIdByName.isEmpty ? null : categoryIdByName,
+                        categoryIdByName: categoryIdByName.isEmpty
+                            ? null
+                            : categoryIdByName,
                         originAddress: _originAddress,
                         originDetailAddress: _originDetailAddress,
                         orderedPlaces: orderedPlaces, // 🔥 순서가 유지되는 리스트 전달
@@ -323,7 +366,9 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                 backgroundColor: const Color(0xFFFF8126),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 minimumSize: const Size(double.infinity, 52),
               ),
               child: const Text(
@@ -342,19 +387,22 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
     if (_originAddress == null || _originAddress!.isEmpty) {
       return false;
     }
-    
+
     // 좌표 형식 확인: "위도: 37.505147, 경도: 126.943349"
     final latMatch = RegExp(r'위도:\s*([\d.]+)').firstMatch(_originAddress!);
     final lngMatch = RegExp(r'경도:\s*([\d.]+)').firstMatch(_originAddress!);
-    
+
     if (latMatch != null && lngMatch != null) {
       final lat = double.tryParse(latMatch.group(1)!);
       final lng = double.tryParse(lngMatch.group(1)!);
-      return lat != null && lng != null && 
-             lat >= -90 && lat <= 90 && 
-             lng >= -180 && lng <= 180;
+      return lat != null &&
+          lng != null &&
+          lat >= -90 &&
+          lat <= 90 &&
+          lng >= -180 &&
+          lng <= 180;
     }
-    
+
     return false;
   }
 
@@ -393,13 +441,15 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
       originSubtitle = '출발지';
     }
 
-    items.add(_ScheduleItem(
-      title: originTitle,
-      subtitle: originSubtitle,
-      icon: Icons.home_outlined,
-      color: Colors.grey[700]!,
-      type: _ItemType.origin,
-    ));
+    items.add(
+      _ScheduleItem(
+        title: originTitle,
+        subtitle: originSubtitle,
+        icon: Icons.home_outlined,
+        color: Colors.grey[700]!,
+        type: _ItemType.origin,
+      ),
+    );
 
     // 선택된 장소를 순서대로 나열 (카테고리 순서 유지)
     selected.forEach((category, places) {
@@ -407,31 +457,33 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
         // place가 Map인지 String인지 확인
         String placeName;
         String subCategory;
-        
+
         if (place is Map<String, dynamic>) {
           // Map 형태인 경우 실제 데이터 추출
           // 서버 응답 형식에 따라 여러 필드명 시도 (title, name 순서로)
-          placeName = place['title'] as String? ?? 
-                     place['name'] as String? ?? 
-                     '알 수 없음';
-          subCategory = place['sub_category'] as String? ?? 
-                       place['category'] as String? ?? 
-                       category;
+          placeName =
+              place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
+          subCategory =
+              place['sub_category'] as String? ??
+              place['category'] as String? ??
+              category;
         } else {
           // String 형태인 경우 (기존 호환성 유지)
           placeName = place.toString();
           subCategory = category;
         }
-        
-        items.add(_ScheduleItem(
-          title: placeName,
-          subtitle: subCategory,
-          icon: _iconFor(category),
-          color: const Color(0xFFFF8126),
-          type: _ItemType.place,
-          durationMinutes: items.length == 1 ? 45 : 20,
-          categoryName: category,
-        ));
+
+        items.add(
+          _ScheduleItem(
+            title: placeName,
+            subtitle: subCategory,
+            icon: _iconFor(category),
+            color: const Color(0xFFFF8126),
+            type: _ItemType.place,
+            durationMinutes: items.length == 1 ? 45 : 20,
+            categoryName: category,
+          ),
+        );
       }
     });
 
@@ -483,7 +535,15 @@ class _TimelineRow extends StatelessWidget {
   final bool showDuration;
   final VoidCallback? onTap;
 
-  const _TimelineRow({Key? key, required this.item, required this.index, this.isLast = false, this.onDragHandle, this.showDuration = true, this.onTap}) : super(key: key);
+  const _TimelineRow({
+    Key? key,
+    required this.item,
+    required this.index,
+    this.isLast = false,
+    this.onDragHandle,
+    this.showDuration = true,
+    this.onTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -519,11 +579,7 @@ class _TimelineRow extends StatelessWidget {
                 ),
               ),
               if (!isLast)
-                Container(
-                  width: 2,
-                  height: 60,
-                  color: Colors.grey[300],
-                ),
+                Container(width: 2, height: 60, color: Colors.grey[300]),
             ],
           ),
           const SizedBox(width: 12),
@@ -545,68 +601,74 @@ class _TimelineRow extends StatelessWidget {
                   border: Border.all(color: Colors.grey.withOpacity(0.15)),
                 ),
                 child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFEFE3),
-                      borderRadius: BorderRadius.circular(10),
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEFE3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(item.icon, color: const Color(0xFFFF8126)),
                     ),
-                    child: Icon(item.icon, color: const Color(0xFFFF8126)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        // 출발지 항목이 아닐 때만 주황색 태그로 표시
-                        if (item.type != _ItemType.origin)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF8126),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '# ${item.subtitle}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
+                          const SizedBox(height: 4),
+                          // 출발지 항목이 아닐 때만 주황색 태그로 표시
+                          if (item.type != _ItemType.origin)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF8126),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '# ${item.subtitle}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            )
+                          else
+                            // 출발지 항목은 회색 텍스트로 표시
+                            Text(
+                              item.subtitle,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
                               ),
                             ),
-                          )
-                        else
-                          // 출발지 항목은 회색 텍스트로 표시
-                          Text(
-                            item.subtitle,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  if (item.type == _ItemType.place && onDragHandle != null)
-                    onDragHandle!(const Icon(Icons.drag_handle, color: Colors.grey, size: 18)),
-                  if (item.type == _ItemType.origin && onTap != null)
-                    const Icon(Icons.edit, color: Colors.grey, size: 18),
-                ],
-              ),
+                    if (item.type == _ItemType.place && onDragHandle != null)
+                      onDragHandle!(
+                        const Icon(
+                          Icons.drag_handle,
+                          color: Colors.grey,
+                          size: 18,
+                        ),
+                      ),
+                    if (item.type == _ItemType.origin && onTap != null)
+                      const Icon(Icons.edit, color: Colors.grey, size: 18),
+                  ],
+                ),
               ),
             ),
           ),
@@ -627,15 +689,21 @@ class OriginAddressInputScreen extends StatefulWidget {
   final String? initialAddress;
   final String? initialDetailAddress;
 
-  const OriginAddressInputScreen({Key? key, this.initialAddress, this.initialDetailAddress}) : super(key: key);
+  const OriginAddressInputScreen({
+    Key? key,
+    this.initialAddress,
+    this.initialDetailAddress,
+  }) : super(key: key);
 
   @override
-  State<OriginAddressInputScreen> createState() => _OriginAddressInputScreenState();
+  State<OriginAddressInputScreen> createState() =>
+      _OriginAddressInputScreenState();
 }
 
 class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _detailAddressController = TextEditingController();
+  final TextEditingController _detailAddressController =
+      TextEditingController();
   final FocusNode _detailAddressFocusNode = FocusNode();
   bool _isLoading = false;
   bool _isLoadingGPS = false;
@@ -645,7 +713,7 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     super.initState();
     _addressController.text = widget.initialAddress ?? '';
     _detailAddressController.text = widget.initialDetailAddress ?? '';
-    
+
     // 화면 진입 시 자동으로 현재 위치 가져오기
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _getCurrentLocation();
@@ -673,13 +741,10 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     try {
       await Future.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
-      Navigator.pop(
-        context,
-        {
-          'address': _addressController.text.trim(),
-          'detailAddress': _detailAddressController.text.trim(),
-        },
-      );
+      Navigator.pop(context, {
+        'address': _addressController.text.trim(),
+        'detailAddress': _detailAddressController.text.trim(),
+      });
     } catch (_) {
       if (!mounted) return;
       _showSnackBar('주소 저장 중 오류가 발생했습니다.');
@@ -748,7 +813,8 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
 
       // 위경도만 표시 (서버로 전송할 수 있도록)
       setState(() {
-        _addressController.text = '위도: ${position.latitude.toStringAsFixed(6)}, 경도: ${position.longitude.toStringAsFixed(6)}';
+        _addressController.text =
+            '위도: ${position.latitude.toStringAsFixed(6)}, 경도: ${position.longitude.toStringAsFixed(6)}';
         _detailAddressController.text = '';
       });
       _showSnackBar('위치 정보를 가져왔습니다. 위경도가 서버로 전송됩니다.');
@@ -777,19 +843,25 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
         ),
         title: const Text(
           '출발지 입력',
-          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF8126)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFFFF8126)),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
-                  
+
                   // GPS 버튼
                   ElevatedButton.icon(
                     onPressed: _isLoadingGPS ? null : _getCurrentLocation,
@@ -815,18 +887,26 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   TextField(
                     controller: _addressController,
                     textInputAction: TextInputAction.next,
-                    onSubmitted: (_) => FocusScope.of(context).requestFocus(_detailAddressFocusNode),
+                    onSubmitted: (_) => FocusScope.of(
+                      context,
+                    ).requestFocus(_detailAddressFocusNode),
                     decoration: InputDecoration(
                       hintText: '예: 서울시 강남구 테헤란로 123',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: const Color(0xFFF5F5F5),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -840,8 +920,14 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: const Color(0xFFF5F5F5),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -851,10 +937,18 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                       backgroundColor: const Color(0xFFFF8126),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       minimumSize: const Size(double.infinity, 52),
                     ),
-                    child: const Text('저장하기', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: const Text(
+                      '저장하기',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ],
               ),

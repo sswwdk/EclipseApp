@@ -8,7 +8,8 @@ import 'dart:async';
 
 class ScheduleBuilderScreen extends StatefulWidget {
   final Map<String, List<String>> selected; // 카테고리별 선택 목록
-  final Map<String, List<Map<String, dynamic>>>? selectedPlacesWithData; // 전체 매장 데이터
+  final Map<String, List<Map<String, dynamic>>>?
+  selectedPlacesWithData; // 전체 매장 데이터
   final Map<String, String>? categoryIdByName; // 카테고리명 -> 카테고리ID 매핑
   final String? originAddress; // 출발지 주소
   final String? originDetailAddress; // 출발지 상세 주소
@@ -16,7 +17,8 @@ class ScheduleBuilderScreen extends StatefulWidget {
   final int? otherDurationMinutes; // 템플릿: 이후 체류 시간
   final bool isReadOnly; // 읽기 전용 모드 (편집 불가)
   final Map<int, int>? initialTransportTypes; // 초기 교통수단 정보 (읽기 전용 모드용)
-  final Map<int, RouteResult>? initialRouteResults; // 🔥 각 구간별 경로 정보 (읽기 전용 모드용)
+  final Map<int, RouteResult>?
+  initialRouteResults; // 🔥 각 구간별 경로 정보 (읽기 전용 모드용)
   final List<Map<String, dynamic>>? orderedPlaces; // 🔥 순서가 유지되는 장소 리스트
 
   const ScheduleBuilderScreen({
@@ -42,7 +44,8 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   late List<_ScheduleItem> _items;
   String? _originAddress; // 출발지 주소
   String? _originDetailAddress; // 출발지 상세 주소
-  Map<int, int> _transportTypes = {}; // 각 구간별 교통수단 (key: segmentIndex, value: transportType)
+  Map<int, int> _transportTypes =
+      {}; // 각 구간별 교통수단 (key: segmentIndex, value: transportType)
   bool _isSaving = false;
   bool _isSharing = false;
 
@@ -56,17 +59,17 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
     if (widget.originDetailAddress != null) {
       _originDetailAddress = widget.originDetailAddress;
     }
-    
+
     print('🔍 [ScheduleBuilderScreen] initState');
     print('🔍 orderedPlaces: ${widget.orderedPlaces}');
-    
+
     _items = _buildScheduleItems(widget.selected);
-    
+
     print('🔍 [ScheduleBuilderScreen] _items 생성 완료:');
     for (int i = 0; i < _items.length; i++) {
       print('  [$i] ${_items[i].title} (${_items[i].type})');
     }
-    
+
     // 교통수단 정보 설정 (읽기 전용 모드일 때는 초기값 사용, 아니면 기본값)
     if (widget.isReadOnly && widget.initialTransportTypes != null) {
       _transportTypes = Map<int, int>.from(widget.initialTransportTypes!);
@@ -145,86 +148,111 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
             if (itemIndex < items.length - 1) {
               return _TransportationCard(
                 segmentIndex: itemIndex,
-                selectedTransportType: _transportTypes[itemIndex] ?? 0, // 기본값: 도보
-                onTransportTypeChanged: widget.isReadOnly ? null : (type) {
-                  setState(() {
-                    _transportTypes[itemIndex] = type;
-                  });
-                },
+                selectedTransportType:
+                    _transportTypes[itemIndex] ?? 0, // 기본값: 도보
+                onTransportTypeChanged: widget.isReadOnly
+                    ? null
+                    : (type) {
+                        setState(() {
+                          _transportTypes[itemIndex] = type;
+                        });
+                      },
                 isReadOnly: widget.isReadOnly,
-                originCoordinates: itemIndex == 0 
-                    ? _getOriginCoordinates() 
+                originCoordinates: itemIndex == 0
+                    ? _getOriginCoordinates()
                     : _getPlaceCoordinates(items[itemIndex]),
-                destinationCoordinates: _getPlaceCoordinates(items[itemIndex + 1]),
+                destinationCoordinates: _getPlaceCoordinates(
+                  items[itemIndex + 1],
+                ),
                 orderedPlaces: widget.orderedPlaces,
-                initialRouteResult: widget.initialRouteResults?[itemIndex], // 🔥 읽기 전용 모드일 때 서버에서 받은 경로 정보
+                initialRouteResult: widget
+                    .initialRouteResults?[itemIndex], // 🔥 읽기 전용 모드일 때 서버에서 받은 경로 정보
               );
             }
             return const SizedBox.shrink();
           }
         },
       ),
-      bottomNavigationBar: widget.isReadOnly ? null : Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.white,
-        child: SafeArea(
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _isSaving ? null : _handleSave,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: Color(0xFFFF8126), width: 2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    foregroundColor: const Color(0xFFFF8126),
-                    minimumSize: const Size(double.infinity, 52),
-                  ),
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+      bottomNavigationBar: widget.isReadOnly
+          ? null
+          : Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.white,
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _isSaving ? null : _handleSave,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(
+                            color: Color(0xFFFF8126),
+                            width: 2,
                           ),
-                        )
-                      : const Text(
-                          '저장하기',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          foregroundColor: const Color(0xFFFF8126),
+                          minimumSize: const Size(double.infinity, 52),
                         ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFFFF8126),
+                                  ),
+                                ),
+                              )
+                            : const Text(
+                                '저장하기',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _isSharing ? null : _handleShare,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF8126),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          minimumSize: const Size(double.infinity, 52),
+                        ),
+                        child: _isSharing
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Text(
+                                '공유하기',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _isSharing ? null : _handleShare,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF8126),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    minimumSize: const Size(double.infinity, 52),
-                  ),
-                  child: _isSharing
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text(
-                          '공유하기',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -239,17 +267,11 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           ),
           title: const Text(
             '홈으로 돌아가기',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           content: const Text(
             '저장하지 않은 일정표는 다시 불러올 수 없습니다',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.black87),
           ),
           actions: [
             TextButton(
@@ -279,10 +301,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
               ),
               child: const Text(
                 '홈으로 돌아가기',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -300,12 +319,50 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   }
 
   /// 저장하기 버튼 클릭 시 서버에 일정표 저장
+  /// 저장하기 버튼 클릭 시 서버에 일정표 저장
   Future<void> _handleSave() async {
     setState(() {
       _isSaving = true;
     });
 
     try {
+      // 🔥 각 구간별 경로 정보 수집
+      print('🚀 경로 정보 수집 시작...');
+      final Map<int, RouteResult> routeResults = {};
+
+      // 각 구간별로 경로 계산
+      for (int i = 0; i < _items.length - 1; i++) {
+        final originCoords = i == 0
+            ? _getOriginCoordinates()
+            : _getPlaceCoordinates(_items[i]);
+        final destCoords = _getPlaceCoordinates(_items[i + 1]);
+
+        if (originCoords != null && destCoords != null) {
+          try {
+            print(
+              '🔍 구간 $i 경로 계산 중: ${_items[i].title} → ${_items[i + 1].title}',
+            );
+            final route = await RouteService.calculateRoute(
+              origin: originCoords,
+              destination: destCoords,
+              transportType: _transportTypes[i] ?? 0,
+            );
+            routeResults[i] = route;
+            print(
+              '✅ 구간 $i 경로 계산 완료: ${route.durationMinutes}분, ${route.distanceMeters}m',
+            );
+          } catch (e) {
+            print('❌ 구간 $i 경로 계산 실패: $e');
+            // 경로 계산 실패 시에도 계속 진행 (fallback으로 템플릿 시간 사용)
+          }
+        } else {
+          print('⚠️ 구간 $i 좌표 정보 없음');
+        }
+      }
+
+      print('🚀 총 ${routeResults.length}개 구간 경로 정보 수집 완료');
+
+      // 서버에 저장
       await HistoryService.saveSchedule(
         selectedPlaces: widget.selected,
         selectedPlacesWithData: widget.selectedPlacesWithData,
@@ -314,6 +371,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         originAddress: _originAddress,
         originDetailAddress: _originDetailAddress,
         transportTypes: _transportTypes,
+        routeResults: routeResults, // 🔥 실제 경로 정보 전달
         firstDurationMinutes: widget.firstDurationMinutes,
         otherDurationMinutes: widget.otherDurationMinutes,
       );
@@ -408,7 +466,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   /// 일정표 정보를 텍스트로 변환
   String _buildScheduleText() {
     final buffer = StringBuffer();
-    
+
     // 출발지
     if (_originAddress != null && _originAddress!.isNotEmpty) {
       buffer.writeln('출발지: $_originAddress');
@@ -418,10 +476,10 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
     } else {
       buffer.writeln('출발지: 집');
     }
-    
+
     buffer.writeln('');
     buffer.writeln('일정:');
-    
+
     // 장소 목록
     int order = 1;
     widget.selected.forEach((category, places) {
@@ -430,7 +488,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         order++;
       }
     });
-    
+
     return buffer.toString();
   }
 
@@ -438,11 +496,11 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
 
   List<_ScheduleItem> _buildScheduleItems(Map<String, List<String>> selected) {
     final List<_ScheduleItem> items = [];
-    
+
     // 출발지(집)
     String originTitle = '집';
     String originSubtitle = '출발지';
-    
+
     if (_originAddress != null && _originAddress!.isNotEmpty) {
       if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty) {
         originTitle = '$_originAddress $_originDetailAddress';
@@ -451,15 +509,17 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       }
       originSubtitle = '출발지';
     }
-    
-    items.add(_ScheduleItem(
-      title: originTitle,
-      subtitle: originSubtitle,
-      icon: Icons.home_outlined,
-      color: Colors.grey[700]!,
-      type: _ItemType.origin,
-      time: null,
-    ));
+
+    items.add(
+      _ScheduleItem(
+        title: originTitle,
+        subtitle: originSubtitle,
+        icon: Icons.home_outlined,
+        color: Colors.grey[700]!,
+        type: _ItemType.origin,
+        time: null,
+      ),
+    );
 
     // 🔥 orderedPlaces가 있으면 순서대로 사용, 없으면 기존 방식
     if (widget.orderedPlaces != null && widget.orderedPlaces!.isNotEmpty) {
@@ -468,29 +528,15 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         final placeName = placeData['name'] as String? ?? '알 수 없음';
         final category = placeData['category'] as String? ?? '기타';
         // 🔥 주소 정보 추출
-        final address = placeData['address'] as String? ?? 
-                       placeData['detail_address'] as String?;
-        
-        items.add(_ScheduleItem(
-          title: placeName,
-          subtitle: category,
-          address: address, // 🔥 주소 정보 추가
-          icon: _iconFor(category),
-          color: const Color(0xFFFF8126),
-          type: _ItemType.place,
-          durationMinutes: items.length == 1
-              ? (widget.firstDurationMinutes ?? 45)
-              : (widget.otherDurationMinutes ?? 20),
-          time: null,
-        ));
-      }
-    } else {
-      // 기존 방식: 카테고리별로 그룹화됨 (하위 호환성)
-      selected.forEach((category, places) {
-        for (final place in places) {
-          items.add(_ScheduleItem(
-            title: place,
+        final address =
+            placeData['address'] as String? ??
+            placeData['detail_address'] as String?;
+
+        items.add(
+          _ScheduleItem(
+            title: placeName,
             subtitle: category,
+            address: address, // 🔥 주소 정보 추가
             icon: _iconFor(category),
             color: const Color(0xFFFF8126),
             type: _ItemType.place,
@@ -498,7 +544,26 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                 ? (widget.firstDurationMinutes ?? 45)
                 : (widget.otherDurationMinutes ?? 20),
             time: null,
-          ));
+          ),
+        );
+      }
+    } else {
+      // 기존 방식: 카테고리별로 그룹화됨 (하위 호환성)
+      selected.forEach((category, places) {
+        for (final place in places) {
+          items.add(
+            _ScheduleItem(
+              title: place,
+              subtitle: category,
+              icon: _iconFor(category),
+              color: const Color(0xFFFF8126),
+              type: _ItemType.place,
+              durationMinutes: items.length == 1
+                  ? (widget.firstDurationMinutes ?? 45)
+                  : (widget.otherDurationMinutes ?? 20),
+              time: null,
+            ),
+          );
         }
       });
     }
@@ -531,9 +596,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       if (placeName == item.title) {
         final data = placeData['data'] as Map<String, dynamic>?;
         if (data != null) {
-          return data['address'] as String? ?? 
-                 data['detail_address'] as String? ??
-                 placeData['address'] as String?;
+          return data['address'] as String? ??
+              data['detail_address'] as String? ??
+              placeData['address'] as String?;
         }
         return placeData['address'] as String?;
       }
@@ -554,7 +619,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         // 위경도를 최상위 레벨에서 먼저 확인
         dynamic latValue = placeData['latitude'] ?? placeData['lat'];
         dynamic lngValue = placeData['longitude'] ?? placeData['lng'];
-        
+
         // 최상위 레벨에 없으면 data 안에서 확인
         if (latValue == null || lngValue == null) {
           final data = placeData['data'] as Map<String, dynamic>?;
@@ -563,23 +628,23 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
             lngValue ??= data['longitude'] ?? data['lng'];
           }
         }
-        
+
         // 문자열이면 파싱, 숫자면 그대로 사용
         double? lat;
         double? lng;
-        
+
         if (latValue is String) {
           lat = double.tryParse(latValue);
         } else if (latValue is num) {
           lat = latValue.toDouble();
         }
-        
+
         if (lngValue is String) {
           lng = double.tryParse(lngValue);
         } else if (lngValue is num) {
           lng = lngValue.toDouble();
         }
-        
+
         if (lat != null && lng != null) {
           return (lat: lat, lng: lng);
         }
@@ -591,7 +656,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
 
   /// 출발지 좌표를 가져오는 헬퍼 메서드
   ({double lat, double lng})? _getOriginCoordinates() {
-    // 출발지 주소가 있으면 좌표 변환이 필요하지만, 
+    // 출발지 주소가 있으면 좌표 변환이 필요하지만,
     // 일단 null을 반환하고 서버에서 처리하거나 나중에 주소->좌표 변환 API 추가
     // TODO: 출발지 주소를 좌표로 변환하는 로직 추가 (카카오 API 등)
     // 현재는 출발지가 GPS 위치인 경우를 처리할 수 있도록 주소 형식 확인
@@ -599,7 +664,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       // GPS 위치 형식: "위도: 37.505147, 경도: 126.943349"
       final latMatch = RegExp(r'위도:\s*([\d.]+)').firstMatch(_originAddress!);
       final lngMatch = RegExp(r'경도:\s*([\d.]+)').firstMatch(_originAddress!);
-      
+
       if (latMatch != null && lngMatch != null) {
         final lat = double.tryParse(latMatch.group(1)!);
         final lng = double.tryParse(lngMatch.group(1)!);
@@ -645,7 +710,15 @@ class _TimelineRow extends StatelessWidget {
   final bool showDuration;
   final VoidCallback? onTap;
 
-  const _TimelineRow({Key? key, required this.item, required this.index, this.isLast = false, this.onDragHandle, this.showDuration = true, this.onTap}) : super(key: key);
+  const _TimelineRow({
+    Key? key,
+    required this.item,
+    required this.index,
+    this.isLast = false,
+    this.onDragHandle,
+    this.showDuration = true,
+    this.onTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -708,8 +781,8 @@ class _TimelineRow extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: item.type == _ItemType.origin 
-                      ? Colors.grey[100] 
+                  color: item.type == _ItemType.origin
+                      ? Colors.grey[100]
                       : Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey.withOpacity(0.2)),
@@ -726,11 +799,11 @@ class _TimelineRow extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
-                        item.icon, 
-                        color: item.type == _ItemType.origin 
-                            ? Colors.grey[700] 
-                            : const Color(0xFFFF8126), 
-                        size: 20
+                        item.icon,
+                        color: item.type == _ItemType.origin
+                            ? Colors.grey[700]
+                            : const Color(0xFFFF8126),
+                        size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -751,7 +824,10 @@ class _TimelineRow extends StatelessWidget {
                           if (item.subtitle.isNotEmpty) ...[
                             Text(
                               item.subtitle,
-                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
                             ),
                             const SizedBox(height: 2),
                           ],
@@ -759,8 +835,10 @@ class _TimelineRow extends StatelessWidget {
                           Text(
                             item.address ?? '주소 정보 없음',
                             style: TextStyle(
-                              fontSize: 12, 
-                              color: item.address != null ? Colors.grey[600] : Colors.grey[400],
+                              fontSize: 12,
+                              color: item.address != null
+                                  ? Colors.grey[600]
+                                  : Colors.grey[400],
                             ),
                           ),
                         ],
@@ -844,7 +922,8 @@ class _TransportationCardState extends State<_TransportationCard> {
 
   Future<void> _loadRouteInfo() async {
     // 좌표 정보가 없으면 로드하지 않음
-    if (widget.originCoordinates == null || widget.destinationCoordinates == null) {
+    if (widget.originCoordinates == null ||
+        widget.destinationCoordinates == null) {
       return;
     }
 
@@ -858,7 +937,7 @@ class _TransportationCardState extends State<_TransportationCard> {
       print('   origin: ${widget.originCoordinates}');
       print('   destination: ${widget.destinationCoordinates}');
       print('   transportType: ${widget.selectedTransportType}');
-      
+
       final result = await RouteService.calculateRoute(
         origin: widget.originCoordinates!,
         destination: widget.destinationCoordinates!,
@@ -912,23 +991,29 @@ class _TransportationCardState extends State<_TransportationCard> {
                   icon: Icons.directions_walk,
                   label: '도보',
                   isSelected: widget.selectedTransportType == 0,
-                  onTap: widget.isReadOnly ? null : () => widget.onTransportTypeChanged?.call(0),
+                  onTap: widget.isReadOnly
+                      ? null
+                      : () => widget.onTransportTypeChanged?.call(0),
                 ),
                 _TransportButton(
                   icon: Icons.train,
                   label: '대중교통',
                   isSelected: widget.selectedTransportType == 1,
-                  onTap: widget.isReadOnly ? null : () => widget.onTransportTypeChanged?.call(1),
+                  onTap: widget.isReadOnly
+                      ? null
+                      : () => widget.onTransportTypeChanged?.call(1),
                 ),
                 _TransportButton(
                   icon: Icons.directions_car,
                   label: '자동차',
                   isSelected: widget.selectedTransportType == 2,
-                  onTap: widget.isReadOnly ? null : () => widget.onTransportTypeChanged?.call(2),
+                  onTap: widget.isReadOnly
+                      ? null
+                      : () => widget.onTransportTypeChanged?.call(2),
                 ),
               ],
             ),
-            
+
             // 선택된 교통수단의 상세 정보
             const SizedBox(height: 16),
             Container(
@@ -990,7 +1075,8 @@ class _TransportationCardState extends State<_TransportationCard> {
     }
 
     // 좌표 정보가 없으면 로딩 또는 기본값 표시
-    if (widget.originCoordinates == null || widget.destinationCoordinates == null) {
+    if (widget.originCoordinates == null ||
+        widget.destinationCoordinates == null) {
       // 좌표가 없으면 로딩 중 표시 (하드코딩된 기본값 대신)
       if (_isLoading) {
         return Row(
@@ -1015,7 +1101,11 @@ class _TransportationCardState extends State<_TransportationCard> {
       if (!widget.isReadOnly) {
         return Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange[300], size: 20),
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.orange[300],
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1059,12 +1149,16 @@ class _TransportationCardState extends State<_TransportationCard> {
     }
 
     final durationMinutes = _routeResult!.durationMinutes;
-    
+
     switch (widget.selectedTransportType) {
       case 0: // 도보
         return Row(
           children: [
-            const Icon(Icons.directions_walk, color: Color(0xFFFF8126), size: 20),
+            const Icon(
+              Icons.directions_walk,
+              color: Color(0xFFFF8126),
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1079,7 +1173,11 @@ class _TransportationCardState extends State<_TransportationCard> {
       case 2: // 자동차
         return Row(
           children: [
-            const Icon(Icons.directions_car, color: Color(0xFFFF8126), size: 20),
+            const Icon(
+              Icons.directions_car,
+              color: Color(0xFFFF8126),
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1098,7 +1196,7 @@ class _TransportationCardState extends State<_TransportationCard> {
     final steps = _routeResult?.steps;
     final distanceMeters = _routeResult?.distanceMeters ?? 0;
     final distanceKm = distanceMeters / 1000.0;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1117,7 +1215,7 @@ class _TransportationCardState extends State<_TransportationCard> {
                   if (distanceKm > 0) ...[
                     const SizedBox(height: 2),
                     Text(
-                      distanceKm >= 1 
+                      distanceKm >= 1
                           ? '거리 약 ${distanceKm.toStringAsFixed(1)}km'
                           : '거리 약 ${distanceMeters}m',
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -1145,7 +1243,7 @@ class _TransportationCardState extends State<_TransportationCard> {
   Widget _buildTransportStep(RouteStep step) {
     IconData icon;
     Color iconColor;
-    
+
     switch (step.type) {
       case 'walk':
         icon = Icons.directions_walk;
@@ -1200,7 +1298,6 @@ class _TransportationCardState extends State<_TransportationCard> {
       ),
     );
   }
-
 }
 
 // 교통수단 버튼
@@ -1263,12 +1360,14 @@ class OriginAddressInputScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<OriginAddressInputScreen> createState() => _OriginAddressInputScreenState();
+  State<OriginAddressInputScreen> createState() =>
+      _OriginAddressInputScreenState();
 }
 
 class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _detailAddressController = TextEditingController();
+  final TextEditingController _detailAddressController =
+      TextEditingController();
   final FocusNode _detailAddressFocusNode = FocusNode();
   bool _isLoading = false;
 
@@ -1300,16 +1399,13 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     try {
       // 주소 저장
       await Future.delayed(const Duration(milliseconds: 300));
-      
+
       if (!mounted) return;
-      
-      Navigator.pop(
-        context,
-        {
-          'address': _addressController.text.trim(),
-          'detailAddress': _detailAddressController.text.trim(),
-        },
-      );
+
+      Navigator.pop(context, {
+        'address': _addressController.text.trim(),
+        'detailAddress': _detailAddressController.text.trim(),
+      });
     } catch (e) {
       if (!mounted) return;
       _showSnackBar('주소 저장 중 오류가 발생했습니다: $e');
@@ -1324,13 +1420,9 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -1355,9 +1447,7 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFFFF8126),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFFFF8126)),
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -1365,7 +1455,7 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
-                  
+
                   // 구분선
                   Row(
                     children: [
@@ -1383,9 +1473,9 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                       Expanded(child: Divider(color: Colors.grey[300])),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // 주소 입력 필드
                   Text(
                     '주소',
@@ -1400,7 +1490,9 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                     controller: _addressController,
                     textInputAction: TextInputAction.next,
                     onSubmitted: (_) {
-                      FocusScope.of(context).requestFocus(_detailAddressFocusNode);
+                      FocusScope.of(
+                        context,
+                      ).requestFocus(_detailAddressFocusNode);
                     },
                     decoration: InputDecoration(
                       hintText: '예: 서울시 강남구 테헤란로 123',
@@ -1427,9 +1519,9 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // 상세 주소 입력 필드
                   Text(
                     '상세 주소 (건물명, 동/호수 등)',
@@ -1464,9 +1556,9 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // 저장하기 버튼
                   ElevatedButton(
                     onPressed: _isLoading ? null : _saveAddress,
@@ -1493,4 +1585,3 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     );
   }
 }
-
