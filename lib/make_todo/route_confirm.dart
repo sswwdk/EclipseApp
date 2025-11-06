@@ -118,6 +118,17 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
+                // 🔥 좌표 입력 확인
+                if (!_hasValidCoordinates()) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('현재 위치 좌표를 입력해주세요.'),
+                      duration: Duration(seconds: 2),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
                 print('🔍 경로 확정하기 버튼 클릭');
                 print('🔍 widget.selected 데이터:');
                 widget.selected.forEach((category, places) {
@@ -324,6 +335,27 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
         ),
       ),
     );
+  }
+
+  /// 좌표가 유효한지 확인 (위도와 경도 형식인지 체크)
+  bool _hasValidCoordinates() {
+    if (_originAddress == null || _originAddress!.isEmpty) {
+      return false;
+    }
+    
+    // 좌표 형식 확인: "위도: 37.505147, 경도: 126.943349"
+    final latMatch = RegExp(r'위도:\s*([\d.]+)').firstMatch(_originAddress!);
+    final lngMatch = RegExp(r'경도:\s*([\d.]+)').firstMatch(_originAddress!);
+    
+    if (latMatch != null && lngMatch != null) {
+      final lat = double.tryParse(latMatch.group(1)!);
+      final lng = double.tryParse(lngMatch.group(1)!);
+      return lat != null && lng != null && 
+             lat >= -90 && lat <= 90 && 
+             lng >= -180 && lng <= 180;
+    }
+    
+    return false;
   }
 
   Future<void> _showOriginAddressInput() async {
