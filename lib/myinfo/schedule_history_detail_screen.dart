@@ -113,46 +113,41 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
 
     print('🔍 서버에서 받은 categories: $categories');
     
-    // 🔥 categories_name에서 정확한 순서 추출 (서버가 categories 순서를 보장하지 않음)
-    final categoriesNameStr = data['categories_name'] as String? ?? '';
-    final orderedNames = categoriesNameStr.split('→').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    // 🔥 seq 필드로 정렬 (서버 응답에 seq가 있음!)
+    final sortedCategories = List<Map<String, dynamic>>.from(
+      categories.map((c) => c as Map<String, dynamic>)
+    );
+    sortedCategories.sort((a, b) {
+      final seqA = a['seq'] as int? ?? 0;
+      final seqB = b['seq'] as int? ?? 0;
+      return seqA.compareTo(seqB);
+    });
     
-    print('🔍 categories_name에서 추출한 순서: $orderedNames');
-
-    // 카테고리 데이터를 Map으로 변환 (이름 -> 데이터)
-    final Map<String, Map<String, dynamic>> categoryDataByName = {};
-    for (final category in categories) {
-      final categoryMap = category as Map<String, dynamic>;
-      final categoryName = categoryMap['category_name'] as String? ?? '';
-      if (categoryName.isNotEmpty) {
-        categoryDataByName[categoryName] = categoryMap;
-      }
+    print('🔍 seq로 정렬된 categories:');
+    for (int i = 0; i < sortedCategories.length; i++) {
+      print('  [$i] ${sortedCategories[i]['category_name']} (seq: ${sortedCategories[i]['seq']})');
     }
 
-    // 🔥 orderedNames 순서대로 처리 (정확한 순서 보장!)
-    for (int i = 0; i < orderedNames.length; i++) {
-      final categoryName = orderedNames[i];
-      final categoryData = categoryDataByName[categoryName];
-      
-      if (categoryData == null) {
-        print('⚠️ [$i] $categoryName: 데이터를 찾을 수 없음');
-        continue;
-      }
-
-      final categoryId = categoryData['category_id'] as String? ?? '';
-      final duration = categoryData['duration'] as int? ?? 60;
+    // 🔥 정렬된 순서대로 처리
+    for (int i = 0; i < sortedCategories.length; i++) {
+      final category = sortedCategories[i];
+      final categoryName = category['category_name'] as String? ?? '';
+      final categoryId = category['category_id'] as String? ?? '';
+      final duration = category['duration'] as int? ?? 60;
       int transportation = 1; // 기본값: 대중교통
-      if (categoryData['transportation'] != null) {
-        if (categoryData['transportation'] is int) {
-          transportation = categoryData['transportation'] as int;
-        } else if (categoryData['transportation'] is String) {
-          transportation = int.tryParse(categoryData['transportation'] as String) ?? 1;
+      if (category['transportation'] != null) {
+        if (category['transportation'] is int) {
+          transportation = category['transportation'] as int;
+        } else if (category['transportation'] is String) {
+          transportation = int.tryParse(category['transportation'] as String) ?? 1;
         }
       }
 
       print('🔍 [$i] categoryName: $categoryName, transportation: $transportation');
+      
+      if (categoryName.isEmpty) continue;
 
-      // 🔥 orderedPlaces에 순서대로 추가 (categories_name 순서 기준!)
+      // 🔥 orderedPlaces에 순서대로 추가 (seq 순서 기준!)
       orderedPlaces.add({
         'id': categoryId,
         'name': categoryName,
@@ -180,7 +175,7 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
         categoryIdByName[categoryName] = categoryId;
       }
 
-      // 🔥 교통수단 정보 저장
+      // 🔥 교통수단 정보 저장: sortedCategories[i]의 transportation은 "출발지 → i번째 장소"의 이동수단
       transportTypes[i] = transportation;
 
       // 첫 번째 체류 시간 설정
