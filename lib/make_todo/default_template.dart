@@ -1200,35 +1200,71 @@ class _TransportationCardState extends State<_TransportationCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.train, color: Color(0xFFFF8126), size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '대중교통 약 ${durationMinutes}분',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                  if (distanceKm > 0) ...[
-                    const SizedBox(height: 2),
+        // 헤더: 요약 정보
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF5E8),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.train, color: Color(0xFFFF8126), size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      distanceKm >= 1
-                          ? '거리 약 ${distanceKm.toStringAsFixed(1)}km'
-                          : '거리 약 ${distanceMeters}m',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      '대중교통 약 ${durationMinutes}분',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFFF8126),
+                      ),
                     ),
+                    if (distanceKm > 0) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        distanceKm >= 1
+                            ? '거리 약 ${distanceKm.toStringAsFixed(1)}km'
+                            : '거리 약 ${distanceMeters}m',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+
+        // 상세 경로
         if (steps != null && steps.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          ...steps.map((step) => _buildTransportStep(step)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '상세 경로',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...steps.map((step) => _buildTransportStep(step)),
+              ],
+            ),
+          ),
         ] else if (_routeResult?.summary != null) ...[
           const SizedBox(height: 8),
           Text(
@@ -1247,15 +1283,15 @@ class _TransportationCardState extends State<_TransportationCard> {
     switch (step.type) {
       case 'walk':
         icon = Icons.directions_walk;
-        iconColor = Colors.blue;
+        iconColor = const Color(0xFF4A90E2);
         break;
       case 'transit':
         icon = Icons.train;
-        iconColor = Colors.green;
+        iconColor = const Color(0xFF5CB85C);
         break;
       case 'drive':
         icon = Icons.directions_car;
-        iconColor = Colors.orange;
+        iconColor = const Color(0xFFF0AD4E);
         break;
       default:
         icon = Icons.arrow_forward;
@@ -1263,18 +1299,19 @@ class _TransportationCardState extends State<_TransportationCard> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(4),
+              color: iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, color: iconColor, size: 16),
+            child: Icon(icon, color: iconColor, size: 18),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1282,15 +1319,24 @@ class _TransportationCardState extends State<_TransportationCard> {
                 if (step.description != null && step.description!.isNotEmpty)
                   Text(
                     step.description!,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                if (step.durationMinutes > 0)
+                // 🔥 도보인 경우는 항상 표시, 다른 경우는 0분 이상일 때만 표시
+                if (step.type == 'walk' || step.durationMinutes > 0) ...[
+                  const SizedBox(height: 2),
                   Text(
-                    '${step.durationMinutes}분',
+                    step.durationMinutes > 0
+                        ? '${step.durationMinutes}분'
+                        : '이동 없음', // 🔥 시간이 0이면 "이동 없음"으로 표시
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
+                ],
               ],
             ),
           ),

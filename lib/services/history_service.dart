@@ -101,34 +101,51 @@ class HistoryService {
             // 🔥 실제 경로 계산 결과 사용 (초 단위)
             int durationSeconds = 0;
             int distanceMeters = 0;
+            String? description; // 🔥 대중교통 상세 정보
 
             if (routeResults != null && routeResults.containsKey(i)) {
-              // ✅ 원본 초 데이터를 그대로 사용 (변환하지 않음!)
               final route = routeResults[i]!;
-              durationSeconds =
-                  route.durationSeconds; // 🔥 durationMinutes * 60 대신 원본 사용
+              durationSeconds = route.durationSeconds; // 🔥 원본 초 데이터
               distanceMeters = route.distanceMeters;
+
+              // 🔥 대중교통 상세 정보 생성 (steps가 있는 경우)
+              if (transportationCode == '1' &&
+                  route.steps != null &&
+                  route.steps!.isNotEmpty) {
+                description = _buildTransportDescription(route);
+              }
+
               print(
                 '✅ [$i] 실제 경로 정보 사용 (원본 초): ${durationSeconds}초 (${route.durationMinutes}분 표시), ${distanceMeters}m',
               );
+              if (description != null) {
+                print('   description: $description');
+              }
             } else {
               // 경로 정보가 없으면 하드코딩된 템플릿 시간 사용 (fallback)
               final int durationMinutes = i == 0
                   ? (firstDurationMinutes ?? otherDurationMinutes ?? 60)
                   : (otherDurationMinutes ?? 60);
-              durationSeconds = durationMinutes * 60; // 분을 초로 변환
+              durationSeconds = durationMinutes * 60;
               print(
                 '⚠️ [$i] 경로 정보 없음, 템플릿 시간 사용: ${durationMinutes}분 → ${durationSeconds}초',
               );
             }
 
-            categories.add({
+            final categoryData = {
               'category_id': categoryId,
               'category_name': placeName,
-              'duration': durationSeconds, // 🔥 원본 초 단위로 저장
+              'duration': durationSeconds, // 🔥 초 단위로 저장
               'distance': distanceMeters,
               'transportation': transportationCode,
-            });
+            };
+
+            // 🔥 description이 있으면 추가
+            if (description != null && description.isNotEmpty) {
+              categoryData['description'] = description;
+            }
+
+            categories.add(categoryData);
 
             print(
               '✅ [$i] 카테고리 추가: $placeName (duration: ${durationSeconds}초, distance: ${distanceMeters}m, transport: $transportationCode)',
@@ -187,13 +204,23 @@ class HistoryService {
 
                   // 🔥 실제 경로 계산 결과 사용 (초 단위)
                   int durationSeconds = 0;
+                  int distanceMeters = 0;
+                  String? description;
 
                   if (routeResults != null &&
                       routeResults.containsKey(addedCategoryCount)) {
                     final route = routeResults[addedCategoryCount]!;
-                    durationSeconds = route.durationMinutes * 60;
+                    durationSeconds = route.durationSeconds;
+                    distanceMeters = route.distanceMeters;
+
+                    if (transportationCode == '1' &&
+                        route.steps != null &&
+                        route.steps!.isNotEmpty) {
+                      description = _buildTransportDescription(route);
+                    }
+
                     print(
-                      '✅ 실제 경로 정보 사용: ${route.durationMinutes}분 → ${durationSeconds}초',
+                      '✅ 실제 경로 정보 사용 (원본 초): ${durationSeconds}초 (${route.durationMinutes}분 표시)',
                     );
                   } else {
                     final int durationMinutes = addedCategoryCount == 0
@@ -205,12 +232,19 @@ class HistoryService {
                     );
                   }
 
-                  categories.add({
+                  final categoryData = {
                     'category_id': categoryId,
                     'category_name': matchedPlaceName,
                     'duration': durationSeconds, // 🔥 초 단위로 저장
+                    'distance': distanceMeters,
                     'transportation': transportationCode,
-                  });
+                  };
+
+                  if (description != null && description.isNotEmpty) {
+                    categoryData['description'] = description;
+                  }
+
+                  categories.add(categoryData);
 
                   print(
                     '✅ 카테고리 추가: $matchedPlaceName (duration: ${durationSeconds}초, transport: $transportationCode)',
@@ -235,10 +269,20 @@ class HistoryService {
 
                 // 🔥 초 단위로 변환
                 int durationSeconds = 0;
+                int distanceMeters = 0;
+                String? description;
+
                 if (routeResults != null &&
                     routeResults.containsKey(addedCategoryCount)) {
-                  durationSeconds =
-                      routeResults[addedCategoryCount]!.durationMinutes * 60;
+                  final route = routeResults[addedCategoryCount]!;
+                  durationSeconds = route.durationSeconds;
+                  distanceMeters = route.distanceMeters;
+
+                  if (transportationCode == '1' &&
+                      route.steps != null &&
+                      route.steps!.isNotEmpty) {
+                    description = _buildTransportDescription(route);
+                  }
                 } else {
                   final int durationMinutes = addedCategoryCount == 0
                       ? (firstDurationMinutes ?? otherDurationMinutes ?? 60)
@@ -246,12 +290,19 @@ class HistoryService {
                   durationSeconds = durationMinutes * 60;
                 }
 
-                categories.add({
+                final categoryData = {
                   'category_id': categoryId,
                   'category_name': categoryName,
                   'duration': durationSeconds, // 🔥 초 단위
+                  'distance': distanceMeters,
                   'transportation': transportationCode,
-                });
+                };
+
+                if (description != null && description.isNotEmpty) {
+                  categoryData['description'] = description;
+                }
+
+                categories.add(categoryData);
                 print(
                   '✅ categoryIdByName에서 카테고리 추가: $categoryName (duration: ${durationSeconds}초)',
                 );
@@ -303,6 +354,72 @@ class HistoryService {
       print('일정표 저장 오류: $e');
       throw Exception('네트워크 오류: $e');
     }
+  }
+
+  /// 🔥 대중교통 경로 상세 정보를 텍스트로 변환
+  /// 🔥 대중교통 경로 상세 정보를 텍스트로 변환
+  static String _buildTransportDescription(RouteResult route) {
+    final buffer = StringBuffer();
+
+    // 전체 요약
+    buffer.writeln('대중교통 약 ${route.durationMinutes}분');
+    final distanceKm = route.distanceMeters / 1000.0;
+    if (distanceKm >= 1) {
+      buffer.writeln('거리 약 ${distanceKm.toStringAsFixed(1)}km');
+    } else {
+      buffer.writeln('거리 약 ${route.distanceMeters}m');
+    }
+    buffer.writeln('');
+
+    // 각 단계별 상세 정보
+    if (route.steps != null && route.steps!.isNotEmpty) {
+      for (int i = 0; i < route.steps!.length; i++) {
+        final step = route.steps![i];
+
+        // 아이콘 추가
+        String icon = '';
+        switch (step.type) {
+          case 'walk':
+            icon = '';
+            break;
+          case 'transit':
+            icon = '';
+            break;
+          case 'drive':
+            icon = '';
+            break;
+          default:
+            icon = '';
+        }
+
+        // 설명과 시간
+        if (step.description != null && step.description!.isNotEmpty) {
+          buffer.write('$icon ${step.description}');
+        } else {
+          buffer.write('$icon ${step.type}');
+        }
+
+        // 🔥 도보인 경우는 항상 표시, 다른 경우는 0분 이상일 때만 표시
+        if (step.type == 'walk') {
+          if (step.durationMinutes > 0) {
+            buffer.write(' (${step.durationMinutes}분)');
+          }
+          // 시간이 0이어도 줄바꿈은 추가
+        } else if (step.durationMinutes > 0) {
+          buffer.write(' (${step.durationMinutes}분)');
+        }
+
+        // 마지막 항목이 아니면 줄바꿈
+        if (i < route.steps!.length - 1) {
+          buffer.writeln('');
+        }
+      }
+    } else if (route.summary != null) {
+      // steps가 없고 summary만 있는 경우
+      buffer.write(route.summary);
+    }
+
+    return buffer.toString().trim();
   }
 
   // 히스토리 상세 조회
