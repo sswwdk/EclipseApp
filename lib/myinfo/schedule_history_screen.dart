@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../services/history_service.dart';
 import '../services/token_manager.dart';
 import 'schedule_history_detail_screen.dart';
+import 'schedule_history_normal_detail_screen.dart';
 
 class ScheduleHistoryScreen extends StatefulWidget {
   const ScheduleHistoryScreen({Key? key}) : super(key: key);
@@ -391,7 +392,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       itemBuilder: (context, index) {
         final item = _otherItems[index];
-        return _buildScheduleCard(item);
+        return _buildScheduleCard(item, isNormalTab: true); // "그냥" 탭임을 표시
       },
       separatorBuilder: (_, __) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -404,15 +405,19 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
     );
   }
 
-  Widget _buildScheduleCard(_ScheduleHistoryItem item) {
-    // scheduleTitle을 화살표 기준으로 분리
+  Widget _buildScheduleCard(_ScheduleHistoryItem item, {bool isNormalTab = false}) {
+    // scheduleTitle을 화살표 또는 쉼표 기준으로 분리
     List<String> places = [];
     if (item.scheduleTitle != null && item.scheduleTitle!.isNotEmpty) {
-      places = item.scheduleTitle!.split('→').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      // "그냥" 탭은 쉼표로, "일정표" 탭은 화살표로 분리
+      final separator = isNormalTab ? ',' : '→';
+      places = item.scheduleTitle!.split(separator).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
     }
 
     return InkWell(
-      onTap: () => _navigateToScheduleDetail(item.id),
+      onTap: () => isNormalTab 
+          ? _navigateToNormalDetail(item.id)  // "그냥" 탭은 새 화면으로
+          : _navigateToScheduleDetail(item.id), // "일정표" 탭은 기존 화면으로
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
@@ -421,13 +426,13 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
           border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
           boxShadow: AppTheme.cardShadow,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 날짜 표시
-              Text(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 날짜 표시
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
+              child: Text(
                 item.dateText,
                 style: const TextStyle(
                   color: AppTheme.textPrimaryColor,
@@ -435,79 +440,95 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 12),
-              // 일정표 정보 (화살표로 연결)
-              if (places.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF5E8), // 연한 주황색 배경
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppTheme.primaryColor.withOpacity(0.3), // 얇은 주황색 테두리
-                      width: 1,
-                    ),
+            ),
+            const SizedBox(height: 12),
+            // 일정표 정보 (화살표로 연결 또는 리스트 형식)
+            if (places.isNotEmpty)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF5E8), // 연한 주황색 배경
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.3), // 얇은 주황색 테두리
+                    width: 1,
                   ),
-                  child: Row(
-                    children: [
-                      // 시계 아이콘
-                      const Icon(
-                        Icons.access_time,
-                        color: Color(0xFFFF8126),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      // 장소들을 화살표로 연결하여 표시
-                      Expanded(
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 4,
-                          runSpacing: 4,
-                          children: List.generate(places.length * 2 - 1, (index) {
-                            if (index % 2 == 0) {
-                              // 장소 이름
-                              final placeIndex = index ~/ 2;
-                              return Text(
-                                places[placeIndex],
-                                style: const TextStyle(
+                ),
+                // "그냥" 탭: 리스트 형식, "일정표" 탭: 화살표 형식
+                child: isNormalTab
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: places.map((place) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            '• $place',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFFF8126),
+                            ),
+                          ),
+                        )).toList(),
+                      )
+                    : Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: List.generate(places.length * 2 - 1, (index) {
+                          if (index % 2 == 0) {
+                            // 장소 이름
+                            final placeIndex = index ~/ 2;
+                            return Text(
+                              places[placeIndex],
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFFF8126),
+                              ),
+                            );
+                          } else {
+                            // 화살표
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                '→',
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   color: Color(0xFFFF8126),
                                 ),
-                              );
-                            } else {
-                              // 화살표
-                              return const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 4),
-                                child: Text(
-                                  '→',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFFFF8126),
-                                  ),
-                                ),
-                              );
-                            }
-                          }),
-                        ),
+                              ),
+                            );
+                          }
+                        }),
                       ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  /// 히스토리 상세 화면으로 이동
+  /// 히스토리 상세 화면으로 이동 (일정표 탭)
   void _navigateToScheduleDetail(String historyId) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ScheduleHistoryDetailScreen(
+          historyId: historyId,
+        ),
+      ),
+    );
+  }
+
+  /// "그냥" 탭 히스토리 상세 화면으로 이동
+  void _navigateToNormalDetail(String historyId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ScheduleHistoryNormalDetailScreen(
           historyId: historyId,
         ),
       ),
