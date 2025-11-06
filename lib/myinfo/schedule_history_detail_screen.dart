@@ -156,20 +156,25 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
                      category['address'] as String?;
       
       // 🔥 서버에서 받은 카테고리 정보 추출 (서버 필드명: category_type)
-      final categoryType = category['category_type'] as String? ?? 
-                          category['category'] as String? ??
-                          categoryName; // 기본값으로 categoryName 사용
+      final categoryTypeRaw = category['category_type'];
+      int categoryTypeInt = 0;
+      if (categoryTypeRaw is int) {
+        categoryTypeInt = categoryTypeRaw;
+      } else if (categoryTypeRaw is String) {
+        categoryTypeInt = int.tryParse(categoryTypeRaw) ?? 0;
+      }
+      final categoryType = _getCategoryNameFromType(categoryTypeInt);
       
       // 🔥 서버에서 받은 서브 카테고리 정보 추출 (서버 필드명: sub_category)
       final subCategory = category['sub_category'] as String?;
 
-      print('🔍 [$i] 주소: $address, 카테고리: $categoryType, 서브카테고리: $subCategory');
+      print('🔍 [$i] 주소: $address, 카테고리: $categoryType (원본: $categoryTypeRaw), 서브카테고리: $subCategory');
 
       // 🔥 orderedPlaces에 순서대로 추가 (seq 순서 기준!)
       orderedPlaces.add({
         'id': categoryId,
         'name': categoryName,
-        'category': categoryType, // 실제 카테고리 타입 사용
+        'category': categoryType, // 변환된 카테고리 이름 사용
         'sub_category': subCategory, // 서브 카테고리 추가
         'address': address, // 주소 정보 추가 (category_detail_address)
         'detail_address': address, // 하위 호환성
@@ -233,6 +238,20 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
       'firstDurationMinutes': firstDurationMinutes,
       'otherDurationMinutes': otherDurationMinutes,
     };
+  }
+
+  /// category_type을 카테고리 이름으로 변환
+  String _getCategoryNameFromType(int categoryType) {
+    switch (categoryType) {
+      case 0:
+        return '음식점';
+      case 1:
+        return '카페';
+      case 2:
+        return '콘텐츠';
+      default:
+        return '기타';
+    }
   }
 
   /// 서버에서 받은 category 데이터에서 경로 정보 파싱
