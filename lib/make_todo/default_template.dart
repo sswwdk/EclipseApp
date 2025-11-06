@@ -947,13 +947,66 @@ class _TransportationCardState extends State<_TransportationCard> {
       );
     }
 
-    // 좌표 정보가 없으면 기본값 표시
+    // 좌표 정보가 없으면 로딩 또는 기본값 표시
     if (widget.originCoordinates == null || widget.destinationCoordinates == null) {
-      return _buildDefaultTransportDetails();
+      // 좌표가 없으면 로딩 중 표시 (하드코딩된 기본값 대신)
+      if (_isLoading) {
+        return Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '좌표 정보 확인 중...',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+          ],
+        );
+      }
+      // 좌표 정보가 없어서 계산할 수 없음
+      return Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.orange[300], size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '좌표 정보가 없어 이동시간을 계산할 수 없습니다',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            ),
+          ),
+        ],
+      );
     }
 
-    // 실제 계산 결과 표시
-    final durationMinutes = _routeResult?.durationMinutes ?? 0;
+    // 실제 계산 결과 표시 (하드코딩된 기본값 대신 실제 서버 응답만 표시)
+    if (_routeResult == null) {
+      // 서버 응답이 아직 오지 않음
+      return Row(
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '이동시간 계산 중...',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+        ],
+      );
+    }
+
+    final durationMinutes = _routeResult!.durationMinutes;
     
     switch (widget.selectedTransportType) {
       case 0: // 도보
@@ -963,9 +1016,7 @@ class _TransportationCardState extends State<_TransportationCard> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                durationMinutes > 0 
-                    ? '도보 약 ${durationMinutes}분'
-                    : '도보 시간 계산 중...',
+                '도보 약 ${durationMinutes}분',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
@@ -980,9 +1031,7 @@ class _TransportationCardState extends State<_TransportationCard> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                durationMinutes > 0 
-                    ? '자동차 약 ${durationMinutes}분'
-                    : '자동차 시간 계산 중...',
+                '자동차 약 ${durationMinutes}분',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
@@ -1010,9 +1059,7 @@ class _TransportationCardState extends State<_TransportationCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    durationMinutes > 0 
-                        ? '대중교통 약 ${durationMinutes}분'
-                        : '대중교통 시간 계산 중...',
+                    '대중교통 약 ${durationMinutes}분',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                   if (distanceKm > 0) ...[
@@ -1102,57 +1149,6 @@ class _TransportationCardState extends State<_TransportationCard> {
     );
   }
 
-  Widget _buildDefaultTransportDetails() {
-    // 주소 정보가 없을 때 기본값 표시 (하드코딩된 값)
-    switch (widget.selectedTransportType) {
-      case 0: // 도보
-        return Row(
-          children: [
-            const Icon(Icons.directions_walk, color: Color(0xFFFF8126), size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '도보 약 45분',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      case 1: // 대중교통
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.train, color: Color(0xFFFF8126), size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '대중교통 약 45분',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      case 2: // 자동차
-        return Row(
-          children: [
-            const Icon(Icons.directions_car, color: Color(0xFFFF8126), size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '자동차 약 30분',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      default:
-        return const SizedBox.shrink();
-    }
-  }
 }
 
 // 교통수단 버튼
