@@ -150,25 +150,29 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
       
       if (categoryName.isEmpty) continue;
 
-      // 🔥 서버에서 받은 주소 정보 추출
-      final address = category['address'] as String? ?? 
+      // 🔥 서버에서 받은 주소 정보 추출 (서버 필드명: category_detail_address)
+      final address = category['category_detail_address'] as String? ?? 
                      category['detail_address'] as String? ??
-                     category['address_detail'] as String?;
+                     category['address'] as String?;
       
-      // 🔥 서버에서 받은 카테고리 정보 추출 (카테고리 타입)
-      final categoryType = category['category'] as String? ?? 
-                          category['category_type'] as String? ??
+      // 🔥 서버에서 받은 카테고리 정보 추출 (서버 필드명: category_type)
+      final categoryType = category['category_type'] as String? ?? 
+                          category['category'] as String? ??
                           categoryName; // 기본값으로 categoryName 사용
+      
+      // 🔥 서버에서 받은 서브 카테고리 정보 추출 (서버 필드명: sub_category)
+      final subCategory = category['sub_category'] as String?;
 
-      print('🔍 [$i] 주소: $address, 카테고리: $categoryType');
+      print('🔍 [$i] 주소: $address, 카테고리: $categoryType, 서브카테고리: $subCategory');
 
       // 🔥 orderedPlaces에 순서대로 추가 (seq 순서 기준!)
       orderedPlaces.add({
         'id': categoryId,
         'name': categoryName,
         'category': categoryType, // 실제 카테고리 타입 사용
-        'address': address, // 주소 정보 추가
-        'detail_address': category['detail_address'] as String?,
+        'sub_category': subCategory, // 서브 카테고리 추가
+        'address': address, // 주소 정보 추가 (category_detail_address)
+        'detail_address': address, // 하위 호환성
       });
 
       // selectedPlaces에 추가 (하위 호환성)
@@ -186,8 +190,9 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
         'title': categoryName,
         'name': categoryName,
         'address': address,
-        'detail_address': category['detail_address'] as String?,
+        'detail_address': address,
         'category': categoryType,
+        'sub_category': subCategory,
       });
 
       // categoryIdByName에 추가
@@ -307,11 +312,17 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
         }).whereType<RouteStep>().toList();
       }
 
+      // 🔥 description 필드 파싱 (경로 상세 정보)
+      // description은 routes 안에 있을 수도 있고, 직접 category에 있을 수도 있음
+      String? description = category['description'] as String?;
+      // summary가 없으면 description을 summary로 사용
+      final summary = category['summary'] as String? ?? description;
+
       return RouteResult(
         durationMinutes: durationMinutes,
         distanceMeters: distanceMeters,
         steps: steps,
-        summary: category['summary'] as String?,
+        summary: summary,
       );
     } catch (e) {
       print('❌ 경로 정보 파싱 실패: $e');
