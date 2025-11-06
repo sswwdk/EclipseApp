@@ -180,8 +180,8 @@ class OpenAIService {
           'jwt': TokenManager.accessToken ?? ''
         },
         body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 60), onTimeout: () {
-        throw Exception('서버 연결 시간 초과 (30초)');
+      ).timeout(const Duration(seconds: 120), onTimeout: () {
+        throw Exception('서버 연결 시간 초과 (120초)');
       });
 
       if (response.statusCode == 200) {
@@ -215,8 +215,8 @@ class OpenAIService {
           'jwt': TokenManager.accessToken ?? ''
         },
         body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 60), onTimeout: () {
-        throw Exception('서버 연결 시간 초과 (30초)');
+      ).timeout(const Duration(seconds: 120), onTimeout: () {
+        throw Exception('서버 연결 시간 초과 (120초)');
       });
 
       if (response.statusCode == 200) {
@@ -259,8 +259,8 @@ class OpenAIService {
           'jwt': TokenManager.accessToken ?? ''
         },
         body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 60), onTimeout: () {
-        throw Exception('서버 연결 시간 초과 (30초)');
+      ).timeout(const Duration(seconds: 120), onTimeout: () {
+        throw Exception('서버 연결 시간 초과 (120초)');
       });
 
       if (response.statusCode == 200) {
