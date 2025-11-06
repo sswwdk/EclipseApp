@@ -3,7 +3,6 @@ import '../theme/app_theme.dart';
 import '../services/token_manager.dart';
 import 'make_todo_select.dart';
 import '../widgets/bottom_navigation_widget.dart';
-import 'recommendation_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -79,36 +78,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: const Text(
                               '오늘 할 일 만들기',
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          // 바로 결과 보기 (모킹 데이터)
-                          OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFFF7A21),
-                              side: const BorderSide(color: Color(0xFFFF7A21), width: 2),
-                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            onPressed: () {
-                              final mockSelectedCategories = ['카페', '음식점'];
-                              final mockRecommendations = {
-                                '카페': ['스타벅스 강남점', '투썸플레이스 역삼점', '이디야커피 논현점'],
-                                '음식점': ['새마을식당 강남점', '맥도날드 강남점', '버거킹 신논현점'],
-                              };
-
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => RecommendationResultScreen(
-                                    recommendations: mockRecommendations,
-                                    selectedCategories: mockSelectedCategories,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              '바로 결과 보기 (데모)',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                             ),
                           ),
                         ],
