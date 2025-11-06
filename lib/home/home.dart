@@ -32,7 +32,7 @@ class _MainScreenState extends State<MainScreen> {
         isLoading = true;
         errorMessage = null;
       });
-      
+
       final restaurantsData = await ApiService.getRestaurants();
       setState(() {
         restaurants = restaurantsData;
@@ -76,7 +76,10 @@ class _MainScreenState extends State<MainScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
               ),
               child: const Text(
                 '로그아웃',
@@ -91,10 +94,7 @@ class _MainScreenState extends State<MainScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: const Color(0xFFFF8126),
-          ),
+          child: Container(height: 1, color: const Color(0xFFFF8126)),
         ),
       ),
       body: SingleChildScrollView(
@@ -106,7 +106,9 @@ class _MainScreenState extends State<MainScreen> {
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFFF8126),
+                    ),
                   ),
                 ),
               )
@@ -158,33 +160,37 @@ class _MainScreenState extends State<MainScreen> {
                   padding: EdgeInsets.all(32.0),
                   child: Text(
                     '추천할 레스토랑이 없습니다',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                 ),
               )
             else
-              ...restaurants.map((restaurant) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: _buildRecommendationCard(
-                  imagePlaceholder: restaurant.imageUrl ?? "레스토랑 이미지",
-                  title: restaurant.name,
-                  rating: restaurant.rating ?? 0.0,
-                  reviewCount: 0, // API에서 리뷰 수가 없으므로 0으로 설정
-                  tags: [
-                    if (restaurant.description != null) restaurant.description!,
-                  ],
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
+              ...restaurants
+                  .map(
+                    (restaurant) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildRecommendationCard(
+                        imagePlaceholder: restaurant.imageUrl ?? "레스토랑 이미지",
+                        title: restaurant.name,
+                        rating: restaurant.rating ?? 0.0,
+                        reviewCount: 0, // API에서 리뷰 수가 없으므로 0으로 설정
+                        tags: [
+                          if (restaurant.description != null)
+                            restaurant.description!,
+                        ],
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => RestaurantDetailScreen(
+                                restaurant: restaurant,
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-              )).toList(),
+                    ),
+                  )
+                  .toList(),
           ],
         ),
       ),
@@ -204,17 +210,13 @@ class _MainScreenState extends State<MainScreen> {
               // 할 일 생성 버튼을 누르면 make_do_start.dart의 HomeScreen으로 이동 (화면 이동용)
               setState(() => _selectedIndex = i);
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => const HomeScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
               );
             } else if (i == 2) {
               // 커뮤니티 버튼을 누르면 CommunityScreen으로 이동
               setState(() => _selectedIndex = i);
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => const CommunityScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const CommunityScreen()),
               );
             } else if (i == 3) {
               // 내 정보 버튼을 누르면 MyInfoScreen으로 이동
@@ -227,10 +229,7 @@ class _MainScreenState extends State<MainScreen> {
             }
           },
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              label: '홈',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: '홈'),
             BottomNavigationBarItem(
               icon: Icon(Icons.add_circle_outline),
               label: '할 일 생성',
@@ -269,6 +268,8 @@ class _MainScreenState extends State<MainScreen> {
     required List<String> tags,
     VoidCallback? onTap,
   }) {
+    final bool isUrl = Uri.tryParse(imagePlaceholder)?.isAbsolute ?? false;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -286,79 +287,126 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 이미지 플레이스홀더
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Center(
-              child: Text(
-                imagePlaceholder,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 이미지 영역: URL이면 network image로, 아니면 텍스트 플레이스홀더로 표시
+            Container(
+              height: 200,
+              width: double.infinity,
+              // ClipRRect로 상단 둥근 모서리 유지
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-          
-          // 내용 부분
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 제목
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                
-                // 평점
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star,
-                      color: Color(0xFFFF8126),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$rating ($reviewCount)',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
+                child: isUrl
+                    ? Image.network(
+                        imagePlaceholder,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 200,
+                        // 로딩 중 인디케이터
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFFF8126),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        // 로드 실패 시 대체 UI
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey[500],
+                                    size: 40,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '이미지 로드 실패',
+                                    style: TextStyle(color: Colors.grey[600]),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.grey[200],
+                        child: Center(
+                          child: Text(
+                            imagePlaceholder,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
-                // 태그들
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: tags.map((tag) => _buildTag(tag)).toList(),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
-      ),
+
+            // 내용 부분
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 제목
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 평점
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star,
+                        color: Color(0xFFFF8126),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$rating ($reviewCount)',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 태그들
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: tags.map((tag) => _buildTag(tag)).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -405,12 +453,8 @@ class _RoundedTopNavBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: child,
-        ),
+        child: Padding(padding: const EdgeInsets.only(top: 8), child: child),
       ),
     );
   }
 }
-

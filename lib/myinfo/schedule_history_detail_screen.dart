@@ -9,16 +9,16 @@ import '../services/route_service.dart';
 class ScheduleHistoryDetailScreen extends StatefulWidget {
   final String historyId;
 
-  const ScheduleHistoryDetailScreen({
-    Key? key,
-    required this.historyId,
-  }) : super(key: key);
+  const ScheduleHistoryDetailScreen({Key? key, required this.historyId})
+    : super(key: key);
 
   @override
-  State<ScheduleHistoryDetailScreen> createState() => _ScheduleHistoryDetailScreenState();
+  State<ScheduleHistoryDetailScreen> createState() =>
+      _ScheduleHistoryDetailScreenState();
 }
 
-class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScreen> {
+class _ScheduleHistoryDetailScreenState
+    extends State<ScheduleHistoryDetailScreen> {
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -46,15 +46,18 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
       }
 
       // 히스토리 상세 정보 가져오기
-      final detailResponse = await HistoryService.getHistoryDetail(userId, widget.historyId);
-      
+      final detailResponse = await HistoryService.getHistoryDetail(
+        userId,
+        widget.historyId,
+      );
+
       if (!mounted) return;
 
       // 상세 정보 파싱하여 일정표 데이터로 변환
       final scheduleData = _parseHistoryDetailToScheduleData(detailResponse);
-      
+
       if (!mounted) return;
-      
+
       setState(() {
         _isLoading = false;
       });
@@ -65,17 +68,26 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
         context,
         MaterialPageRoute(
           builder: (context) => ScheduleBuilderScreen(
-            selected: scheduleData['selectedPlaces'] as Map<String, List<String>>,
-            selectedPlacesWithData: scheduleData['selectedPlacesWithData'] as Map<String, List<Map<String, dynamic>>>?,
-            orderedPlaces: scheduleData['orderedPlaces'] as List<Map<String, dynamic>>?, // 🔥 순서 유지
-            categoryIdByName: scheduleData['categoryIdByName'] as Map<String, String>?,
+            selected:
+                scheduleData['selectedPlaces'] as Map<String, List<String>>,
+            selectedPlacesWithData:
+                scheduleData['selectedPlacesWithData']
+                    as Map<String, List<Map<String, dynamic>>>?,
+            orderedPlaces:
+                scheduleData['orderedPlaces']
+                    as List<Map<String, dynamic>>?, // 🔥 순서 유지
+            categoryIdByName:
+                scheduleData['categoryIdByName'] as Map<String, String>?,
             originAddress: scheduleData['originAddress'] as String?,
             originDetailAddress: scheduleData['originDetailAddress'] as String?,
             firstDurationMinutes: scheduleData['firstDurationMinutes'] as int?,
             otherDurationMinutes: scheduleData['otherDurationMinutes'] as int?,
             isReadOnly: true,
-            initialTransportTypes: scheduleData['transportTypes'] as Map<int, int>?,
-            initialRouteResults: scheduleData['routeResults'] as Map<int, RouteResult>?, // 🔥 각 구간별 경로 정보
+            initialTransportTypes:
+                scheduleData['transportTypes'] as Map<int, int>?,
+            initialRouteResults:
+                scheduleData['routeResults']
+                    as Map<int, RouteResult>?, // 🔥 각 구간별 경로 정보
           ),
         ),
       );
@@ -89,10 +101,12 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
   }
 
   /// 히스토리 상세 데이터를 일정표 데이터 형식으로 변환
-  Map<String, dynamic> _parseHistoryDetailToScheduleData(Map<String, dynamic> detailResponse) {
+  Map<String, dynamic> _parseHistoryDetailToScheduleData(
+    Map<String, dynamic> detailResponse,
+  ) {
     // 서버 응답에서 데이터 추출
     final data = detailResponse['data'] ?? detailResponse;
-    
+
     // 카테고리 정보 추출
     final categories = data['categories'] as List<dynamic>? ?? [];
     final Map<String, List<String>> selectedPlaces = {};
@@ -115,20 +129,22 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
     }
 
     print('🔍 서버에서 받은 categories: $categories');
-    
+
     // 🔥 seq 필드로 정렬 (서버 응답에 seq가 있음!)
     final sortedCategories = List<Map<String, dynamic>>.from(
-      categories.map((c) => c as Map<String, dynamic>)
+      categories.map((c) => c as Map<String, dynamic>),
     );
     sortedCategories.sort((a, b) {
       final seqA = a['seq'] as int? ?? 0;
       final seqB = b['seq'] as int? ?? 0;
       return seqA.compareTo(seqB);
     });
-    
+
     print('🔍 seq로 정렬된 categories:');
     for (int i = 0; i < sortedCategories.length; i++) {
-      print('  [$i] ${sortedCategories[i]['category_name']} (seq: ${sortedCategories[i]['seq']})');
+      print(
+        '  [$i] ${sortedCategories[i]['category_name']} (seq: ${sortedCategories[i]['seq']})',
+      );
     }
 
     // 🔥 정렬된 순서대로 처리
@@ -142,19 +158,23 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
         if (category['transportation'] is int) {
           transportation = category['transportation'] as int;
         } else if (category['transportation'] is String) {
-          transportation = int.tryParse(category['transportation'] as String) ?? 1;
+          transportation =
+              int.tryParse(category['transportation'] as String) ?? 1;
         }
       }
 
-      print('🔍 [$i] categoryName: $categoryName, transportation: $transportation');
-      
+      print(
+        '🔍 [$i] categoryName: $categoryName, transportation: $transportation',
+      );
+
       if (categoryName.isEmpty) continue;
 
       // 🔥 서버에서 받은 주소 정보 추출 (서버 필드명: category_detail_address)
-      final address = category['category_detail_address'] as String? ?? 
-                     category['detail_address'] as String? ??
-                     category['address'] as String?;
-      
+      final address =
+          category['category_detail_address'] as String? ??
+          category['detail_address'] as String? ??
+          category['address'] as String?;
+
       // 🔥 서버에서 받은 카테고리 정보 추출 (서버 필드명: category_type)
       final categoryTypeRaw = category['category_type'];
       int categoryTypeInt = 0;
@@ -164,11 +184,13 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
         categoryTypeInt = int.tryParse(categoryTypeRaw) ?? 0;
       }
       final categoryType = _getCategoryNameFromType(categoryTypeInt);
-      
+
       // 🔥 서버에서 받은 서브 카테고리 정보 추출 (서버 필드명: sub_category)
       final subCategory = category['sub_category'] as String?;
 
-      print('🔍 [$i] 주소: $address, 카테고리: $categoryType (원본: $categoryTypeRaw), 서브카테고리: $subCategory');
+      print(
+        '🔍 [$i] 주소: $address, 카테고리: $categoryType (원본: $categoryTypeRaw), 서브카테고리: $subCategory',
+      );
 
       // 🔥 orderedPlaces에 순서대로 추가 (seq 순서 기준!)
       orderedPlaces.add({
@@ -255,12 +277,14 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
   }
 
   /// 서버에서 받은 category 데이터에서 경로 정보 파싱
-  RouteResult? _parseRouteInfo(Map<String, dynamic> category, int defaultDuration) {
+  RouteResult? _parseRouteInfo(
+    Map<String, dynamic> category,
+    int defaultDuration,
+  ) {
     try {
-      // duration 파싱 (초 단위 또는 분 단위)
+      // 🔥 서버에서 받은 원본 초 데이터 추출
       int? durationSeconds;
-      bool isAlreadyInMinutes = false;
-      
+
       if (category.containsKey('duration_seconds')) {
         final duration = category['duration_seconds'];
         if (duration is int) {
@@ -269,35 +293,19 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
           durationSeconds = int.tryParse(duration);
         }
       } else if (category.containsKey('duration')) {
-        // duration이 초 단위인 경우 (서버에서 보통 초 단위로 보냄)
+        // duration이 초 단위인 경우
         final duration = category['duration'];
         if (duration is int) {
           durationSeconds = duration;
         } else if (duration is String) {
           durationSeconds = int.tryParse(duration);
         }
-      } else if (category.containsKey('duration_minutes')) {
-        final duration = category['duration_minutes'];
-        if (duration is int) {
-          durationSeconds = duration;
-          isAlreadyInMinutes = true;
-        } else if (duration is String) {
-          final minutes = int.tryParse(duration);
-          if (minutes != null) {
-            durationSeconds = minutes;
-            isAlreadyInMinutes = true;
-          }
-        }
       }
-      
-      // duration을 분으로 변환
+
+      // 🔥 분 계산 (UI 표시용만)
       int durationMinutes = defaultDuration;
       if (durationSeconds != null) {
-        if (isAlreadyInMinutes) {
-          durationMinutes = durationSeconds;
-        } else {
-          durationMinutes = (durationSeconds / 60).round();
-        }
+        durationMinutes = (durationSeconds / 60).round();
       }
 
       // distance 파싱
@@ -309,45 +317,40 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
         } else if (distance is String) {
           distanceValue = double.tryParse(distance);
         }
-      } else if (category.containsKey('distance_meters')) {
-        final distance = category['distance_meters'];
-        if (distance is num) {
-          distanceValue = distance.toDouble();
-        } else if (distance is String) {
-          distanceValue = double.tryParse(distance);
-        }
       }
       int distanceMeters = (distanceValue ?? 0).round();
 
-      // routes 파싱 (대중교통 경로 정보)
+      // routes 파싱
       List<RouteStep>? steps;
       final routes = category['routes'] as List<dynamic>?;
       if (routes != null && routes.isNotEmpty) {
-        steps = routes.map((route) {
-          if (route is Map<String, dynamic>) {
-            return RouteStep.fromPublicTransportRoute(route);
-          }
-          return null;
-        }).whereType<RouteStep>().toList();
+        steps = routes
+            .map((route) {
+              if (route is Map<String, dynamic>) {
+                return RouteStep.fromPublicTransportRoute(route);
+              }
+              return null;
+            })
+            .whereType<RouteStep>()
+            .toList();
       }
 
-      // 🔥 description 필드 파싱 (경로 상세 정보)
-      // description은 routes 안에 있을 수도 있고, 직접 category에 있을 수도 있음
       String? description = category['description'] as String?;
-      // summary가 없으면 description을 summary로 사용
       final summary = category['summary'] as String? ?? description;
 
       return RouteResult(
-        durationMinutes: durationMinutes,
+        durationMinutes: durationMinutes, // UI 표시용
+        durationSeconds:
+            durationSeconds ?? (durationMinutes * 60), // 🔥 원본 초 데이터
         distanceMeters: distanceMeters,
         steps: steps,
         summary: summary,
       );
     } catch (e) {
       print('❌ 경로 정보 파싱 실패: $e');
-      // 파싱 실패 시 기본값으로 RouteResult 생성
       return RouteResult(
         durationMinutes: defaultDuration,
+        durationSeconds: defaultDuration * 60, // 기본값도 초로 변환
         distanceMeters: 0,
         steps: null,
         summary: null,
@@ -381,35 +384,34 @@ class _ScheduleHistoryDetailScreenState extends State<ScheduleHistoryDetailScree
               child: CircularProgressIndicator(color: AppTheme.primaryColor),
             )
           : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondaryColor,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadHistoryDetail,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('다시 시도'),
-                        ),
-                      ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondaryColor,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                )
-              : const SizedBox.shrink(),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadHistoryDetail,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('다시 시도'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
 }
-
