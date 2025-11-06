@@ -27,8 +27,28 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   }
 
   Future<void> _fetchDetail() async {
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('🏪 [Restaurant Detail] 상세 정보 요청 시작');
+    print('  → Restaurant ID: ${widget.restaurant.id}');
+    print('  → Restaurant Name: ${widget.restaurant.name}');
+    print('  → Restaurant Address: ${widget.restaurant.detailAddress}');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
     try {
       final res = await ApiService.getRestaurant(widget.restaurant.id);
+      
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      print('✅ [Restaurant Detail] 서버 응답 성공');
+      print('  → Reviews 개수: ${res.reviews.length}');
+      print('  → Tags 개수: ${res.tags.length}');
+      print('  → Is Favorite: ${res.isFavorite}');
+      print('  → Reviews 데이터:');
+      for (int i = 0; i < res.reviews.length; i++) {
+        print('    [$i] ${res.reviews[i].nickname}: ${res.reviews[i].content}');
+      }
+      print('  → Tags: ${res.tags}');
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
       if (!mounted) return;
       setState(() {
         _reviews = res.reviews;
@@ -37,6 +57,11 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         _loading = false;
       });
     } catch (e) {
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      print('❌ [Restaurant Detail] 서버 요청 실패');
+      print('  → Error: $e');
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
       if (!mounted) return;
       setState(() {
         _error = e.toString();
