@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/history_service.dart';
 import '../services/service_api.dart';
 import '../services/token_manager.dart';
+import '../services/route_service.dart';
 import '../home/home.dart';
 import 'dart:async';
 
@@ -149,6 +150,11 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                   });
                 },
                 isReadOnly: widget.isReadOnly,
+                originCoordinates: itemIndex == 0 
+                    ? _getOriginCoordinates() 
+                    : _getPlaceCoordinates(items[itemIndex]),
+                destinationCoordinates: _getPlaceCoordinates(items[itemIndex + 1]),
+                orderedPlaces: widget.orderedPlaces,
               );
             }
             return const SizedBox.shrink();
@@ -505,6 +511,98 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         return Icons.place;
     }
   }
+
+  /// 장소의 주소를 가져오는 헬퍼 메서드
+  String? _getPlaceAddress(_ScheduleItem item) {
+    if (widget.orderedPlaces == null || widget.orderedPlaces!.isEmpty) {
+      return null;
+    }
+
+    // orderedPlaces에서 해당 장소 찾기
+    for (final placeData in widget.orderedPlaces!) {
+      final placeName = placeData['name'] as String? ?? '';
+      if (placeName == item.title) {
+        final data = placeData['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          return data['address'] as String? ?? 
+                 data['detail_address'] as String? ??
+                 placeData['address'] as String?;
+        }
+        return placeData['address'] as String?;
+      }
+    }
+    return null;
+  }
+
+  /// 장소의 위경도를 가져오는 헬퍼 메서드
+  ({double lat, double lng})? _getPlaceCoordinates(_ScheduleItem item) {
+    if (widget.orderedPlaces == null || widget.orderedPlaces!.isEmpty) {
+      return null;
+    }
+
+    // orderedPlaces에서 해당 장소 찾기
+    for (final placeData in widget.orderedPlaces!) {
+      final placeName = placeData['name'] as String? ?? '';
+      if (placeName == item.title) {
+        // 위경도를 최상위 레벨에서 먼저 확인
+        dynamic latValue = placeData['latitude'] ?? placeData['lat'];
+        dynamic lngValue = placeData['longitude'] ?? placeData['lng'];
+        
+        // 최상위 레벨에 없으면 data 안에서 확인
+        if (latValue == null || lngValue == null) {
+          final data = placeData['data'] as Map<String, dynamic>?;
+          if (data != null) {
+            latValue ??= data['latitude'] ?? data['lat'];
+            lngValue ??= data['longitude'] ?? data['lng'];
+          }
+        }
+        
+        // 문자열이면 파싱, 숫자면 그대로 사용
+        double? lat;
+        double? lng;
+        
+        if (latValue is String) {
+          lat = double.tryParse(latValue);
+        } else if (latValue is num) {
+          lat = latValue.toDouble();
+        }
+        
+        if (lngValue is String) {
+          lng = double.tryParse(lngValue);
+        } else if (lngValue is num) {
+          lng = lngValue.toDouble();
+        }
+        
+        if (lat != null && lng != null) {
+          return (lat: lat, lng: lng);
+        }
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /// 출발지 좌표를 가져오는 헬퍼 메서드
+  ({double lat, double lng})? _getOriginCoordinates() {
+    // 출발지 주소가 있으면 좌표 변환이 필요하지만, 
+    // 일단 null을 반환하고 서버에서 처리하거나 나중에 주소->좌표 변환 API 추가
+    // TODO: 출발지 주소를 좌표로 변환하는 로직 추가 (카카오 API 등)
+    // 현재는 출발지가 GPS 위치인 경우를 처리할 수 있도록 주소 형식 확인
+    if (_originAddress != null && _originAddress!.contains('위도:')) {
+      // GPS 위치 형식: "위도: 37.505147, 경도: 126.943349"
+      final latMatch = RegExp(r'위도:\s*([\d.]+)').firstMatch(_originAddress!);
+      final lngMatch = RegExp(r'경도:\s*([\d.]+)').firstMatch(_originAddress!);
+      
+      if (latMatch != null && lngMatch != null) {
+        final lat = double.tryParse(latMatch.group(1)!);
+        final lng = double.tryParse(lngMatch.group(1)!);
+        if (lat != null && lng != null) {
+          return (lat: lat, lng: lng);
+        }
+      }
+    }
+    return null;
+  }
 }
 
 enum _ItemType { origin, place }
@@ -661,11 +759,14 @@ class _TimelineRow extends StatelessWidget {
 }
 
 // 교통수단 선택 카드
-class _TransportationCard extends StatelessWidget {
+class _TransportationCard extends StatefulWidget {
   final int segmentIndex;
   final int selectedTransportType;
   final Function(int)? onTransportTypeChanged;
   final bool isReadOnly;
+  final ({double lat, double lng})? originCoordinates;
+  final ({double lat, double lng})? destinationCoordinates;
+  final List<Map<String, dynamic>>? orderedPlaces;
 
   const _TransportationCard({
     Key? key,
@@ -673,7 +774,84 @@ class _TransportationCard extends StatelessWidget {
     required this.selectedTransportType,
     this.onTransportTypeChanged,
     this.isReadOnly = false,
+    this.originCoordinates,
+    this.destinationCoordinates,
+    this.orderedPlaces,
   }) : super(key: key);
+
+  @override
+  State<_TransportationCard> createState() => _TransportationCardState();
+}
+
+class _TransportationCardState extends State<_TransportationCard> {
+  RouteResult? _routeResult;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRouteInfo();
+  }
+
+  @override
+  void didUpdateWidget(_TransportationCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 교통수단이나 좌표가 변경되면 다시 로드
+    if (oldWidget.selectedTransportType != widget.selectedTransportType ||
+        oldWidget.originCoordinates != widget.originCoordinates ||
+        oldWidget.destinationCoordinates != widget.destinationCoordinates) {
+      _loadRouteInfo();
+    }
+  }
+
+  Future<void> _loadRouteInfo() async {
+    // 좌표 정보가 없으면 로드하지 않음
+    if (widget.originCoordinates == null || widget.destinationCoordinates == null) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      print('🔍 [TransportationCard] 이동시간 계산 요청:');
+      print('   origin: ${widget.originCoordinates}');
+      print('   destination: ${widget.destinationCoordinates}');
+      print('   transportType: ${widget.selectedTransportType}');
+      
+      final result = await RouteService.calculateRoute(
+        origin: widget.originCoordinates!,
+        destination: widget.destinationCoordinates!,
+        transportType: widget.selectedTransportType,
+      );
+
+      print('🔍 [TransportationCard] 이동시간 계산 결과:');
+      print('   durationMinutes: ${result.durationMinutes}');
+      print('   distanceMeters: ${result.distanceMeters}');
+      print('   steps: ${result.steps}');
+      print('   summary: ${result.summary}');
+
+      if (mounted) {
+        setState(() {
+          _routeResult = result;
+          _isLoading = false;
+        });
+        print('✅ [TransportationCard] 상태 업데이트 완료');
+      }
+    } catch (e, stackTrace) {
+      print('❌ 이동시간 계산 실패: $e');
+      print('   스택 트레이스: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -696,20 +874,20 @@ class _TransportationCard extends StatelessWidget {
                 _TransportButton(
                   icon: Icons.directions_walk,
                   label: '도보',
-                  isSelected: selectedTransportType == 0,
-                  onTap: isReadOnly ? null : () => onTransportTypeChanged?.call(0),
+                  isSelected: widget.selectedTransportType == 0,
+                  onTap: widget.isReadOnly ? null : () => widget.onTransportTypeChanged?.call(0),
                 ),
                 _TransportButton(
                   icon: Icons.train,
                   label: '대중교통',
-                  isSelected: selectedTransportType == 1,
-                  onTap: isReadOnly ? null : () => onTransportTypeChanged?.call(1),
+                  isSelected: widget.selectedTransportType == 1,
+                  onTap: widget.isReadOnly ? null : () => widget.onTransportTypeChanged?.call(1),
                 ),
                 _TransportButton(
                   icon: Icons.directions_car,
                   label: '자동차',
-                  isSelected: selectedTransportType == 2,
-                  onTap: isReadOnly ? null : () => onTransportTypeChanged?.call(2),
+                  isSelected: widget.selectedTransportType == 2,
+                  onTap: widget.isReadOnly ? null : () => widget.onTransportTypeChanged?.call(2),
                 ),
               ],
             ),
@@ -732,7 +910,201 @@ class _TransportationCard extends StatelessWidget {
   }
 
   Widget _buildTransportDetails() {
-    switch (selectedTransportType) {
+    // 로딩 중
+    if (_isLoading) {
+      return Row(
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '이동시간 계산 중...',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+        ],
+      );
+    }
+
+    // 에러 발생
+    if (_errorMessage != null) {
+      return Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[300], size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '이동시간 계산 실패',
+              style: TextStyle(fontSize: 14, color: Colors.red[600]),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 좌표 정보가 없으면 기본값 표시
+    if (widget.originCoordinates == null || widget.destinationCoordinates == null) {
+      return _buildDefaultTransportDetails();
+    }
+
+    // 실제 계산 결과 표시
+    final durationMinutes = _routeResult?.durationMinutes ?? 0;
+    
+    switch (widget.selectedTransportType) {
+      case 0: // 도보
+        return Row(
+          children: [
+            const Icon(Icons.directions_walk, color: Color(0xFFFF8126), size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                durationMinutes > 0 
+                    ? '도보 약 ${durationMinutes}분'
+                    : '도보 시간 계산 중...',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      case 1: // 대중교통
+        return _buildPublicTransportDetails(durationMinutes);
+      case 2: // 자동차
+        return Row(
+          children: [
+            const Icon(Icons.directions_car, color: Color(0xFFFF8126), size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                durationMinutes > 0 
+                    ? '자동차 약 ${durationMinutes}분'
+                    : '자동차 시간 계산 중...',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildPublicTransportDetails(int durationMinutes) {
+    final steps = _routeResult?.steps;
+    final distanceMeters = _routeResult?.distanceMeters ?? 0;
+    final distanceKm = distanceMeters / 1000.0;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.train, color: Color(0xFFFF8126), size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    durationMinutes > 0 
+                        ? '대중교통 약 ${durationMinutes}분'
+                        : '대중교통 시간 계산 중...',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  if (distanceKm > 0) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      distanceKm >= 1 
+                          ? '거리 약 ${distanceKm.toStringAsFixed(1)}km'
+                          : '거리 약 ${distanceMeters}m',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (steps != null && steps.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          ...steps.map((step) => _buildTransportStep(step)),
+        ] else if (_routeResult?.summary != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _routeResult!.summary!,
+            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTransportStep(RouteStep step) {
+    IconData icon;
+    Color iconColor;
+    
+    switch (step.type) {
+      case 'walk':
+        icon = Icons.directions_walk;
+        iconColor = Colors.blue;
+        break;
+      case 'transit':
+        icon = Icons.train;
+        iconColor = Colors.green;
+        break;
+      case 'drive':
+        icon = Icons.directions_car;
+        iconColor = Colors.orange;
+        break;
+      default:
+        icon = Icons.arrow_forward;
+        iconColor = Colors.grey;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Icon(icon, color: iconColor, size: 16),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (step.description != null && step.description!.isNotEmpty)
+                  Text(
+                    step.description!,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (step.durationMinutes > 0)
+                  Text(
+                    '${step.durationMinutes}분',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDefaultTransportDetails() {
+    // 주소 정보가 없을 때 기본값 표시 (하드코딩된 값)
+    switch (widget.selectedTransportType) {
       case 0: // 도보
         return Row(
           children: [
@@ -758,50 +1130,6 @@ class _TransportationCard extends StatelessWidget {
                   child: Text(
                     '대중교통 약 45분',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.green[100],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Icon(Icons.train, color: Colors.green, size: 16),
-                ),
-                const SizedBox(width: 8),
-                const Text('2호선', style: TextStyle(fontSize: 13)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '집 근처 역 > 홍대입구역',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[100],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Icon(Icons.directions_walk, color: Colors.blue, size: 16),
-                ),
-                const SizedBox(width: 8),
-                const Text('도보 5분', style: TextStyle(fontSize: 13)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '홍대입구역 1번 출구 > 홍대 CGV',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                   ),
                 ),
               ],
@@ -1117,3 +1445,4 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
     );
   }
 }
+

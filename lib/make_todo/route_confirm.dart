@@ -121,18 +121,25 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                 print('🔍 경로 확정하기 버튼 클릭');
                 print('🔍 widget.selected 데이터:');
                 widget.selected.forEach((category, places) {
-                  print('  [$category]:');
-                  for (var place in places) {
+                  print('  [$category]: 총 ${places.length}개 장소');
+                  for (int i = 0; i < places.length; i++) {
+                    final place = places[i];
                     if (place is Map) {
-                      print('    - 필드: ${(place as Map).keys.toList()}');
-                      print('    - category_id: ${place['category_id']}');
+                      print('    [$i] 장소 이름: ${place['title'] ?? place['name']}');
+                      print('       id: ${place['id']}');
+                      print('       lat: ${place['lat']}, lng: ${place['lng']}');
+                      print('       latitude: ${place['latitude']}, longitude: ${place['longitude']}');
+                      print('       category_id: ${place['category_id']}');
+                      print('       필드: ${place.keys.toList()}');
                     }
                   }
                 });
                 
                 // 원본 선택 데이터에서 placeName -> categoryName 매핑을 구축
+                // 🔥 같은 이름의 가게가 여러 개 있을 수 있으므로, ID를 포함한 고유 키 사용
                 final Map<String, String> placeToCategory = {};
                 final Map<String, Map<String, dynamic>> placeNameToData = {};
+                final List<Map<String, dynamic>> allPlaces = []; // 🔥 모든 선택된 장소를 순서대로 저장
                 
                 widget.selected.forEach((category, places) {
                   for (final place in places) {
@@ -142,8 +149,20 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                                   place['name'] as String? ??
                                   place['id'] as String? ??
                                   place.toString();
-                      placeToCategory[placeName] = category;
-                      placeNameToData[placeName] = place;
+                      
+                      // 🔥 ID를 포함한 고유 키 생성 (같은 이름의 가게가 여러 개 있을 수 있음)
+                      final String placeId = place['id'] as String? ?? '';
+                      final String uniqueKey = placeId.isNotEmpty 
+                          ? '$placeName|$placeId' 
+                          : '$placeName|${place.hashCode}';
+                      
+                      placeToCategory[uniqueKey] = category;
+                      placeNameToData[uniqueKey] = place;
+                      allPlaces.add(place); // 🔥 모든 장소를 순서대로 저장
+                      
+                      print('🔍 [경로 확정] 장소 추가: $placeName (id: $placeId, uniqueKey: $uniqueKey)');
+                      print('   lat: ${place['lat']}, lng: ${place['lng']}');
+                      print('   latitude: ${place['latitude']}, longitude: ${place['longitude']}');
                     } else {
                       placeName = place.toString();
                       placeToCategory[placeName] = category;
@@ -160,19 +179,61 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
                   print('  [$i] ${item.title} (${item.type})');
                 }
                 
+                // 🔥 _items의 순서대로 orderedPlaces 생성하되, 각 item에 해당하는 실제 데이터 찾기
+                // allPlaces를 순회하면서 _items의 순서와 매칭
+                int allPlacesIndex = 0;
                 for (final item in _items) {
                   if (item.type != _ItemType.place) continue; // 출발지 제외
                   
                   final String placeName = item.title;
-                  final String categoryName = placeToCategory[placeName] ?? item.categoryName ?? item.subtitle;
-                  final Map<String, dynamic>? placeData = placeNameToData[placeName];
+                  
+                  // 🔥 item.title과 일치하는 place를 allPlaces에서 순서대로 찾기
+                  Map<String, dynamic>? matchedPlace;
+                  String? matchedCategory;
+                  
+                  // allPlaces에서 순서대로 검색 (이미 사용한 것은 건너뛰기)
+                  for (int i = allPlacesIndex; i < allPlaces.length; i++) {
+                    final place = allPlaces[i];
+                    final dataPlaceName = place['title'] as String? ?? 
+                                        place['name'] as String? ?? '';
+                    if (dataPlaceName == placeName) {
+                      matchedPlace = place;
+                      // category 찾기
+                      for (final entry in widget.selected.entries) {
+                        if (entry.value.contains(place)) {
+                          matchedCategory = entry.key;
+                          break;
+                        }
+                      }
+                      allPlacesIndex = i + 1; // 다음 검색은 여기서부터
+                      break;
+                    }
+                  }
+                  
+                  // 여전히 못 찾았으면 기본값 사용
+                  final String categoryName = matchedCategory ?? 
+                                             item.categoryName ?? 
+                                             item.subtitle;
+                  
+                  // 위경도 정보 추출 (서버에서 보낼 수 있는 여러 필드명 확인)
+                  final String? latitude = matchedPlace?['latitude'] as String? ?? 
+                                           matchedPlace?['lat'] as String?;
+                  final String? longitude = matchedPlace?['longitude'] as String? ?? 
+                                            matchedPlace?['lng'] as String?;
                   
                   orderedPlaces.add({
-                    'id': placeData?['id'] as String? ?? '', // 🔥 id를 최상위 레벨로 추가
+                    'id': matchedPlace?['id'] as String? ?? '', // 🔥 id를 최상위 레벨로 추가
                     'name': placeName,
                     'category': categoryName,
-                    'data': placeData ?? {},
+                    'latitude': latitude, // 🔥 위경도를 최상위 레벨에 명시적으로 추가
+                    'longitude': longitude,
+                    'data': matchedPlace ?? {},
                   });
+                  
+                  print('🔍 [경로 확정] orderedPlaces 추가: $placeName');
+                  print('   id: ${matchedPlace?['id']}');
+                  print('   lat: ${matchedPlace?['lat']}, lng: ${matchedPlace?['lng']}');
+                  print('   latitude: ${matchedPlace?['latitude']}, longitude: ${matchedPlace?['longitude']}');
                 }
                 
                 print('🔍 [경로 확정] orderedPlaces 생성 완료:');
