@@ -69,9 +69,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
     if (widget.isReadOnly && widget.initialTransportTypes != null) {
       _transportTypes = Map<int, int>.from(widget.initialTransportTypes!);
     } else {
-      // 각 구간별로 기본 교통수단 설정 (대중교통)
+      // 각 구간별로 기본 교통수단 설정 (도보)
       for (int i = 0; i < _items.length - 1; i++) {
-        _transportTypes[i] = 1;
+        _transportTypes[i] = 0; // 0: 도보, 1: 대중교통, 2: 자동차
       }
     }
   }
@@ -143,7 +143,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
             if (itemIndex < items.length - 1) {
               return _TransportationCard(
                 segmentIndex: itemIndex,
-                selectedTransportType: _transportTypes[itemIndex] ?? 1,
+                selectedTransportType: _transportTypes[itemIndex] ?? 0, // 기본값: 도보
                 onTransportTypeChanged: widget.isReadOnly ? null : (type) {
                   setState(() {
                     _transportTypes[itemIndex] = type;
