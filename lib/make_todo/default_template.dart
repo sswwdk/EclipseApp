@@ -16,6 +16,7 @@ class ScheduleBuilderScreen extends StatefulWidget {
   final int? otherDurationMinutes; // 템플릿: 이후 체류 시간
   final bool isReadOnly; // 읽기 전용 모드 (편집 불가)
   final Map<int, int>? initialTransportTypes; // 초기 교통수단 정보 (읽기 전용 모드용)
+  final Map<int, RouteResult>? initialRouteResults; // 🔥 각 구간별 경로 정보 (읽기 전용 모드용)
   final List<Map<String, dynamic>>? orderedPlaces; // 🔥 순서가 유지되는 장소 리스트
 
   const ScheduleBuilderScreen({
@@ -29,6 +30,7 @@ class ScheduleBuilderScreen extends StatefulWidget {
     this.otherDurationMinutes,
     this.isReadOnly = false,
     this.initialTransportTypes,
+    this.initialRouteResults,
     this.orderedPlaces,
   }) : super(key: key);
 
@@ -155,6 +157,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                     : _getPlaceCoordinates(items[itemIndex]),
                 destinationCoordinates: _getPlaceCoordinates(items[itemIndex + 1]),
                 orderedPlaces: widget.orderedPlaces,
+                initialRouteResult: widget.initialRouteResults?[itemIndex], // 🔥 읽기 전용 모드일 때 서버에서 받은 경로 정보
               );
             }
             return const SizedBox.shrink();
@@ -464,10 +467,14 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       for (final placeData in widget.orderedPlaces!) {
         final placeName = placeData['name'] as String? ?? '알 수 없음';
         final category = placeData['category'] as String? ?? '기타';
+        // 🔥 주소 정보 추출
+        final address = placeData['address'] as String? ?? 
+                       placeData['detail_address'] as String?;
         
         items.add(_ScheduleItem(
           title: placeName,
           subtitle: category,
+          address: address, // 🔥 주소 정보 추가
           icon: _iconFor(category),
           color: const Color(0xFFFF8126),
           type: _ItemType.place,
@@ -611,6 +618,7 @@ class _ScheduleItem {
   final String id = UniqueKey().toString();
   final String title;
   final String subtitle;
+  final String? address; // 🔥 주소 정보 추가
   final IconData icon;
   final Color color;
   final _ItemType type;
@@ -620,6 +628,7 @@ class _ScheduleItem {
   _ScheduleItem({
     required this.title,
     required this.subtitle,
+    this.address,
     required this.icon,
     required this.color,
     required this.type,
@@ -738,9 +747,21 @@ class _TimelineRow extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 4),
+                          // 🔥 카테고리 정보 표시
+                          if (item.subtitle.isNotEmpty) ...[
+                            Text(
+                              item.subtitle,
+                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            ),
+                            const SizedBox(height: 2),
+                          ],
+                          // 🔥 주소 정보 표시
                           Text(
-                            item.subtitle,
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            item.address ?? '주소 정보 없음',
+                            style: TextStyle(
+                              fontSize: 12, 
+                              color: item.address != null ? Colors.grey[600] : Colors.grey[400],
+                            ),
                           ),
                         ],
                       ),
@@ -767,6 +788,7 @@ class _TransportationCard extends StatefulWidget {
   final ({double lat, double lng})? originCoordinates;
   final ({double lat, double lng})? destinationCoordinates;
   final List<Map<String, dynamic>>? orderedPlaces;
+  final RouteResult? initialRouteResult; // 🔥 읽기 전용 모드일 때 서버에서 받은 경로 정보
 
   const _TransportationCard({
     Key? key,
@@ -777,6 +799,7 @@ class _TransportationCard extends StatefulWidget {
     this.originCoordinates,
     this.destinationCoordinates,
     this.orderedPlaces,
+    this.initialRouteResult,
   }) : super(key: key);
 
   @override
@@ -791,12 +814,26 @@ class _TransportationCardState extends State<_TransportationCard> {
   @override
   void initState() {
     super.initState();
-    _loadRouteInfo();
+    // 읽기 전용 모드이고 이미 경로 정보가 있으면 API 호출 없이 바로 사용
+    if (widget.isReadOnly && widget.initialRouteResult != null) {
+      _routeResult = widget.initialRouteResult;
+    } else {
+      _loadRouteInfo();
+    }
   }
 
   @override
   void didUpdateWidget(_TransportationCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // 읽기 전용 모드에서는 경로 정보가 이미 있으므로 API 호출하지 않음
+    if (widget.isReadOnly && widget.initialRouteResult != null) {
+      if (oldWidget.initialRouteResult != widget.initialRouteResult) {
+        setState(() {
+          _routeResult = widget.initialRouteResult;
+        });
+      }
+      return;
+    }
     // 교통수단이나 좌표가 변경되면 다시 로드
     if (oldWidget.selectedTransportType != widget.selectedTransportType ||
         oldWidget.originCoordinates != widget.originCoordinates ||
@@ -947,6 +984,11 @@ class _TransportationCardState extends State<_TransportationCard> {
       );
     }
 
+    // 🔥 읽기 전용 모드이고 서버에서 받은 경로 정보가 있으면 바로 표시 (좌표 체크 불필요)
+    if (widget.isReadOnly && _routeResult != null) {
+      return _buildTransportDetailsByType();
+    }
+
     // 좌표 정보가 없으면 로딩 또는 기본값 표시
     if (widget.originCoordinates == null || widget.destinationCoordinates == null) {
       // 좌표가 없으면 로딩 중 표시 (하드코딩된 기본값 대신)
@@ -969,19 +1011,21 @@ class _TransportationCardState extends State<_TransportationCard> {
           ],
         );
       }
-      // 좌표 정보가 없어서 계산할 수 없음
-      return Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.orange[300], size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '좌표 정보가 없어 이동시간을 계산할 수 없습니다',
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+      // 좌표 정보가 없어서 계산할 수 없음 (읽기 전용 모드가 아닐 때만)
+      if (!widget.isReadOnly) {
+        return Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange[300], size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '좌표 정보가 없어 이동시간을 계산할 수 없습니다',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
             ),
-          ),
-        ],
-      );
+          ],
+        );
+      }
     }
 
     // 실제 계산 결과 표시 (하드코딩된 기본값 대신 실제 서버 응답만 표시)
@@ -1004,6 +1048,14 @@ class _TransportationCardState extends State<_TransportationCard> {
           ),
         ],
       );
+    }
+
+    return _buildTransportDetailsByType();
+  }
+
+  Widget _buildTransportDetailsByType() {
+    if (_routeResult == null) {
+      return const SizedBox.shrink();
     }
 
     final durationMinutes = _routeResult!.durationMinutes;
