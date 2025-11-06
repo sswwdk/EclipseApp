@@ -76,15 +76,26 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
 
   /// 히스토리 상세 데이터 파싱
   Map<String, dynamic> _parseHistoryDetail(Map<String, dynamic> detailResponse) {
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('📦 [Normal Detail] 전체 서버 응답:');
+    print(detailResponse);
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
     final data = detailResponse['data'] ?? detailResponse;
+    
+    print('📦 [Normal Detail] data 부분:');
+    print(data);
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
     // 날짜 정보 추출
     String? dateText;
     if (data['visited_at'] != null) {
       final visitedAt = data['visited_at'].toString();
       dateText = _formatDate(visitedAt);
+      print('📅 [Normal Detail] visited_at: $visitedAt → $dateText');
     } else if (data['date'] != null) {
       dateText = _formatDate(data['date'].toString());
+      print('📅 [Normal Detail] date: ${data['date']} → $dateText');
     }
 
     // 장소 정보 추출
@@ -92,15 +103,43 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
     
     // categories 형식으로 저장된 경우
     if (data['categories'] != null && data['categories'] is List) {
+      print('🏷️ [Normal Detail] categories 형식으로 파싱 시작');
       final categories = data['categories'] as List<dynamic>;
+      print('🏷️ [Normal Detail] categories 개수: ${categories.length}');
       
-      for (final category in categories) {
+      for (int idx = 0; idx < categories.length; idx++) {
+        final category = categories[idx];
+        print('━━━ Category ${idx + 1} ━━━');
+        print('원본 데이터: $category');
+        
         final categoryMap = category as Map<String, dynamic>;
-        final categoryName = categoryMap['category_name'] as String? ?? '기타';
+        print('사용 가능한 필드들: ${categoryMap.keys.toList()}');
+        
+        // category_type을 실제 카테고리로 변환 (String 또는 int 처리)
+        final categoryTypeRaw = categoryMap['category_type'];
+        int categoryType = 0;
+        if (categoryTypeRaw is int) {
+          categoryType = categoryTypeRaw;
+        } else if (categoryTypeRaw is String) {
+          categoryType = int.tryParse(categoryTypeRaw) ?? 0;
+        }
+        final categoryName = _getCategoryNameFromType(categoryType);
         final placeName = categoryMap['category_name'] as String? ?? '';
         final placeId = categoryMap['category_id'] as String? ?? '';
+        final placeAddress = categoryMap['category_detail_address'] as String? ?? '주소 정보 없음';
+        final subCategory = categoryMap['sub_category'] as String? ?? '';
         
-        if (placeName.isEmpty) continue;
+        print('  → categoryType: $categoryType');
+        print('  → categoryName: $categoryName');
+        print('  → placeName: $placeName');
+        print('  → placeId: $placeId');
+        print('  → placeAddress: $placeAddress');
+        print('  → subCategory: $subCategory');
+        
+        if (placeName.isEmpty) {
+          print('  ⚠️ placeName이 비어있어서 스킵');
+          continue;
+        }
 
         if (!places.containsKey(categoryName)) {
           places[categoryName] = [];
@@ -110,41 +149,82 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
           'id': placeId,
           'title': placeName,
           'name': placeName,
-          'address': '주소 정보 없음',
+          'address': placeAddress,
           'category': categoryName,
+          'sub_category': subCategory,
         });
+        print('  ✅ 추가됨');
       }
     }
     
     // places 형식으로 저장된 경우 (saveOtherHistory)
     else if (data['places'] != null && data['places'] is List) {
+      print('📍 [Normal Detail] places 형식으로 파싱 시작');
       final placesList = data['places'] as List<dynamic>;
+      print('📍 [Normal Detail] places 개수: ${placesList.length}');
       
-      for (final place in placesList) {
+      for (int idx = 0; idx < placesList.length; idx++) {
+        final place = placesList[idx];
+        print('━━━ Place ${idx + 1} ━━━');
+        print('원본 데이터: $place');
+        
         final placeMap = place as Map<String, dynamic>;
+        print('사용 가능한 필드들: ${placeMap.keys.toList()}');
+        
         final category = placeMap['category'] as String? ?? '기타';
+        final placeId = placeMap['place_id'] as String? ?? placeMap['id'] as String? ?? '';
+        final placeName = placeMap['name'] as String? ?? '알 수 없음';
+        final placeAddress = placeMap['address'] as String? ?? '주소 정보 없음';
+        final placeImage = placeMap['image_url'] as String? ?? placeMap['image'] as String? ?? '';
+        
+        print('  → category: $category');
+        print('  → placeId: $placeId');
+        print('  → placeName: $placeName');
+        print('  → placeAddress: $placeAddress');
+        print('  → placeImage: $placeImage');
         
         if (!places.containsKey(category)) {
           places[category] = [];
         }
         
         places[category]!.add({
-          'id': placeMap['place_id'] as String? ?? placeMap['id'] as String? ?? '',
-          'title': placeMap['name'] as String? ?? '알 수 없음',
-          'name': placeMap['name'] as String? ?? '알 수 없음',
-          'address': placeMap['address'] as String? ?? '주소 정보 없음',
+          'id': placeId,
+          'title': placeName,
+          'name': placeName,
+          'address': placeAddress,
           'category': category,
-          'image_url': placeMap['image_url'] as String? ?? placeMap['image'] as String?,
+          'image_url': placeImage,
         });
+        print('  ✅ 추가됨');
       }
     }
+    else {
+      print('⚠️ [Normal Detail] categories도 places도 없음!');
+      print('data의 키들: ${data.keys.toList()}');
+    }
 
-    print('🔍 [Normal Detail] 파싱된 장소: $places');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('🔍 [Normal Detail] 최종 파싱된 장소: $places');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return {
       'places': places,
       'date': dateText,
     };
+  }
+
+  /// category_type을 카테고리 이름으로 변환
+  String _getCategoryNameFromType(int categoryType) {
+    switch (categoryType) {
+      case 0:
+        return '음식점';
+      case 1:
+        return '카페';
+      case 2:
+        return '콘텐츠';
+      default:
+        return '기타';
+    }
   }
 
   /// 날짜 형식 변환

@@ -19,6 +19,54 @@ class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
   bool _isSaving = false;
 
   @override
+  void initState() {
+    super.initState();
+    _logSelectedData();
+  }
+
+  /// 선택된 데이터 로그 출력
+  void _logSelectedData() {
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('📦 [Result Confirm] 추천 화면에서 전달받은 전체 데이터:');
+    print(widget.selected);
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    final categories = widget.selected.keys.toList();
+    print('📦 [Result Confirm] 카테고리 목록: $categories');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    for (final category in categories) {
+      final places = widget.selected[category] ?? [];
+      print('🏷️ [Result Confirm] 카테고리: $category');
+      print('🏷️ [Result Confirm] 장소 개수: ${places.length}');
+
+      for (int idx = 0; idx < places.length; idx++) {
+        final place = places[idx];
+        print('━━━ Place ${idx + 1} in $category ━━━');
+        print('원본 데이터: $place');
+        print('사용 가능한 필드들: ${place.keys.toList()}');
+        
+        final placeName = place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
+        final placeAddress = place['address'] as String? ?? place['detail_address'] as String? ?? '주소 정보 없음';
+        final placeId = place['id'] as String? ?? '';
+        final placeCategory = place['category'] as String? ?? place['sub_category'] as String? ?? category;
+        final placeImage = place['image_url'] as String? ?? place['image'] as String? ?? '';
+        
+        print('  → placeId: $placeId');
+        print('  → placeName: $placeName');
+        print('  → placeAddress: $placeAddress');
+        print('  → placeCategory: $placeCategory');
+        print('  → placeImage: $placeImage');
+        print('  ✅ 확인됨');
+      }
+    }
+
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('🔍 [Result Confirm] 데이터 로그 출력 완료');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  }
+
+  @override
   Widget build(BuildContext context) {
     final categories = widget.selected.keys.toList();
     return Scaffold(
