@@ -18,9 +18,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Colors.white, // 🔥 흰색 배경으로 변경 (네비게이션 바 주변)
+      extendBody: true, // 🔥 body를 네비게이션 바 아래까지 확장
       appBar: AppBar(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: Colors.white, // 🔥 흰색으로 변경
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(
@@ -61,6 +62,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ),
       ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 100), // 🔥 하단 패딩 추가 (네비게이션 바 공간)
         child: Column(
           children: [
             // 커뮤니티 포스트들

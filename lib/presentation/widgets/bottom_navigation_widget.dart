@@ -89,16 +89,14 @@ class _RoundedTopNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        boxShadow: [
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), // 🔥 좌우, 하단 여백 추가
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85), // 🔥 반투명 배경 (블러 효과)
+        borderRadius: BorderRadius.circular(24), // 🔥 모든 모서리를 둥글게
+        boxShadow: const [
           BoxShadow(
             color: Color(0x1A000000),
-            blurRadius: 16,
+            blurRadius: 8,
             offset: Offset(0, -4),
           ),
         ],
@@ -106,7 +104,7 @@ class _RoundedTopNavBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.symmetric(vertical: 8), // 🔥 상하 패딩만
           child: child,
         ),
       ),

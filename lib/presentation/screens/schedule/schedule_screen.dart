@@ -17,7 +17,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F0F0),
+      backgroundColor: Colors.white, // 🔥 흰색 배경으로 변경 (네비게이션 바 주변)
+      extendBody: true, // 🔥 body를 네비게이션 바 아래까지 확장
       body: SafeArea(
         child: Stack(
           children: [
@@ -83,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 80),
+                    const SizedBox(height: 120), // 🔥 네비게이션 바 공간 확보 (80 -> 120)
                   ],
                 ),
               ),
