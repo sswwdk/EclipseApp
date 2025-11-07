@@ -466,7 +466,7 @@ class _ScheduleHistoryTemplate2DetailScreenState
                   ...List.generate(_items.length - 1, (index) {
                     String originName;
                     if (index == 0) {
-                      originName = '집';
+                      originName = '출발지';
                       if (_originAddress != null &&
                           _originAddress!.isNotEmpty) {
                         final parts = _originAddress!.split(' ');
