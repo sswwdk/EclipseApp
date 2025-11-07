@@ -99,13 +99,11 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
               final next = !_isFavorite;
               setState(() => _isFavorite = next);
               try {
-                final userId = TokenManager.userId ?? '';
-                if (userId.isEmpty) return;
                 final categoryId = restaurant.id;
                 if (next) {
-                  await LikeService.likeStore(categoryId, userId);
+                  await LikeService.likeStore(categoryId);
                 } else {
-                  await LikeService.unlikeStore(categoryId, userId);
+                  await LikeService.unlikeStore(categoryId);
                 }
               } catch (e) {
                 setState(() => _isFavorite = !next);

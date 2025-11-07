@@ -13,10 +13,6 @@ class ApiService {
         'Content-Type': 'application/json',
         ...TokenManager.jwtHeader,
       };
-      
-      final requestBody = {
-        'body': "qwerfgh",
-      };
 
     final response = await HttpInterceptor.get(
       '/api/categories/',
