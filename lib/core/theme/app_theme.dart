@@ -51,6 +51,9 @@ class AppTheme {
   static Color get textPrimaryColorWithOpacity70 => textPrimaryColor.withValues(alpha: 0.7);
   
   
+  // Hover, Click, Focus 애니메이션 강도 설정 (0.0 ~ 1.0, 낮을수록 약함)
+  static const double animationIntensity = 0.6; // 
+  
   // 라이트 테마
   static ThemeData get lightTheme {
     return ThemeData(
@@ -59,6 +62,12 @@ class AppTheme {
       // 스플래시 스크린 색상 설정
       scaffoldBackgroundColor: backgroundColor,
       canvasColor: backgroundColor,
+      
+      // 🔥 InkWell 애니메이션 효과 설정
+      splashColor: primaryColor.withValues(alpha: animationIntensity * 0.3), // 클릭 시 ripple 효과
+      highlightColor: primaryColor.withValues(alpha: animationIntensity * 0.2), // 클릭 홀드 시
+      hoverColor: primaryColor.withValues(alpha: animationIntensity * 0.1), // 마우스 hover 시
+      
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
         primaryContainer: primaryLightColor,
