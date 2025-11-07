@@ -106,6 +106,7 @@ class _ScheduleHistoryTemplate2DetailScreenState
         icon: Icons.home_outlined,
         categoryId: null,
         rating: null,
+        imageUrl: null,
       ),
     );
 
@@ -148,6 +149,9 @@ class _ScheduleHistoryTemplate2DetailScreenState
         rating = ratingValue.toDouble();
       }
 
+      // 🔥 이미지 URL 추출
+      String? imageUrl = category['image_url'] as String?;
+
       items.add(
         _ScheduleItem(
           title: categoryName,
@@ -156,6 +160,7 @@ class _ScheduleHistoryTemplate2DetailScreenState
           icon: _iconFor(categoryType),
           categoryId: categoryId,
           rating: rating,
+          imageUrl: imageUrl, // 🔥 추가
         ),
       );
 
@@ -554,6 +559,7 @@ class _ScheduleItem {
   final IconData icon;
   final String? categoryId;
   final double? rating;
+  final String? imageUrl;
 
   _ScheduleItem({
     required this.title,
@@ -562,6 +568,7 @@ class _ScheduleItem {
     required this.icon,
     this.categoryId,
     this.rating,
+    this.imageUrl,
   });
 }
 
@@ -646,8 +653,39 @@ class _PlannerItemCard extends StatelessWidget {
               border: Border.all(color: const Color(0xFFD97941), width: 2),
               borderRadius: BorderRadius.circular(8),
             ),
-            alignment: Alignment.center,
-            child: Text(emoji, style: const TextStyle(fontSize: 40)),
+            clipBehavior: Clip.antiAlias, // 🔥 이미지 모서리 처리
+            child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                ? Image.network(
+                    item.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      // 🔥 이미지 로딩 실패 시 이모지 표시
+                      return Center(
+                        child: Text(
+                          emoji,
+                          style: const TextStyle(fontSize: 40),
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      // 🔥 로딩 중 표시
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                          color: const Color(0xFFD97941),
+                          strokeWidth: 2,
+                        ),
+                      );
+                    },
+                  )
+                : Center(
+                    // 🔥 이미지 URL이 없으면 이모지 표시
+                    child: Text(emoji, style: const TextStyle(fontSize: 40)),
+                  ),
           ),
           const SizedBox(height: 8),
           _buildStars(item.rating ?? 0.0),
