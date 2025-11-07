@@ -9,9 +9,8 @@ class HistoryService {
 
   // 내 히스토리 보기
   static Future<Map<String, dynamic>> getMyHistory(
-    String userId, {
-    bool templateType = true,
-  }) async {
+    String userId,
+  ) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/users/me/histories'),
@@ -459,16 +458,11 @@ class HistoryService {
 
       final List<Map<String, dynamic>> places = [];
       for (final entry in selectedPlaces.entries) {
-        final category = entry.key;
         final placeList = entry.value;
 
         for (final place in placeList) {
           final placeName =
               place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
-          final placeAddress =
-              place['address'] as String? ??
-              place['detail_address'] as String? ??
-              '';
 
           places.add({
             'category_name': placeName,

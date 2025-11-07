@@ -24,9 +24,9 @@ class ServiceApi {
   }
 
   // 하루랑 채팅
-  static Future<Map<String, dynamic>> chatWithHaru(String prompt, String userId) async {
+  static Future<Map<String, dynamic>> chatWithHaru(String prompt) async {
     final svc = OpenAIService();
-    // 기존 코드와의 호환을 위해 userId를 session으로 사용할 수 있게 초기화 보장
+    // 기존 코드와의 호환을 위해 sessionId가 없으면 초기화 보장
     if (svc.sessionId == null) {
       await svc.initialize(playAddress: '', peopleCount: 1, selectedCategories: const []);
     }

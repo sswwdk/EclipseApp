@@ -175,13 +175,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                   _isFavorite = next;
                                 });
                                 try {
-                                  final userId = TokenManager.userId ?? '';
-                                  if (userId.isEmpty) return;
                                   final categoryId = widget.placeName;
                                   if (next) {
-                                    await LikeService.likeStore(categoryId, userId);
+                                    await LikeService.likeStore(categoryId);
                                   } else {
-                                    await LikeService.unlikeStore(categoryId, userId);
+                                    await LikeService.unlikeStore(categoryId);
                                   }
                                 } catch (e) {
                                   setState(() {
