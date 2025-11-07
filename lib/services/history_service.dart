@@ -402,11 +402,11 @@ class HistoryService {
         // 🔥 도보인 경우는 항상 표시, 다른 경우는 0분 이상일 때만 표시
         if (step.type == 'walk') {
           if (step.durationMinutes > 0) {
-            buffer.write(' (${step.durationMinutes}분)');
+            buffer.write(' ${step.durationMinutes}분');
           }
           // 시간이 0이어도 줄바꿈은 추가
         } else if (step.durationMinutes > 0) {
-          buffer.write(' (${step.durationMinutes}분)');
+          buffer.write(' ${step.durationMinutes}분');
         }
 
         // 마지막 항목이 아니면 줄바꿈
