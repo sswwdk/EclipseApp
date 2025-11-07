@@ -2,15 +2,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../shared/helpers/token_manager.dart';
 import '../../core/config/server_config.dart';
-import 'route_service.dart'; // 🔥 RouteResult 임포트
+import 'route_service.dart';
 
 class HistoryService {
   static String get baseUrl => ServerConfig.baseUrl;
 
   // 내 히스토리 보기
-  static Future<Map<String, dynamic>> getMyHistory(
-    String userId,
-  ) async {
+  static Future<Map<String, dynamic>> getMyHistory(String userId) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/users/me/histories'),
@@ -57,18 +55,19 @@ class HistoryService {
     }
   }
 
-  // 일정표 히스토리 "일정표" 탭에 저장
+  // 일정표 히스토리에 저장
   static Future<void> saveSchedule({
     required Map<String, List<String>> selectedPlaces,
     Map<String, String>? categoryIdByName,
     Map<String, List<Map<String, dynamic>>>? selectedPlacesWithData,
-    List<Map<String, dynamic>>? orderedPlaces, // 🔥 순서가 유지되는 장소 리스트
+    List<Map<String, dynamic>>? orderedPlaces,
     String? originAddress,
     String? originDetailAddress,
     Map<int, int>? transportTypes,
-    Map<int, RouteResult>? routeResults, // 🔥 실제 경로 계산 결과
+    Map<int, RouteResult>? routeResults,
     int? firstDurationMinutes,
     int? otherDurationMinutes,
+    int templateType = 0, // 🔥 기본값 0 (기본 템플릿), 2 (플로우 템플릿)
   }) async {
     try {
       final callId = DateTime.now().millisecondsSinceEpoch;
@@ -78,10 +77,11 @@ class HistoryService {
       print('📍 [CALL-$callId] orderedPlaces: $orderedPlaces');
       print('📍 [CALL-$callId] transportTypes: $transportTypes');
       print('📍 [CALL-$callId] routeResults: ${routeResults?.keys.toList()}');
+      print('📍 [CALL-$callId] templateType: $templateType'); // 🔥 추가
 
       final List<Map<String, dynamic>> categories = [];
 
-      // 🔥 orderedPlaces가 있으면 순서대로 처리 (순서 보장)
+      // orderedPlaces가 있으면 순서대로 처리 (순서 보장)
       if (orderedPlaces != null && orderedPlaces.isNotEmpty) {
         print('✅ orderedPlaces를 사용하여 순서대로 저장');
 
@@ -97,17 +97,17 @@ class HistoryService {
                 ? transportTypes[i]!.toString()
                 : '1'; // 기본값: 대중교통
 
-            // 🔥 실제 경로 계산 결과 사용 (초 단위)
+            // 실제 경로 계산 결과 사용 (초 단위)
             int durationSeconds = 0;
             int distanceMeters = 0;
-            String? description; // 🔥 대중교통 상세 정보
+            String? description;
 
             if (routeResults != null && routeResults.containsKey(i)) {
               final route = routeResults[i]!;
-              durationSeconds = route.durationSeconds; // 🔥 원본 초 데이터
+              durationSeconds = route.durationSeconds;
               distanceMeters = route.distanceMeters;
 
-              // 🔥 대중교통 상세 정보 생성 (steps가 있는 경우)
+              // 대중교통 상세 정보 생성 (steps가 있는 경우)
               if (transportationCode == '1' &&
                   route.steps != null &&
                   route.steps!.isNotEmpty) {
@@ -134,12 +134,12 @@ class HistoryService {
             final categoryData = {
               'category_id': categoryId,
               'category_name': placeName,
-              'duration': durationSeconds, // 🔥 초 단위로 저장
+              'duration': durationSeconds,
               'distance': distanceMeters,
               'transportation': transportationCode,
             };
 
-            // 🔥 description이 있으면 추가
+            // description이 있으면 추가
             if (description != null && description.isNotEmpty) {
               categoryData['description'] = description;
             }
@@ -154,7 +154,7 @@ class HistoryService {
           }
         }
       } else {
-        // 🔸 하위 호환성: orderedPlaces가 없으면 기존 방식 사용
+        // 하위 호환성: orderedPlaces가 없으면 기존 방식 사용
         print('⚠️ orderedPlaces가 없음, 기존 방식 사용 (순서 보장 안됨)');
         int addedCategoryCount = 0;
 
@@ -201,7 +201,6 @@ class HistoryService {
                       ? transportTypes[addedCategoryCount]!.toString()
                       : '1';
 
-                  // 🔥 실제 경로 계산 결과 사용 (초 단위)
                   int durationSeconds = 0;
                   int distanceMeters = 0;
                   String? description;
@@ -234,7 +233,7 @@ class HistoryService {
                   final categoryData = {
                     'category_id': categoryId,
                     'category_name': matchedPlaceName,
-                    'duration': durationSeconds, // 🔥 초 단위로 저장
+                    'duration': durationSeconds,
                     'distance': distanceMeters,
                     'transportation': transportationCode,
                   };
@@ -266,7 +265,6 @@ class HistoryService {
                     ? transportTypes[addedCategoryCount]!.toString()
                     : '1';
 
-                // 🔥 초 단위로 변환
                 int durationSeconds = 0;
                 int distanceMeters = 0;
                 String? description;
@@ -292,7 +290,7 @@ class HistoryService {
                 final categoryData = {
                   'category_id': categoryId,
                   'category_name': categoryName,
-                  'duration': durationSeconds, // 🔥 초 단위
+                  'duration': durationSeconds,
                   'distance': distanceMeters,
                   'transportation': transportationCode,
                 };
@@ -325,6 +323,7 @@ class HistoryService {
         throw Exception('로그인이 필요합니다. user_id 없음');
       }
 
+      // 🔥 template_type을 문자열로 변환하여 전송
       final response = await http
           .post(
             Uri.parse('$baseUrl/api/service/histories'),
@@ -333,7 +332,7 @@ class HistoryService {
               ...TokenManager.jwtHeader,
             },
             body: json.encode({
-              'template_type': '0', // 0: 일정표
+              'template_type': templateType.toString(), // 🔥 0, 2 등
               'category': categories,
             }),
           )
@@ -349,14 +348,15 @@ class HistoryService {
         print('   응답 본문: ${response.body}');
         throw Exception('일정표 저장 실패: ${response.statusCode}');
       }
+
+      print('✅ 일정표 저장 성공 (template_type: $templateType)');
     } catch (e) {
       print('일정표 저장 오류: $e');
       throw Exception('네트워크 오류: $e');
     }
   }
 
-  /// 🔥 대중교통 경로 상세 정보를 텍스트로 변환
-  /// 🔥 대중교통 경로 상세 정보를 텍스트로 변환
+  /// 대중교통 경로 상세 정보를 텍스트로 변환
   static String _buildTransportDescription(RouteResult route) {
     final buffer = StringBuffer();
 
@@ -398,12 +398,11 @@ class HistoryService {
           buffer.write('$icon ${step.type}');
         }
 
-        // 🔥 도보인 경우는 항상 표시, 다른 경우는 0분 이상일 때만 표시
+        // 도보인 경우는 항상 표시, 다른 경우는 0분 이상일 때만 표시
         if (step.type == 'walk') {
           if (step.durationMinutes > 0) {
             buffer.write(' ${step.durationMinutes}분');
           }
-          // 시간이 0이어도 줄바꿈은 추가
         } else if (step.durationMinutes > 0) {
           buffer.write(' ${step.durationMinutes}분');
         }
@@ -466,7 +465,7 @@ class HistoryService {
 
           places.add({
             'category_name': placeName,
-            'duration': 3600, // 🔥 60분 → 3600초
+            'duration': 3600, // 60분 → 3600초
             'transportation': '1',
             'category_id': place['id'] as String? ?? '',
           });
@@ -505,6 +504,8 @@ class HistoryService {
         print('   응답 본문: ${response.body}');
         throw Exception('히스토리 저장 실패: ${response.statusCode}');
       }
+
+      print('✅ "그냥" 탭 히스토리 저장 성공');
     } catch (e) {
       print('히스토리 저장 오류: $e');
       throw Exception('네트워크 오류: $e');
