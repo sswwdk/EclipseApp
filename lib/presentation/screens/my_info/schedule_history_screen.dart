@@ -4,6 +4,7 @@ import '../../../data/services/history_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import 'schedule_history_detail_screen.dart';
 import 'schedule_history_normal_detail_screen.dart';
+import 'schedule_history_template2_detail_screen.dart';
 
 class ScheduleHistoryScreen extends StatefulWidget {
   const ScheduleHistoryScreen({Key? key}) : super(key: key);
@@ -12,7 +13,8 @@ class ScheduleHistoryScreen extends StatefulWidget {
   State<ScheduleHistoryScreen> createState() => _ScheduleHistoryScreenState();
 }
 
-class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with SingleTickerProviderStateMixin {
+class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _loading = true;
   String? _errorMessage;
@@ -49,127 +51,120 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
         return;
       }
 
-      // 서버에서 히스토리 데이터 가져오기
       final response = await HistoryService.getMyHistory(userId);
 
       if (!mounted) return;
 
-      // 서버 응답 파싱
       final List<_ScheduleHistoryItem> scheduleItems = [];
       final List<_ScheduleHistoryItem> otherItems = [];
 
-      // 디버깅: 전체 응답 출력
-      print('🔍 전체 응답: $response');
-      print('🔍 응답 타입: ${response.runtimeType}');
-      print('🔍 응답 키들: ${response.keys.toList()}');
-
-      // 서버 응답 형식: MergeUserHistory 객체들의 리스트
-      // 각 객체는 {id, visited_at, categories_name} 형식
-      // getMyHistory는 Map<String, dynamic>을 반환하므로 Map에서 데이터 추출
       List<dynamic> data = [];
-      
-      // Map에서 다양한 키로 데이터 찾기
-      data = response['data'] as List<dynamic>? ?? 
-             response['histories'] as List<dynamic>? ?? 
-             response['items'] as List<dynamic>? ?? 
-             response['history'] as List<dynamic>? ??
-             [];
-      
-      // 만약 위의 키들에 없으면, Map의 모든 값이 리스트인 경우 찾기
+
+      data =
+          response['data'] as List<dynamic>? ??
+          response['histories'] as List<dynamic>? ??
+          response['items'] as List<dynamic>? ??
+          response['history'] as List<dynamic>? ??
+          [];
+
       if (data.isEmpty) {
         for (final value in response.values) {
           if (value is List && value.isNotEmpty) {
             data = value;
-            print('🔍 리스트 데이터를 다른 키에서 찾음: ${response.keys.where((k) => response[k] == value).join(", ")}');
             break;
           }
         }
       }
-      
-      print('🔍 파싱된 데이터 리스트: $data');
-      print('🔍 데이터 개수: ${data.length}');
-      
+
       for (final item in data) {
         try {
-          // item이 Map인지 확인
           if (item is! Map<String, dynamic>) {
-            print('⚠️ 아이템이 Map이 아님: $item (타입: ${item.runtimeType})');
             continue;
           }
-          
+
           final itemMap = item;
-          
-          print('🔍 아이템 전체: $itemMap');
-          print('🔍 아이템 키들: ${itemMap.keys.toList()}');
-          
-          // MergeUserHistory 형식 파싱
-          final id = itemMap['id']?.toString() ?? 
-                    itemMap['history_id']?.toString() ?? 
-                    itemMap['merge_history_id']?.toString() ?? 
-                    '';
-          final categoriesName = itemMap['categories_name']?.toString() ?? 
-                                itemMap['category_name']?.toString() ?? 
-                                itemMap['name']?.toString() ?? 
-                                '';
-          
-          // visited_at 파싱 (datetime 문자열 또는 ISO 형식)
+
+          final id =
+              itemMap['id']?.toString() ??
+              itemMap['history_id']?.toString() ??
+              itemMap['merge_history_id']?.toString() ??
+              '';
+          final categoriesName =
+              itemMap['categories_name']?.toString() ??
+              itemMap['category_name']?.toString() ??
+              itemMap['name']?.toString() ??
+              '';
+
           String dateStr = '';
           if (itemMap['visited_at'] != null) {
             final visitedAt = itemMap['visited_at'];
             if (visitedAt is String) {
               dateStr = visitedAt;
             } else if (visitedAt is Map) {
-              // Python datetime 객체가 Map으로 올 수 있음
-              // {year: 2025, month: 11, day: 5} 형식일 수 있음
-              if (visitedAt.containsKey('year') && visitedAt.containsKey('month') && visitedAt.containsKey('day')) {
+              if (visitedAt.containsKey('year') &&
+                  visitedAt.containsKey('month') &&
+                  visitedAt.containsKey('day')) {
                 final year = visitedAt['year']?.toString() ?? '';
-                final month = visitedAt['month']?.toString().padLeft(2, '0') ?? '';
+                final month =
+                    visitedAt['month']?.toString().padLeft(2, '0') ?? '';
                 final day = visitedAt['day']?.toString().padLeft(2, '0') ?? '';
                 dateStr = '$year-$month-$day';
               } else {
-                dateStr = visitedAt['date']?.toString() ?? visitedAt['iso']?.toString() ?? visitedAt.toString();
+                dateStr =
+                    visitedAt['date']?.toString() ??
+                    visitedAt['iso']?.toString() ??
+                    visitedAt.toString();
               }
             } else {
               dateStr = visitedAt.toString();
             }
           } else if (itemMap['date'] != null) {
-            // date 필드도 확인
             dateStr = itemMap['date'].toString();
           }
-          
-          print('🔍 아이템 파싱 결과: id=$id, categories_name=$categoriesName, visited_at=$dateStr');
-          
-          // 날짜 형식 변환 (YYYY-MM-DD 형식으로 추출)
+
           String formattedDate = _formatDate(dateStr);
-          
+
+          // 🔥 template_type 추출
+          int templateType = 0;
+          final templateTypeValue =
+              itemMap['template_type'] ?? itemMap['templateType'];
+          if (templateTypeValue != null) {
+            if (templateTypeValue is int) {
+              templateType = templateTypeValue;
+            } else if (templateTypeValue is String) {
+              templateType = int.tryParse(templateTypeValue) ?? 0;
+            }
+          }
+
           final historyItem = _ScheduleHistoryItem(
-            id: id.isNotEmpty ? id : DateTime.now().millisecondsSinceEpoch.toString(),
+            id: id.isNotEmpty
+                ? id
+                : DateTime.now().millisecondsSinceEpoch.toString(),
             dateText: formattedDate.isNotEmpty ? formattedDate : '날짜 없음',
             scheduleTitle: categoriesName.isNotEmpty ? categoriesName : null,
+            templateType: templateType, // 🔥 추가
           );
-          
-          // 1) 휴리스틱: 'schedule_title' 등이 있으면 기본값을 '그냥'으로 간주
-          bool isScheduleType = !(itemMap.containsKey('schedule_title') || itemMap.containsKey('places'));
-          
-          // 2) template_type 값이 있으면 그것으로 명시적으로 덮어씀
-          final templateTypeValue = itemMap['template_type'] ?? itemMap['templateType'] ?? itemMap['type'];
+
+          bool isScheduleType =
+              !(itemMap.containsKey('schedule_title') ||
+                  itemMap.containsKey('places'));
+
           if (templateTypeValue != null) {
             final String t = templateTypeValue.toString().trim().toLowerCase();
-            if (t == '0' || t == 'default' || t == 'travel_planning') {
+            if (t == '0' ||
+                t == '2' ||
+                t == 'default' ||
+                t == 'travel_planning') {
               isScheduleType = true;
             } else if (t == '1' || t == 'just' || t == 'other') {
               isScheduleType = false;
             }
           }
-          
-          print('🔎 분류: template_type=${templateTypeValue}, isScheduleType=$isScheduleType, has_schedule_title=${itemMap.containsKey('schedule_title')}');
-          
+
           if (isScheduleType) {
             scheduleItems.add(historyItem);
-            print('✅ 일정표 탭에 추가: $categoriesName');
           } else {
             otherItems.add(historyItem);
-            print('✅ 그냥 탭에 추가: $categoriesName');
           }
         } catch (e, stackTrace) {
           print('❌ 아이템 파싱 오류: $e');
@@ -177,8 +172,6 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
           print('   아이템: $item');
         }
       }
-      
-      print('🔍 최종 결과 - 일정표: ${scheduleItems.length}개, 그냥: ${otherItems.length}개');
 
       if (!mounted) return;
 
@@ -189,7 +182,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
       });
     } catch (e) {
       if (!mounted) return;
-      
+
       print('❌ 히스토리 로드 실패: $e');
       setState(() {
         _errorMessage = '일정표 히스토리를 불러오는 중 오류가 발생했습니다.';
@@ -209,7 +202,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
       } else if (dateStr.contains(' ')) {
         datePart = dateStr.split(' ')[0];
       }
-      
+
       // YYYY-MM-DD 형식을 YYYY.MM.DD로 변환
       if (datePart.contains('-')) {
         return datePart.replaceAll('-', '.');
@@ -257,10 +250,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
                   Tab(text: '그냥'),
                 ],
               ),
-              Container(
-                height: 1,
-                color: AppTheme.primaryColor,
-              ),
+              Container(height: 1, color: AppTheme.primaryColor),
             ],
           ),
         ),
@@ -270,10 +260,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
         color: AppTheme.primaryColor,
         child: TabBarView(
           controller: _tabController,
-          children: [
-            _buildScheduleTab(),
-            _buildOtherTab(),
-          ],
+          children: [_buildScheduleTab(), _buildOtherTab()],
         ),
       ),
     );
@@ -296,7 +283,10 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
+                style: const TextStyle(
+                  color: AppTheme.textSecondaryColor,
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -333,10 +323,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
       },
       separatorBuilder: (_, __) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Divider(
-          color: AppTheme.dividerColor,
-          thickness: 1,
-        ),
+        child: Divider(color: AppTheme.dividerColor, thickness: 1),
       ),
       itemCount: _scheduleItems.length,
     );
@@ -359,7 +346,10 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
+                style: const TextStyle(
+                  color: AppTheme.textSecondaryColor,
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -396,28 +386,33 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
       },
       separatorBuilder: (_, __) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Divider(
-          color: AppTheme.dividerColor,
-          thickness: 1,
-        ),
+        child: Divider(color: AppTheme.dividerColor, thickness: 1),
       ),
       itemCount: _otherItems.length,
     );
   }
 
-  Widget _buildScheduleCard(_ScheduleHistoryItem item, {bool isNormalTab = false}) {
-    // scheduleTitle을 화살표 또는 쉼표 기준으로 분리
+  Widget _buildScheduleCard(
+    _ScheduleHistoryItem item, {
+    bool isNormalTab = false,
+  }) {
     List<String> places = [];
     if (item.scheduleTitle != null && item.scheduleTitle!.isNotEmpty) {
-      // "그냥" 탭은 쉼표로, "일정표" 탭은 화살표로 분리
       final separator = isNormalTab ? ',' : '→';
-      places = item.scheduleTitle!.split(separator).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      places = item.scheduleTitle!
+          .split(separator)
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
 
     return InkWell(
-      onTap: () => isNormalTab 
-          ? _navigateToNormalDetail(item.id)  // "그냥" 탭은 새 화면으로
-          : _navigateToScheduleDetail(item.id), // "일정표" 탭은 기존 화면으로
+      onTap: () => isNormalTab
+          ? _navigateToNormalDetail(item.id)
+          : _navigateToScheduleDetail(
+              item.id,
+              item.templateType,
+            ), // 🔥 templateType 전달
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
@@ -429,7 +424,6 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 날짜 표시
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
               child: Text(
@@ -442,35 +436,40 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
               ),
             ),
             const SizedBox(height: 12),
-            // 일정표 정보 (화살표로 연결 또는 리스트 형식)
             if (places.isNotEmpty)
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF5E8), // 연한 주황색 배경
+                  color: const Color(0xFFFFF5E8),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.3), // 얇은 주황색 테두리
+                    color: AppTheme.primaryColor.withOpacity(0.3),
                     width: 1,
                   ),
                 ),
-                // "그냥" 탭: 리스트 형식, "일정표" 탭: 화살표 형식
                 child: isNormalTab
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: places.map((place) => Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            '• $place',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFFFF8126),
-                            ),
-                          ),
-                        )).toList(),
+                        children: places
+                            .map(
+                              (place) => Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(
+                                  '• $place',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFFFF8126),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
                       )
                     : Wrap(
                         crossAxisAlignment: WrapCrossAlignment.center,
@@ -478,7 +477,6 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
                         runSpacing: 4,
                         children: List.generate(places.length * 2 - 1, (index) {
                           if (index % 2 == 0) {
-                            // 장소 이름
                             final placeIndex = index ~/ 2;
                             return Text(
                               places[placeIndex],
@@ -489,7 +487,6 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
                               ),
                             );
                           } else {
-                            // 화살표
                             return const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 4),
                               child: Text(
@@ -512,15 +509,25 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
   }
 
   /// 히스토리 상세 화면으로 이동 (일정표 탭)
-  void _navigateToScheduleDetail(String historyId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ScheduleHistoryDetailScreen(
-          historyId: historyId,
+  void _navigateToScheduleDetail(String historyId, int templateType) {
+    // 🔥 template_type에 따라 다른 화면으로 이동
+    if (templateType == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ScheduleHistoryTemplate2DetailScreen(historyId: historyId),
         ),
-      ),
-    );
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ScheduleHistoryDetailScreen(historyId: historyId),
+        ),
+      );
+    }
   }
 
   /// "그냥" 탭 히스토리 상세 화면으로 이동
@@ -528,9 +535,8 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> with Sing
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ScheduleHistoryNormalDetailScreen(
-          historyId: historyId,
-        ),
+        builder: (context) =>
+            ScheduleHistoryNormalDetailScreen(historyId: historyId),
       ),
     );
   }
@@ -540,12 +546,12 @@ class _ScheduleHistoryItem {
   final String id;
   final String dateText;
   final String? scheduleTitle;
+  final int templateType;
 
   const _ScheduleHistoryItem({
     required this.id,
     required this.dateText,
     this.scheduleTitle,
+    this.templateType = 0,
   });
 }
-
-

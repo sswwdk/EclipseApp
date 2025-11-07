@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'template_1_screen.dart';
+import 'template_2_screen.dart'; // 🔥 추가
 import '../../../core/theme/app_theme.dart';
 
 class ChooseTemplateScreen extends StatefulWidget {
   final Map<String, List<String>> selected;
-  final Map<String, List<Map<String, dynamic>>>? selectedPlacesWithData; // 전체 매장 데이터
-  final Map<String, String>? categoryIdByName; // 카테고리명 -> 카테고리ID 매핑(옵션)
+  final Map<String, List<Map<String, dynamic>>>? selectedPlacesWithData;
+  final Map<String, String>? categoryIdByName;
   final String? originAddress;
   final String? originDetailAddress;
-  final List<Map<String, dynamic>>? orderedPlaces; // 🔥 순서가 유지되는 장소 리스트
+  final List<Map<String, dynamic>>? orderedPlaces;
 
   const ChooseTemplateScreen({
     Key? key,
@@ -25,7 +26,7 @@ class ChooseTemplateScreen extends StatefulWidget {
 }
 
 class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
-  String? _selectedName; // null = none selected
+  String? _selectedName;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +41,11 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
         ),
         title: const Text(
           '템플릿 선택',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
         centerTitle: true,
       ),
@@ -86,10 +91,15 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onPressed: _onConfirm,
-              child: const Text('템플릿 선택하기', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text(
+                '템플릿 선택하기',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ),
@@ -99,24 +109,27 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
 
   void _onConfirm() {
     if (_selectedName == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('템플릿을 선택해 주세요.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('템플릿을 선택해 주세요.')));
       return;
     }
 
     if (_selectedName == '기본 템플릿') {
-      _go(first: 50, other: 25);
+      _goTemplate1(first: 50, other: 25);
     } else if (_selectedName == '플로우 템플릿') {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('템플릿이 준비중입니다.')));
+      _goTemplate2(first: 50, other: 25); // 🔥 템플릿 2로 이동
     }
   }
 
-  void _go({required int first, required int other}) {
+  void _goTemplate1({required int first, required int other}) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ScheduleBuilderScreen(
           selected: {
-            for (final entry in widget.selected.entries) entry.key: List<String>.from(entry.value)
+            for (final entry in widget.selected.entries)
+              entry.key: List<String>.from(entry.value),
           },
           selectedPlacesWithData: widget.selectedPlacesWithData,
           categoryIdByName: widget.categoryIdByName,
@@ -124,7 +137,29 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
           originDetailAddress: widget.originDetailAddress,
           firstDurationMinutes: first,
           otherDurationMinutes: other,
-          orderedPlaces: widget.orderedPlaces, // 🔥 순서가 유지되는 리스트 전달
+          orderedPlaces: widget.orderedPlaces,
+        ),
+      ),
+    );
+  }
+
+  // 🔥 템플릿 2로 이동하는 메서드 추가
+  void _goTemplate2({required int first, required int other}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Template2Screen(
+          selected: {
+            for (final entry in widget.selected.entries)
+              entry.key: List<String>.from(entry.value),
+          },
+          selectedPlacesWithData: widget.selectedPlacesWithData,
+          categoryIdByName: widget.categoryIdByName,
+          originAddress: widget.originAddress,
+          originDetailAddress: widget.originDetailAddress,
+          firstDurationMinutes: first,
+          otherDurationMinutes: other,
+          orderedPlaces: widget.orderedPlaces,
         ),
       ),
     );
@@ -138,7 +173,14 @@ class _TemplateTile extends StatelessWidget {
   final bool checked;
   final VoidCallback onToggle;
 
-  const _TemplateTile({Key? key, required this.name, required this.description, required this.emoji, required this.checked, required this.onToggle}) : super(key: key);
+  const _TemplateTile({
+    Key? key,
+    required this.name,
+    required this.description,
+    required this.emoji,
+    required this.checked,
+    required this.onToggle,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +192,11 @@ class _TemplateTile extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         padding: const EdgeInsets.all(14),
@@ -193,7 +239,11 @@ class _TemplateTile extends StatelessWidget {
             Text(
               name,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
