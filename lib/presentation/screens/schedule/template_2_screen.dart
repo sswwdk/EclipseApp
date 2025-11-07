@@ -5,6 +5,7 @@ import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
 import '../main/main_screen.dart';
 import 'dart:async';
+import '../../widgets/common_dialogs.dart';
 
 class Template2Screen extends StatefulWidget {
   final Map<String, List<String>> selected;
@@ -166,13 +167,13 @@ class _Template2ScreenState extends State<Template2Screen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFD97941)),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.isReadOnly ? '일정표 상세' : '오늘의 일정표',
           style: const TextStyle(
-            color: Color(0xFFD97941),
+            color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -180,7 +181,7 @@ class _Template2ScreenState extends State<Template2Screen> {
         centerTitle: true,
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Color(0xFFD97941)),
+            icon: const Icon(Icons.more_vert, color: Colors.black),
             onSelected: (value) {
               if (value == 'home') {
                 _showGoHomeDialog();
@@ -191,7 +192,7 @@ class _Template2ScreenState extends State<Template2Screen> {
                 value: 'home',
                 child: Row(
                   children: [
-                    Icon(Icons.home, size: 20, color: Color(0xFFD97941)),
+                    Icon(Icons.home, size: 20, color: Colors.black),
                     SizedBox(width: 8),
                     Text('홈으로 돌아가기'),
                   ],
@@ -558,11 +559,9 @@ Widget _buildHeader() {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('일정표 히스토리에 저장되었습니다.'),
-          duration: Duration(seconds: 2),
-        ),
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '일정표 히스토리에 저장되었습니다.',
       );
 
       Navigator.of(context).pushAndRemoveUntil(
@@ -572,12 +571,9 @@ Widget _buildHeader() {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('저장 중 오류가 발생했습니다: ${e.toString()}'),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '저장 중 오류가 발생했습니다: ${e.toString()}',
       );
     } finally {
       if (mounted) {
@@ -597,11 +593,9 @@ Widget _buildHeader() {
       final userId = TokenManager.userId;
       if (userId == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('로그인이 필요합니다.'),
-            duration: Duration(seconds: 2),
-          ),
+        CommonDialogs.showError(
+          context: context,
+          message: '로그인이 필요합니다.',
         );
         return;
       }
@@ -611,21 +605,16 @@ Widget _buildHeader() {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('커뮤니티에 공유되었습니다.'),
-          duration: Duration(seconds: 2),
-        ),
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '커뮤니티에 공유되었습니다.',
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('공유 중 오류가 발생했습니다: ${e.toString()}'),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '공유 중 오류가 발생했습니다: ${e.toString()}',
       );
     } finally {
       if (mounted) {
