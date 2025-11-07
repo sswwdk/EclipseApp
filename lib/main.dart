@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'login/login_screen.dart';
-import 'theme/app_theme.dart';
+import 'package:whattodo/presentation/screens/auth/login_screen.dart';
+import 'package:whattodo/core/theme/app_theme.dart';
 
 
 void main() {
