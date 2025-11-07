@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import '../services/history_service.dart';
 import '../services/token_manager.dart';
 import '../services/route_service.dart';
+import '../services/api_service.dart'; // 🔥 Restaurant 모델 사용
+import '../home/restaurant_detail_screen.dart'; // 🔥 상세 화면 import
 
 /// 일정표 히스토리 상세 화면
 class ScheduleHistoryDetailScreen extends StatefulWidget {
@@ -112,6 +115,7 @@ class _ScheduleHistoryDetailScreenState
         icon: Icons.home_outlined,
         color: Colors.grey[700]!,
         type: _ItemType.origin,
+        categoryId: null, // 🔥 출발지는 매장 ID 없음
       ),
     );
 
@@ -119,6 +123,8 @@ class _ScheduleHistoryDetailScreenState
     for (int i = 0; i < sortedCategories.length; i++) {
       final category = sortedCategories[i];
       final categoryName = category['category_name'] as String? ?? '';
+      final categoryId =
+          category['category_id'] as String? ?? ''; // 🔥 매장 ID 추출
       final duration = category['duration'] as int? ?? 3600; // 초 단위
 
       int transportation = 1;
@@ -153,6 +159,7 @@ class _ScheduleHistoryDetailScreenState
           icon: _iconFor(categoryType),
           color: const Color(0xFFFF8126),
           type: _ItemType.place,
+          categoryId: categoryId, // 🔥 매장 ID 추가
         ),
       );
 
@@ -188,6 +195,7 @@ class _ScheduleHistoryDetailScreenState
     }
   }
 
+  /// 카테고리에 따른 아이콘 반환
   IconData _iconFor(String category) {
     switch (category) {
       case '음식점':
@@ -404,6 +412,7 @@ class _ScheduleHistoryDetailScreenState
               itemCount: _items.length * 2 - 1,
               itemBuilder: (context, index) {
                 if (index % 2 == 0) {
+                  // 실제 아이템
                   int itemIndex = index ~/ 2;
                   final item = _items[itemIndex];
                   return _TimelineRow(
@@ -412,6 +421,7 @@ class _ScheduleHistoryDetailScreenState
                     isLast: itemIndex == _items.length - 1,
                   );
                 } else {
+                  // 교통수단 카드
                   int itemIndex = index ~/ 2;
                   if (itemIndex < _items.length - 1) {
                     return _TransportationCard(
@@ -428,10 +438,10 @@ class _ScheduleHistoryDetailScreenState
   }
 }
 
-// 아이템 타입
+// 🔥 아이템 타입 (출발지 vs 매장)
 enum _ItemType { origin, place }
 
-// 일정 아이템
+// 🔥 일정 아이템 데이터 모델
 class _ScheduleItem {
   final String title;
   final String subtitle;
@@ -439,6 +449,7 @@ class _ScheduleItem {
   final IconData icon;
   final Color color;
   final _ItemType type;
+  final String? categoryId; // 🔥 매장 ID (클릭 시 사용)
 
   _ScheduleItem({
     required this.title,
@@ -447,10 +458,11 @@ class _ScheduleItem {
     required this.icon,
     required this.color,
     required this.type,
+    this.categoryId, // 🔥 추가
   });
 }
 
-// 타임라인 행 (default_template.dart와 동일)
+// 🔥 타임라인 행 위젯 (클릭 가능)
 class _TimelineRow extends StatelessWidget {
   final _ScheduleItem item;
   final int index;
@@ -497,73 +509,91 @@ class _TimelineRow extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 12),
-          // 카드
+          // 🔥 카드 (매장인 경우 클릭 가능)
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: item.type == _ItemType.origin
-                    ? Colors.grey[100]
-                    : Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: item.type == _ItemType.origin
-                          ? Colors.grey[200]
-                          : const Color(0xFFFFEFE3),
-                      borderRadius: BorderRadius.circular(10),
+            child: InkWell(
+              onTap:
+                  item.type == _ItemType.place &&
+                      item.categoryId != null &&
+                      item.categoryId!.isNotEmpty
+                  ? () => _navigateToDetail(context)
+                  : null, // 출발지는 클릭 불가
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: item.type == _ItemType.origin
+                      ? Colors.grey[100]
+                      : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: item.type == _ItemType.origin
+                            ? Colors.grey[200]
+                            : const Color(0xFFFFEFE3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        item.icon,
+                        color: item.type == _ItemType.origin
+                            ? Colors.grey[700]
+                            : const Color(0xFFFF8126),
+                        size: 20,
+                      ),
                     ),
-                    child: Icon(
-                      item.icon,
-                      color: item.type == _ItemType.origin
-                          ? Colors.grey[700]
-                          : const Color(0xFFFF8126),
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        if (item.subtitle.isNotEmpty) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            item.subtitle,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                            item.title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                        ],
-                        Text(
-                          item.address ?? '주소 정보 없음',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: item.address != null
-                                ? Colors.grey[600]
-                                : Colors.grey[400],
+                          const SizedBox(height: 4),
+                          if (item.subtitle.isNotEmpty) ...[
+                            Text(
+                              item.subtitle,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                          ],
+                          Text(
+                            item.address ?? '주소 정보 없음',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: item.address != null
+                                  ? Colors.grey[600]
+                                  : Colors.grey[400],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    // 🔥 매장인 경우 화살표 아이콘 표시
+                    if (item.type == _ItemType.place &&
+                        item.categoryId != null &&
+                        item.categoryId!.isNotEmpty)
+                      Icon(
+                        Icons.chevron_right,
+                        color: Colors.grey[400],
+                        size: 20,
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -571,9 +601,74 @@ class _TimelineRow extends StatelessWidget {
       ),
     );
   }
+
+  /// 🔥 매장 상세 화면으로 이동
+  Future<void> _navigateToDetail(BuildContext context) async {
+    if (item.categoryId == null || item.categoryId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('매장 정보를 불러올 수 없습니다.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    try {
+      // 🔥 로딩 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+          ),
+        ),
+      );
+
+      // 🔥 Restaurant 객체 생성 (RestaurantDetailScreen에서 필요한 형식)
+      final restaurant = Restaurant(
+        id: item.categoryId!,
+        name: item.title,
+        subCategory: item.subtitle,
+        detailAddress: item.address,
+        phone: null,
+        rating: null,
+        businessHour: null,
+        image: null,
+      );
+
+      if (!context.mounted) return;
+
+      // 로딩 다이얼로그 닫기
+      Navigator.pop(context);
+
+      // 🔥 상세 화면으로 이동
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      // 로딩 다이얼로그가 열려있으면 닫기
+      Navigator.pop(context);
+
+      print('❌ 매장 상세 화면 이동 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('매장 정보를 불러오는 데 실패했습니다: $e'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 }
 
-// 교통수단 카드 (default_template.dart와 동일)
+// 🔥 교통수단 카드 (읽기 전용)
 class _TransportationCard extends StatelessWidget {
   final int segmentIndex;
   final int selectedTransportType;
@@ -699,6 +794,7 @@ class _TransportationCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 헤더: 요약 정보
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -736,6 +832,8 @@ class _TransportationCard extends StatelessWidget {
             ],
           ),
         ),
+
+        // 상세 경로
         if (steps != null && steps.isNotEmpty) ...[
           const SizedBox(height: 12),
           Container(
@@ -835,7 +933,7 @@ class _TransportationCard extends StatelessWidget {
   }
 }
 
-// 교통수단 버튼 (읽기 전용)
+// 🔥 교통수단 버튼 (읽기 전용)
 class _TransportButton extends StatelessWidget {
   final IconData icon;
   final String label;
