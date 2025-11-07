@@ -48,6 +48,13 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       }
       print('  → Tags: ${res.tags}');
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      print('🔍 [Restaurant Detail] 최종 Restaurant 객체 확인');
+      print('  → Widget Restaurant ID: ${widget.restaurant.id}');
+      print('  → Widget Restaurant Name: "${widget.restaurant.name}"');
+      print('  → Widget Detail Address: "${widget.restaurant.detailAddress}"');
+      print('  → Widget Detail Address (null?): ${widget.restaurant.detailAddress == null}');
+      print('  → Widget Address (getter): "${widget.restaurant.address}"');
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       if (!mounted) return;
       setState(() {

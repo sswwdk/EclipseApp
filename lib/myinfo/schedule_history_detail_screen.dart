@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/history_service.dart';
 import '../services/token_manager.dart';
 import '../services/route_service.dart';
+import '../home/restaurant_detail_screen.dart';
+import '../services/api_service.dart';
 
 /// 일정표 히스토리 상세 화면
 class ScheduleHistoryDetailScreen extends StatefulWidget {
@@ -144,6 +146,7 @@ class _ScheduleHistoryDetailScreenState
         categoryTypeInt = int.tryParse(categoryTypeRaw) ?? 0;
       }
       final categoryType = _getCategoryNameFromType(categoryTypeInt);
+      final categoryId = category['category_id'] as String? ?? '';
 
       items.add(
         _ScheduleItem(
@@ -153,6 +156,7 @@ class _ScheduleHistoryDetailScreenState
           icon: _iconFor(categoryType),
           color: const Color(0xFFFF8126),
           type: _ItemType.place,
+          categoryId: categoryId,
         ),
       );
 
@@ -439,6 +443,7 @@ class _ScheduleItem {
   final IconData icon;
   final Color color;
   final _ItemType type;
+  final String? categoryId; // 가게 ID (가게 상세 화면 이동용)
 
   _ScheduleItem({
     required this.title,
@@ -447,6 +452,7 @@ class _ScheduleItem {
     required this.icon,
     required this.color,
     required this.type,
+    this.categoryId,
   });
 }
 
@@ -465,7 +471,11 @@ class _TimelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    // 가게 정보 카드인 경우 탭 가능하게 만들기
+    final isPlace = item.type == _ItemType.place;
+    final hasCategoryId = item.categoryId != null && item.categoryId!.isNotEmpty;
+
+    Widget cardContent = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,6 +580,96 @@ class _TimelineRow extends StatelessWidget {
         ],
       ),
     );
+
+    // 가게 정보 카드이고 categoryId가 있으면 탭 가능하게 만들기
+    if (isPlace && hasCategoryId) {
+      return InkWell(
+        onTap: () => _navigateToRestaurantDetail(context, item.categoryId!, item.title, item.address),
+        borderRadius: BorderRadius.circular(12),
+        child: cardContent,
+      );
+    }
+
+    return cardContent;
+  }
+
+  /// 가게 상세 화면으로 이동
+  void _navigateToRestaurantDetail(BuildContext context, String categoryId, String restaurantName, String? address) async {
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('🔍 [Schedule History] 가게 상세 화면 이동 시작');
+    print('  → Category ID: $categoryId');
+    print('  → Restaurant Name (전달): $restaurantName');
+    print('  → Address (전달): $address');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    try {
+      // 가게 정보 가져오기 (태그, 리뷰 등)
+      final restaurantData = await ApiService.getRestaurant(categoryId);
+      
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      print('🔍 [Schedule History] 서버에서 받은 데이터');
+      print('  → Rating: ${restaurantData.rating}');
+      print('  → Reviews 개수: ${restaurantData.reviews.length}');
+      print('  → Tags 개수: ${restaurantData.tags.length}');
+      print('  → Is Favorite: ${restaurantData.isFavorite}');
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // 이미 가지고 있는 이름과 주소 정보를 사용하여 Restaurant 객체 생성
+      final restaurant = Restaurant(
+        id: categoryId,
+        name: restaurantName, // 이미 가지고 있는 가게 이름 사용
+        detailAddress: address, // 이미 가지고 있는 주소 사용
+        rating: restaurantData.rating,
+        reviews: restaurantData.reviews,
+        tags: restaurantData.tags,
+        isFavorite: restaurantData.isFavorite,
+        // 나머지 필드는 기본값 또는 null
+        do_: null,
+        si: null,
+        gu: null,
+        subCategory: null,
+        businessHour: null,
+        phone: null,
+        type: null,
+        image: null,
+        latitude: null,
+        longitude: null,
+        lastCrawl: null,
+      );
+      
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      print('✅ [Schedule History] Restaurant 객체 생성 완료');
+      print('  → Restaurant ID: ${restaurant.id}');
+      print('  → Restaurant Name (최종): ${restaurant.name}');
+      print('  → Restaurant Name (비어있음?): ${restaurant.name.isEmpty}');
+      print('  → Detail Address (최종): ${restaurant.detailAddress}');
+      print('  → Detail Address (null?): ${restaurant.detailAddress == null}');
+      print('  → Address (getter): ${restaurant.address}');
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      if (!context.mounted) return;
+      
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
+        ),
+      );
+    } catch (e) {
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      print('❌ [Schedule History] 가게 상세 화면 이동 실패');
+      print('  → Error: $e');
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      if (!context.mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('가게 정보를 불러올 수 없습니다: $e'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
 
