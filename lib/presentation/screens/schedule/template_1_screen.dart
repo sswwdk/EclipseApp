@@ -46,6 +46,8 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   String? _originDetailAddress; // 출발지 상세 주소
   Map<int, int> _transportTypes =
       {}; // 각 구간별 교통수단 (key: segmentIndex, value: transportType)
+  Map<int, RouteResult> _calculatedRoutes = {}; // 🔥 미리 계산된 모든 구간의 경로 정보
+  bool _isLoadingRoutes = false; // 🔥 경로 계산 중 상태
   bool _isSaving = false;
   bool _isSharing = false;
 
@@ -73,11 +75,121 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
     // 교통수단 정보 설정 (읽기 전용 모드일 때는 초기값 사용, 아니면 기본값)
     if (widget.isReadOnly && widget.initialTransportTypes != null) {
       _transportTypes = Map<int, int>.from(widget.initialTransportTypes!);
+      // 읽기 전용 모드에서는 이미 계산된 경로 정보 사용
+      if (widget.initialRouteResults != null) {
+        _calculatedRoutes = Map<int, RouteResult>.from(widget.initialRouteResults!);
+      }
     } else {
       // 각 구간별로 기본 교통수단 설정 (도보)
       for (int i = 0; i < _items.length - 1; i++) {
         _transportTypes[i] = 0; // 0: 도보, 1: 대중교통, 2: 자동차
       }
+      // 🔥 편집 모드일 때 모든 구간의 경로를 미리 계산
+      _loadAllRoutes();
+    }
+  }
+
+  /// 🔥 모든 구간의 경로를 한 번에 계산 (병렬 처리)
+  Future<void> _loadAllRoutes() async {
+    if (_items.length <= 1) return; // 구간이 없으면 리턴
+
+    setState(() {
+      _isLoadingRoutes = true;
+    });
+
+    print('🚀 [ScheduleBuilderScreen] 모든 구간 경로 계산 시작...');
+
+    try {
+      // 모든 구간의 경로를 병렬로 계산
+      final List<Future<MapEntry<int, RouteResult>?>> futures = [];
+
+      for (int i = 0; i < _items.length - 1; i++) {
+        final originCoords = i == 0
+            ? _getOriginCoordinates()
+            : _getPlaceCoordinates(_items[i]);
+        final destCoords = _getPlaceCoordinates(_items[i + 1]);
+
+        if (originCoords != null && destCoords != null) {
+          futures.add(_calculateRouteForSegment(i, originCoords, destCoords));
+        } else {
+          print('⚠️ 구간 $i 좌표 정보 없음');
+        }
+      }
+
+      // 모든 경로 계산을 병렬로 실행
+      final results = await Future.wait(futures);
+
+      // 결과를 _calculatedRoutes에 저장
+      for (final result in results) {
+        if (result != null) {
+          _calculatedRoutes[result.key] = result.value;
+        }
+      }
+
+      print('✅ [ScheduleBuilderScreen] 총 ${_calculatedRoutes.length}개 구간 경로 계산 완료');
+    } catch (e) {
+      print('❌ [ScheduleBuilderScreen] 경로 계산 중 오류: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingRoutes = false;
+        });
+      }
+    }
+  }
+
+  /// 특정 구간의 경로를 계산하는 헬퍼 메서드
+  Future<MapEntry<int, RouteResult>?> _calculateRouteForSegment(
+    int segmentIndex,
+    ({double lat, double lng}) origin,
+    ({double lat, double lng}) destination,
+  ) async {
+    try {
+      print('🔍 구간 $segmentIndex 경로 계산 중: ${_items[segmentIndex].title} → ${_items[segmentIndex + 1].title}');
+      
+      final route = await RouteService.calculateRoute(
+        origin: origin,
+        destination: destination,
+        transportType: _transportTypes[segmentIndex] ?? 0,
+      );
+
+      print('✅ 구간 $segmentIndex 경로 계산 완료: ${route.durationMinutes}분, ${route.distanceMeters}m');
+      return MapEntry(segmentIndex, route);
+    } catch (e) {
+      print('❌ 구간 $segmentIndex 경로 계산 실패: $e');
+      return null;
+    }
+  }
+
+  /// 🔥 교통수단 변경 시 특정 구간만 재계산
+  Future<void> _recalculateRoute(int segmentIndex) async {
+    final originCoords = segmentIndex == 0
+        ? _getOriginCoordinates()
+        : _getPlaceCoordinates(_items[segmentIndex]);
+    final destCoords = _getPlaceCoordinates(_items[segmentIndex + 1]);
+
+    if (originCoords == null || destCoords == null) {
+      print('⚠️ 구간 $segmentIndex 좌표 정보 없음');
+      return;
+    }
+
+    print('🔄 구간 $segmentIndex 재계산 시작...');
+
+    try {
+      final result = await _calculateRouteForSegment(
+        segmentIndex,
+        originCoords,
+        destCoords,
+      );
+
+      if (result != null && mounted) {
+        setState(() {
+          _calculatedRoutes[result.key] = result.value;
+        });
+        print('✅ 구간 $segmentIndex 재계산 완료');
+      }
+    } catch (e) {
+      print('❌ 구간 $segmentIndex 재계산 실패: $e');
     }
   }
 
@@ -126,53 +238,83 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        itemCount: items.length * 2 - 1,
-        itemBuilder: (context, index) {
-          if (index % 2 == 0) {
-            // 실제 아이템 (index를 2로 나눈 값)
-            int itemIndex = index ~/ 2;
-            final item = items[itemIndex];
-            return _TimelineRow(
-              item: item,
-              index: itemIndex,
-              isLast: itemIndex == items.length - 1,
-              showDuration: true,
-              onDragHandle: null,
-              onTap: null,
-            );
-          } else {
-            // 아이템 사이의 교통수단 정보
-            int itemIndex = index ~/ 2;
-            if (itemIndex < items.length - 1) {
-              return _TransportationCard(
-                segmentIndex: itemIndex,
-                selectedTransportType:
-                    _transportTypes[itemIndex] ?? 0, // 기본값: 도보
-                onTransportTypeChanged: widget.isReadOnly
-                    ? null
-                    : (type) {
-                        setState(() {
-                          _transportTypes[itemIndex] = type;
-                        });
-                      },
-                isReadOnly: widget.isReadOnly,
-                originCoordinates: itemIndex == 0
-                    ? _getOriginCoordinates()
-                    : _getPlaceCoordinates(items[itemIndex]),
-                destinationCoordinates: _getPlaceCoordinates(
-                  items[itemIndex + 1],
-                ),
-                orderedPlaces: widget.orderedPlaces,
-                initialRouteResult: widget
-                    .initialRouteResults?[itemIndex], // 🔥 읽기 전용 모드일 때 서버에서 받은 경로 정보
-              );
-            }
-            return const SizedBox.shrink();
-          }
-        },
-      ),
+      body: _isLoadingRoutes
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(
+                    color: Color(0xFFFF8126),
+                    strokeWidth: 3,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    '경로 정보 계산 중...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${_calculatedRoutes.length} / ${_items.length - 1} 구간 완료',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              itemCount: items.length * 2 - 1,
+              itemBuilder: (context, index) {
+                if (index % 2 == 0) {
+                  // 실제 아이템 (index를 2로 나눈 값)
+                  int itemIndex = index ~/ 2;
+                  final item = items[itemIndex];
+                  return _TimelineRow(
+                    item: item,
+                    index: itemIndex,
+                    isLast: itemIndex == items.length - 1,
+                    showDuration: true,
+                    onDragHandle: null,
+                    onTap: null,
+                  );
+                } else {
+                  // 아이템 사이의 교통수단 정보
+                  int itemIndex = index ~/ 2;
+                  if (itemIndex < items.length - 1) {
+                    return _TransportationCard(
+                      segmentIndex: itemIndex,
+                      selectedTransportType:
+                          _transportTypes[itemIndex] ?? 0, // 기본값: 도보
+                      onTransportTypeChanged: widget.isReadOnly
+                          ? null
+                          : (type) {
+                              // 🔥 교통수단 변경 시 해당 구간만 재계산
+                              setState(() {
+                                _transportTypes[itemIndex] = type;
+                              });
+                              _recalculateRoute(itemIndex);
+                            },
+                      isReadOnly: widget.isReadOnly,
+                      originCoordinates: itemIndex == 0
+                          ? _getOriginCoordinates()
+                          : _getPlaceCoordinates(items[itemIndex]),
+                      destinationCoordinates: _getPlaceCoordinates(
+                        items[itemIndex + 1],
+                      ),
+                      orderedPlaces: widget.orderedPlaces,
+                      initialRouteResult: _calculatedRoutes[itemIndex], // 🔥 미리 계산된 경로 정보 전달
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }
+              },
+            ),
       bottomNavigationBar: widget.isReadOnly
           ? null
           : Container(
@@ -319,48 +461,42 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   }
 
   /// 저장하기 버튼 클릭 시 서버에 일정표 저장
-  /// 저장하기 버튼 클릭 시 서버에 일정표 저장
   Future<void> _handleSave() async {
     setState(() {
       _isSaving = true;
     });
 
     try {
-      // 🔥 각 구간별 경로 정보 수집
-      print('🚀 경로 정보 수집 시작...');
-      final Map<int, RouteResult> routeResults = {};
+      // 🔥 이미 계산된 경로 정보 사용 (필요한 경우 누락된 구간만 재계산)
+      print('🚀 경로 정보 확인 중...');
+      final Map<int, RouteResult> routeResults = Map<int, RouteResult>.from(_calculatedRoutes);
 
-      // 각 구간별로 경로 계산
+      // 누락된 구간이 있으면 계산
       for (int i = 0; i < _items.length - 1; i++) {
-        final originCoords = i == 0
-            ? _getOriginCoordinates()
-            : _getPlaceCoordinates(_items[i]);
-        final destCoords = _getPlaceCoordinates(_items[i + 1]);
+        if (!routeResults.containsKey(i)) {
+          final originCoords = i == 0
+              ? _getOriginCoordinates()
+              : _getPlaceCoordinates(_items[i]);
+          final destCoords = _getPlaceCoordinates(_items[i + 1]);
 
-        if (originCoords != null && destCoords != null) {
-          try {
-            print(
-              '🔍 구간 $i 경로 계산 중: ${_items[i].title} → ${_items[i + 1].title}',
-            );
-            final route = await RouteService.calculateRoute(
-              origin: originCoords,
-              destination: destCoords,
-              transportType: _transportTypes[i] ?? 0,
-            );
-            routeResults[i] = route;
-            print(
-              '✅ 구간 $i 경로 계산 완료: ${route.durationMinutes}분, ${route.distanceMeters}m',
-            );
-          } catch (e) {
-            print('❌ 구간 $i 경로 계산 실패: $e');
-            // 경로 계산 실패 시에도 계속 진행 (fallback으로 템플릿 시간 사용)
+          if (originCoords != null && destCoords != null) {
+            try {
+              print('🔍 누락된 구간 $i 경로 계산 중...');
+              final route = await RouteService.calculateRoute(
+                origin: originCoords,
+                destination: destCoords,
+                transportType: _transportTypes[i] ?? 0,
+              );
+              routeResults[i] = route;
+              print('✅ 구간 $i 경로 계산 완료: ${route.durationMinutes}분');
+            } catch (e) {
+              print('❌ 구간 $i 경로 계산 실패: $e');
+            }
           }
-        } else {
-          print('⚠️ 구간 $i 좌표 정보 없음');
         }
       }
 
-      print('🚀 총 ${routeResults.length}개 구간 경로 정보 수집 완료');
+      print('🚀 총 ${routeResults.length}개 구간 경로 정보 확인 완료');
 
       // 서버에 저장
       await HistoryService.saveSchedule(
@@ -631,28 +767,6 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       default:
         return Icons.place;
     }
-  }
-
-  /// 장소의 주소를 가져오는 헬퍼 메서드
-  String? _getPlaceAddress(_ScheduleItem item) {
-    if (widget.orderedPlaces == null || widget.orderedPlaces!.isEmpty) {
-      return null;
-    }
-
-    // orderedPlaces에서 해당 장소 찾기
-    for (final placeData in widget.orderedPlaces!) {
-      final placeName = placeData['name'] as String? ?? '';
-      if (placeName == item.title) {
-        final data = placeData['data'] as Map<String, dynamic>?;
-        if (data != null) {
-          return data['address'] as String? ??
-              data['detail_address'] as String? ??
-              placeData['address'] as String?;
-        }
-        return placeData['address'] as String?;
-      }
-    }
-    return null;
   }
 
   /// 장소의 위경도를 가져오는 헬퍼 메서드
@@ -941,10 +1055,13 @@ class _TransportationCardState extends State<_TransportationCard> {
   @override
   void initState() {
     super.initState();
-    // 읽기 전용 모드이고 이미 경로 정보가 있으면 API 호출 없이 바로 사용
-    if (widget.isReadOnly && widget.initialRouteResult != null) {
+    // 🔥 이미 경로 정보가 있으면 API 호출 없이 바로 사용
+    if (widget.initialRouteResult != null) {
       _routeResult = widget.initialRouteResult;
+      print('✅ [TransportationCard-${widget.segmentIndex}] 이미 계산된 경로 정보 사용');
     } else {
+      // 경로 정보가 없으면 계산 (하위 호환성 또는 오류 대비)
+      print('⚠️ [TransportationCard-${widget.segmentIndex}] 경로 정보 없음, 직접 계산 시도');
       _loadRouteInfo();
     }
   }
@@ -952,19 +1069,24 @@ class _TransportationCardState extends State<_TransportationCard> {
   @override
   void didUpdateWidget(_TransportationCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 읽기 전용 모드에서는 경로 정보가 이미 있으므로 API 호출하지 않음
-    if (widget.isReadOnly && widget.initialRouteResult != null) {
-      if (oldWidget.initialRouteResult != widget.initialRouteResult) {
-        setState(() {
-          _routeResult = widget.initialRouteResult;
-        });
-      }
+    // 🔥 경로 정보가 변경되면 업데이트
+    if (oldWidget.initialRouteResult != widget.initialRouteResult) {
+      setState(() {
+        _routeResult = widget.initialRouteResult;
+      });
+      print('✅ [TransportationCard-${widget.segmentIndex}] 경로 정보 업데이트됨');
+    }
+    
+    // 이미 경로 정보가 있으면 재계산하지 않음
+    if (widget.initialRouteResult != null) {
       return;
     }
-    // 교통수단이나 좌표가 변경되면 다시 로드
+    
+    // 교통수단이나 좌표가 변경되면 다시 로드 (경로 정보가 없는 경우만)
     if (oldWidget.selectedTransportType != widget.selectedTransportType ||
         oldWidget.originCoordinates != widget.originCoordinates ||
         oldWidget.destinationCoordinates != widget.destinationCoordinates) {
+      print('⚠️ [TransportationCard-${widget.segmentIndex}] 교통수단/좌표 변경, 재계산 시도');
       _loadRouteInfo();
     }
   }
