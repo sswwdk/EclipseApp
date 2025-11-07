@@ -12,21 +12,51 @@ class LocationInputScreen extends StatefulWidget {
 }
 
 class _LocationInputScreenState extends State<LocationInputScreen> {
-  final TextEditingController _locationController = TextEditingController();
+  String _currentText = ''; // 현재 입력된 텍스트
 
-  @override
-  void dispose() {
-    _locationController.dispose();
-    super.dispose();
-  }
+  // 서울시 25개 구 목록
+  static const List<String> _seoulDistricts = [
+    '강남구',
+    '강동구',
+    '강북구',
+    '강서구',
+    '관악구',
+    '광진구',
+    '구로구',
+    '금천구',
+    '노원구',
+    '도봉구',
+    '동대문구',
+    '동작구',
+    '마포구',
+    '서대문구',
+    '서초구',
+    '성동구',
+    '성북구',
+    '송파구',
+    '양천구',
+    '영등포구',
+    '용산구',
+    '은평구',
+    '종로구',
+    '중구',
+    '중랑구',
+  ];
 
   void _proceedToNext() {
-    final location = _locationController.text.trim();
-    
+    final location = _currentText.trim();
+
     if (location.isEmpty) {
+      CommonDialogs.showError(context: context, message: '위치를 입력해주세요.');
+      return;
+    }
+
+    // 서울시 구 목록에 정확히 일치하는지 확인
+    if (!_seoulDistricts.contains(location)) {
       CommonDialogs.showError(
         context: context,
-        message: '위치를 입력해주세요.',
+        message:
+            '서울시의 구를 정확히 입력해주세요.\n자동완성 목록에서 선택하거나\n"강남구", "송파구"처럼 정확히 입력해주세요.',
       );
       return;
     }
@@ -37,9 +67,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
 
     // 인원 수 선택 화면으로 이동
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => PeopleCountScreen(location: location),
-      ),
+      MaterialPageRoute(builder: (_) => PeopleCountScreen(location: location)),
     );
   }
 
@@ -65,7 +93,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '위치를 입력해주세요!',
+                    '위치를 선택해주세요!',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
@@ -74,39 +102,171 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    '서울특별시만 지원하는 서비스 입니다.\n원하는 지역(구)을 입력해주세요.\n 나중에 이거는 지도에서 찍는 걸로 바꿀지 뭘로 할지 고민해봅시다',
-                    style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
+                    '서울특별시의 구를 선택해주세요.\n자동완성 목록에서 선택하시면 편리합니다.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
-                  ],
-                ),
-                child: TextField(
-                  controller: _locationController,
-                  decoration: InputDecoration(
-                    hintText: '예: 강남구, 강동구, 영등포구...',
-                    hintStyle: const TextStyle(color: Colors.black38, fontSize: 14),
-                    prefixIcon: const Icon(Icons.location_on, color: AppTheme.primaryColor),
-                    border: OutlineInputBorder(
+              child: Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return _seoulDistricts;
+                  }
+                  return _seoulDistricts.where((String option) {
+                    return option.contains(textEditingValue.text);
+                  });
+                },
+                onSelected: (String selection) {
+                  setState(() {
+                    _currentText = selection;
+                  });
+                },
+                fieldViewBuilder:
+                    (context, controller, focusNode, onFieldSubmitted) {
+                      return StatefulBuilder(
+                        builder: (context, setState) {
+                          // controller에 리스너 추가
+                          controller.addListener(() {
+                            this.setState(() {
+                              _currentText = controller.text;
+                            });
+                            setState(() {});
+                          });
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x14000000),
+                                  blurRadius: 12,
+                                  offset: Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: TextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                hintText: '예: 강남구, 강동구, 영등포구...',
+                                hintStyle: const TextStyle(
+                                  color: Colors.black38,
+                                  fontSize: 14,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.location_on,
+                                  color: AppTheme.primaryColor,
+                                ),
+                                suffixIcon: controller.text.isNotEmpty
+                                    ? GestureDetector(
+                                        onTap: () {
+                                          controller.clear();
+                                          this.setState(() {
+                                            _currentText = '';
+                                          });
+                                          setState(() {});
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          child: const Icon(
+                                            Icons.cancel,
+                                            color: Colors.grey,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                              ),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              onSubmitted: (value) {
+                                _proceedToNext();
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    },
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 8,
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                      child: Container(
+                        width: MediaQuery.of(context).size.width - 48,
+                        constraints: const BoxConstraints(maxHeight: 250),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0x11000000)),
+                        ),
+                        child: ListView.separated(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          separatorBuilder: (context, index) => const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0x11000000),
+                          ),
+                          itemBuilder: (context, index) {
+                            final option = options.elementAt(index);
+                            return InkWell(
+                              onTap: () {
+                                onSelected(option);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_outlined,
+                                      size: 20,
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      option,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  ),
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                  onSubmitted: (_) => _proceedToNext(),
-                ),
+                  );
+                },
               ),
             ),
             const Spacer(),
@@ -120,10 +280,15 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                     foregroundColor: Colors.white,
                     elevation: 3,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _proceedToNext,
-                  child: const Text('다음', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  child: const Text(
+                    '다음',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ),
@@ -137,7 +302,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
 /// 인원 수 선택 화면
 class PeopleCountScreen extends StatefulWidget {
   final String location;
-  
+
   const PeopleCountScreen({super.key, required this.location});
 
   @override
@@ -158,7 +323,8 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
     // 할 일 선택 화면으로 이동하면서 인원 수 전달
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => TaskSelectScreen(location: widget.location, peopleCount: _count),
+        builder: (_) =>
+            TaskSelectScreen(location: widget.location, peopleCount: _count),
       ),
     );
   }
@@ -190,7 +356,11 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
             const SizedBox(height: 8),
             const Text(
               '인원 수를 알려주세요.',
-              style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -222,13 +392,18 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
                     foregroundColor: Colors.white,
                     elevation: 3,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _proceedToNext,
-                  child: const Text('할 일 선택', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  child: const Text(
+                    '할 일 선택',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -253,7 +428,11 @@ class _CircleIconButton extends StatelessWidget {
           color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: const [
-            BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
           ],
         ),
         child: Icon(icon, color: Colors.black54),
@@ -270,9 +449,14 @@ class _CircleIconButton extends StatelessWidget {
 class TaskSelectScreen extends StatefulWidget {
   /// 이전 단계에서 선택된 위치
   final String location;
+
   /// 이전 단계에서 선택된 인원 수
   final int peopleCount;
-  const TaskSelectScreen({super.key, required this.location, required this.peopleCount});
+  const TaskSelectScreen({
+    super.key,
+    required this.location,
+    required this.peopleCount,
+  });
 
   @override
   State<TaskSelectScreen> createState() => _TaskSelectScreenState();
@@ -307,18 +491,17 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
   List<String> _sortCategories(Set<String> selected) {
     // 우선순위: 카페 -> 음식점 -> 콘텐츠
     const priorityOrder = ['카페', '음식점', '콘텐츠'];
-    
-    return selected.toList()
-      ..sort((a, b) {
-        int indexA = priorityOrder.indexOf(a);
-        int indexB = priorityOrder.indexOf(b);
-        
-        // 우선순위 목록에 없는 경우 뒤로 배치
-        if (indexA == -1) indexA = 999;
-        if (indexB == -1) indexB = 999;
-        
-        return indexA.compareTo(indexB);
-      });
+
+    return selected.toList()..sort((a, b) {
+      int indexA = priorityOrder.indexOf(a);
+      int indexB = priorityOrder.indexOf(b);
+
+      // 우선순위 목록에 없는 경우 뒤로 배치
+      if (indexA == -1) indexA = 999;
+      if (indexB == -1) indexB = 999;
+
+      return indexA.compareTo(indexB);
+    });
   }
 
   // 다음 단계로 진행
@@ -334,7 +517,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
 
     // 카테고리를 우선순위대로 정렬
     final sortedList = _sortCategories(_selected);
-    
+
     // 선택한 카테고리 출력
     // ignore: avoid_print
     print('선택 : ${sortedList.map((e) => '"$e"').join(', ')}');
@@ -380,9 +563,15 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('하고 싶은 일을 골라주세요.', style: TextStyle(fontSize: 13, color: Colors.black54)),
+                  Text(
+                    '하고 싶은 일을 골라주세요.',
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                  ),
                   SizedBox(height: 4),
-                  Text('중복 선택도 가능합니다.', style: TextStyle(fontSize: 13, color: Colors.black38)),
+                  Text(
+                    '중복 선택도 가능합니다.',
+                    style: TextStyle(fontSize: 13, color: Colors.black38),
+                  ),
                 ],
               ),
             ),
@@ -412,17 +601,21 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _canProceed 
-                        ? AppTheme.primaryColor 
+                    backgroundColor: _canProceed
+                        ? AppTheme.primaryColor
                         : Colors.grey[400],
                     foregroundColor: Colors.white,
                     elevation: _canProceed ? 3 : 1,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _canProceed ? _proceedToNext : null,
-                  child: const Text('하루와 할 일 만들러 가기!',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  child: const Text(
+                    '하루와 할 일 만들러 가기!',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ),
@@ -445,7 +638,11 @@ class _CategoryCard extends StatelessWidget {
   final _Category category;
   final bool selected;
   final VoidCallback onTap;
-  const _CategoryCard({required this.category, required this.selected, required this.onTap});
+  const _CategoryCard({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -458,10 +655,17 @@ class _CategoryCard extends StatelessWidget {
           height: 110,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? accent : const Color(0x11000000), width: 2),
+            border: Border.all(
+              color: selected ? accent : const Color(0x11000000),
+              width: 2,
+            ),
             color: Colors.white,
             boxShadow: const [
-              BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 12,
+                offset: Offset(0, 6),
+              ),
             ],
           ),
           child: Column(
@@ -472,12 +676,21 @@ class _CategoryCard extends StatelessWidget {
                 height: 56,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: selected ? accent.withOpacity(0.12) : const Color(0xFFF6F6F6),
+                  color: selected
+                      ? accent.withOpacity(0.12)
+                      : const Color(0xFFF6F6F6),
                   boxShadow: const [
-                    BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4)),
+                    BoxShadow(
+                      color: Color(0x11000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
                   ],
                 ),
-                child: Icon(category.icon, color: selected ? accent : Colors.black38),
+                child: Icon(
+                  category.icon,
+                  color: selected ? accent : Colors.black38,
+                ),
               ),
               const SizedBox(height: 10),
               Text(
@@ -495,5 +708,3 @@ class _CategoryCard extends StatelessWidget {
     );
   }
 }
-
-
