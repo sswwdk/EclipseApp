@@ -32,18 +32,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.black,
-          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: const Color(0xFFFF8126),
-          ),
+          child: Container(height: 1, color: const Color(0xFFFF8126)),
         ),
       ),
       body: SingleChildScrollView(
@@ -53,15 +47,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             // 프로필 정보 섹션
             _buildProfileSection(),
             const SizedBox(height: 20),
-            
+
             // 계정 설정 섹션
             _buildAccountSection(context),
             const SizedBox(height: 20),
-            
+
             // 앱 기능 섹션
             _buildAppFeaturesSection(),
             const SizedBox(height: 20),
-            
+
             // 계정 관리 섹션
             _buildAccountManagementSection(context),
           ],
@@ -75,10 +69,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -109,9 +100,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   Builder(
                     builder: (context) {
                       // 디버깅을 위한 로그
-                      print('프로필 설정 화면에서 TokenManager.userName: ${TokenManager.userName}');
-                      print('프로필 설정 화면에서 TokenManager.userEmail: ${TokenManager.userEmail}');
-                      
+                      print(
+                        '프로필 설정 화면에서 TokenManager.userName: ${TokenManager.userName}',
+                      );
+                      print(
+                        '프로필 설정 화면에서 TokenManager.userEmail: ${TokenManager.userEmail}',
+                      );
+
                       return Text(
                         TokenManager.userEmail ?? 'example@gmail.com',
                         style: const TextStyle(
@@ -135,10 +130,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -155,10 +147,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             title: '닉네임 변경',
             onTap: () {
               Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (context) => const ChangeNicknameScreen()))
+                  .push(
+                    MaterialPageRoute(
+                      builder: (context) => const ChangeNicknameScreen(),
+                    ),
+                  )
                   .then((_) {
-                if (mounted) setState(() {}); // 돌아오면 최신 닉네임으로 리빌드
-              });
+                    if (mounted) setState(() {}); // 돌아오면 최신 닉네임으로 리빌드
+                  });
             },
           ),
           _buildDivider(),
@@ -177,12 +173,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           _buildMenuItem(
             icon: Icons.email_outlined,
             title: '이메일 변경',
-            onTap: () {
-              Navigator.of(context).push(
+            onTap: () async {
+              final result = await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const ChangeEmailScreen(),
                 ),
               );
+
+              // 이메일이 변경되었으면 화면 새로고침
+              if (result == true && mounted) {
+                print('프로필 화면 새로고침');
+                setState(() {}); // 이 부분이 화면을 다시 그립니다
+              }
             },
           ),
           _buildDivider(),
@@ -219,10 +221,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -255,10 +254,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -284,7 +280,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         ],
       ),
     );
-  } 
+  }
 
   Widget _buildMenuItem({
     required IconData icon,
@@ -298,19 +294,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: const Color(0xFFFF8126),
-              size: 24,
-            ),
+            Icon(icon, color: const Color(0xFFFF8126), size: 24),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
+                style: const TextStyle(fontSize: 16, color: Colors.black87),
               ),
             ),
           ],
