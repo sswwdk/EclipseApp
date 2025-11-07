@@ -79,8 +79,8 @@ class _ScheduleHistoryDetailScreenState
     final categories = data['categories'] as List<dynamic>? ?? [];
 
     // 출발지 정보
-    _originAddress = (data['origin_address'] as String?)?.trim();
-    _originDetailAddress = (data['origin_detail_address'] as String?)?.trim();
+    _originAddress = data['origin_address'] as String?;
+    _originDetailAddress = data['origin_detail_address'] as String?;
 
     print('🔍 서버에서 받은 categories: $categories');
 
@@ -118,7 +118,7 @@ class _ScheduleHistoryDetailScreenState
     // 각 장소 추가
     for (int i = 0; i < sortedCategories.length; i++) {
       final category = sortedCategories[i];
-      final categoryName = (category['category_name'] as String? ?? '').trim();
+      final categoryName = category['category_name'] as String? ?? '';
       final duration = category['duration'] as int? ?? 3600; // 초 단위
 
       int transportation = 1;
@@ -131,11 +131,10 @@ class _ScheduleHistoryDetailScreenState
         }
       }
 
-      final address = (
+      final address =
           category['category_detail_address'] as String? ??
           category['detail_address'] as String? ??
-          category['address'] as String?
-      )?.trim();
+          category['address'] as String?;
 
       final categoryTypeRaw = category['category_type'];
       int categoryTypeInt = 0;

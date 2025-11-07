@@ -7,7 +7,7 @@ class LikeService {
   static String get baseUrl => ServerConfig.baseUrl;
 
   // 찜 보기
-  static Future<Map<String, dynamic>> getLikes(String userId) async {
+  static Future<Map<String, dynamic>> getLikes() async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/users/me/likes'),
@@ -29,7 +29,7 @@ class LikeService {
   }
 
   // 찜 등록 (서버 DTO: { category_id, user_id })
-  static Future<Map<String, dynamic>> likeStore(String categoryId, String userId) async {
+  static Future<Map<String, dynamic>> likeStore(String categoryId) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/users/me/likes'),
@@ -52,7 +52,7 @@ class LikeService {
   }
 
   // 찜 취소
-  static Future<Map<String, dynamic>> unlikeStore(String categoryId, String userId) async {
+  static Future<Map<String, dynamic>> unlikeStore(String categoryId) async {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/api/users/me/likes'),

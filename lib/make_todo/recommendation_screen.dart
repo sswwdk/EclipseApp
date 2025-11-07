@@ -66,12 +66,10 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
       _favoriteStates[category]![index] = newState;
     });
     try {
-      final userId = TokenManager.userId ?? '';
-      if (userId.isEmpty) return;
       if (newState) {
-        await LikeService.likeStore(categoryId, userId);
+        await LikeService.likeStore(categoryId);
       } else {
-        await LikeService.unlikeStore(categoryId, userId);
+        await LikeService.unlikeStore(categoryId);
       }
     } catch (e) {
       // 서버 실패 시 UI 상태를 롤백
