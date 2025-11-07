@@ -593,10 +593,7 @@ Widget _buildHeader() {
       final userId = TokenManager.userId;
       if (userId == null) {
         if (!mounted) return;
-        CommonDialogs.showError(
-          context: context,
-          message: '로그인이 필요합니다.',
-        );
+        CommonDialogs.showError(context: context, message: '로그인이 필요합니다.');
         return;
       }
 
@@ -605,10 +602,7 @@ Widget _buildHeader() {
 
       if (!mounted) return;
 
-      CommonDialogs.showSuccess(
-        context: context,
-        message: '커뮤니티에 공유되었습니다.',
-      );
+      CommonDialogs.showSuccess(context: context, message: '커뮤니티에 공유되었습니다.');
     } catch (e) {
       if (!mounted) return;
 
@@ -669,6 +663,7 @@ Widget _buildHeader() {
         category: '출발지',
         address: originTitle,
         icon: Icons.home_outlined,
+        imageUrl: null, // 🔥 출발지는 이미지 없음
       ),
     );
 
@@ -702,6 +697,16 @@ Widget _buildHeader() {
           rating = ratingValue.toDouble();
         }
 
+        // 🔥 이미지 URL 추출
+        String? imageUrl;
+        imageUrl = placeData['image_url'] as String?;
+        if (imageUrl == null || imageUrl.isEmpty) {
+          final data = placeData['data'] as Map<String, dynamic>?;
+          if (data != null) {
+            imageUrl = data['image_url'] as String?;
+          }
+        }
+
         items.add(
           _ScheduleItem(
             title: placeName,
@@ -709,6 +714,7 @@ Widget _buildHeader() {
             address: address,
             icon: _iconFor(category),
             rating: rating,
+            imageUrl: imageUrl, // 🔥 추가
           ),
         );
       }
@@ -717,6 +723,7 @@ Widget _buildHeader() {
         for (final placeName in places) {
           String? address;
           double? rating;
+          String? imageUrl; // 🔥 추가
 
           if (widget.selectedPlacesWithData != null) {
             final categoryPlaces = widget.selectedPlacesWithData![category];
@@ -738,6 +745,9 @@ Widget _buildHeader() {
                 } else if (ratingValue is num) {
                   rating = ratingValue.toDouble();
                 }
+
+                // 🔥 이미지 URL 추출
+                imageUrl = placeData['image_url'] as String?;
               }
             }
           }
@@ -749,6 +759,7 @@ Widget _buildHeader() {
               address: address,
               icon: _iconFor(category),
               rating: rating,
+              imageUrl: imageUrl, // 🔥 추가
             ),
           );
         }
@@ -837,6 +848,7 @@ class _ScheduleItem {
   final String? address;
   final IconData icon;
   final double? rating;
+  final String? imageUrl;
 
   _ScheduleItem({
     required this.title,
@@ -844,6 +856,7 @@ class _ScheduleItem {
     this.address,
     required this.icon,
     this.rating,
+    this.imageUrl,
   });
 }
 
@@ -943,8 +956,37 @@ class _PlannerItemCardState extends State<_PlannerItemCard> {
             border: Border.all(color: const Color(0xFFD97941), width: 2),
             borderRadius: BorderRadius.circular(8),
           ),
-          alignment: Alignment.center,
-          child: Text(emoji, style: const TextStyle(fontSize: 40)),
+          clipBehavior: Clip.antiAlias, // 🔥 이미지 모서리 처리
+          child:
+              widget.item.imageUrl != null && widget.item.imageUrl!.isNotEmpty
+              ? Image.network(
+                  widget.item.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    // 🔥 이미지 로딩 실패 시 이모지 표시
+                    return Center(
+                      child: Text(emoji, style: const TextStyle(fontSize: 40)),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    // 🔥 로딩 중 표시
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                            : null,
+                        color: const Color(0xFFD97941),
+                        strokeWidth: 2,
+                      ),
+                    );
+                  },
+                )
+              : Center(
+                  // 🔥 이미지 URL이 없으면 이모지 표시
+                  child: Text(emoji, style: const TextStyle(fontSize: 40)),
+                ),
         ),
         const SizedBox(height: 8),
         _buildStars(widget.item.rating ?? 0.0),
