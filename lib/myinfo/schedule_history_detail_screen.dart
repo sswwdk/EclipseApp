@@ -220,24 +220,29 @@ class _ScheduleHistoryDetailScreenState
           .where((line) => line.trim().isNotEmpty)
           .toList();
 
+      print('🔍 파싱할 description lines: $lines');
+
       int durationMinutes = defaultDuration;
       int distanceMeters = 0;
       List<RouteStep> steps = [];
 
       for (int i = 0; i < lines.length; i++) {
         final line = lines[i].trim();
+        print('📝 처리 중인 라인: $line');
 
-        // "대중교통 약 15분" 파싱
-        if (line.contains('약') && line.contains('분')) {
+        // "대중교통 약 39분" 파싱
+        if (line.startsWith('대중교통') ||
+            line.startsWith('도보') && line.contains('약')) {
           final match = RegExp(r'약\s*(\d+)분').firstMatch(line);
           if (match != null) {
             durationMinutes = int.tryParse(match.group(1)!) ?? durationMinutes;
+            print('⏱️ 총 소요시간: $durationMinutes분');
           }
           continue;
         }
 
-        // "거리 약 2.5km" 파싱
-        if (line.contains('거리')) {
+        // "거리 약 11.8km" 파싱
+        if (line.startsWith('거리')) {
           final kmMatch = RegExp(r'약\s*([\d.]+)km').firstMatch(line);
           final mMatch = RegExp(r'약\s*(\d+)m').firstMatch(line);
 
@@ -247,42 +252,80 @@ class _ScheduleHistoryDetailScreenState
           } else if (mMatch != null) {
             distanceMeters = int.tryParse(mMatch.group(1)!) ?? 0;
           }
+          print('📏 거리: $distanceMeters미터');
           continue;
         }
 
-        // 이동 단계 파싱
-        final timeMatch = RegExp(r'(\d+)분').firstMatch(line);
-        int stepDuration = 0;
-        if (timeMatch != null) {
-          stepDuration = int.tryParse(timeMatch.group(1)!) ?? 0;
-        }
-
-        String type = 'walk';
-        if (line.contains('도보')) {
-          type = 'walk';
-        } else if (line.contains('탑승') ||
-            line.contains('호선') ||
-            line.contains('버스') ||
-            line.contains('지하철')) {
-          type = 'transit';
-        } else if (line.contains('자동차')) {
-          type = 'drive';
-        } else if (timeMatch == null) {
+        // " 도보 4분" 형태 파싱 (시간이 있는 도보)
+        if (line.contains('도보') && line.contains('분')) {
+          final match = RegExp(r'도보\s*(\d+)분').firstMatch(line);
+          if (match != null) {
+            final duration = int.tryParse(match.group(1)!) ?? 0;
+            steps.add(
+              RouteStep(
+                type: 'walk',
+                description: '도보',
+                durationMinutes: duration,
+              ),
+            );
+            print('✅ 도보 단계 추가: $duration분');
+          }
           continue;
         }
 
-        String desc = line.replaceAll(RegExp(r'\s*\d+분\s*'), '').trim();
-
-        if (desc.isNotEmpty || stepDuration > 0) {
+        // "도보"만 있는 경우 (환승) - "이동 없음"으로 표시
+        if (line == '도보' || line.trim() == '도보') {
           steps.add(
-            RouteStep(
-              type: type,
-              description: desc.isEmpty ? '이동' : desc,
-              durationMinutes: stepDuration,
-            ),
+            RouteStep(type: 'walk', description: '도보', durationMinutes: 0),
           );
+          print('✅ 환승 도보 추가 (이동 없음)');
+          continue;
+        }
+
+        // " 지선:8641번 버스: 신길1동새마을금고 → 흑석동효사정앞 10분" 형태 파싱
+        if (line.contains('버스') && line.contains('분')) {
+          // 버스 타입과 번호 추출
+          final busTypeMatch = RegExp(
+            r'(지선|간선|광역|순환|마을|공항):(\d+[가-힣]*)번',
+          ).firstMatch(line);
+          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
+
+          String busInfo = '버스';
+          if (busTypeMatch != null) {
+            final busType = busTypeMatch.group(1) ?? '';
+            final busNumber = busTypeMatch.group(2) ?? '';
+            busInfo = '$busType $busNumber번';
+          }
+
+          // 출발지 → 도착지 추출
+          final routeMatch = RegExp(
+            r':\s*([^→]+)\s*→\s*([^\d]+)',
+          ).firstMatch(line);
+          if (routeMatch != null) {
+            final from = routeMatch.group(1)?.trim() ?? '';
+            final to = routeMatch.group(2)?.trim() ?? '';
+            busInfo += '\n$from → $to';
+          }
+
+          final duration = durationMatch != null
+              ? int.tryParse(durationMatch.group(1)!) ?? 0
+              : 0;
+
+          if (duration > 0) {
+            steps.add(
+              RouteStep(
+                type: 'transit',
+                description: busInfo,
+                durationMinutes: duration,
+              ),
+            );
+            print('✅ 버스 단계 추가: $busInfo, $duration분');
+          }
+          continue;
         }
       }
+
+      print('✅ 파싱 완료 - 단계 수: ${steps.length}');
 
       return RouteResult(
         durationMinutes: durationMinutes,
@@ -920,7 +963,7 @@ class _TransportationCard extends StatelessWidget {
                   Text(
                     step.durationMinutes > 0
                         ? '${step.durationMinutes}분'
-                        : '이동 없음',
+                        : '1분',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],

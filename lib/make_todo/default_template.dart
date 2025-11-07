@@ -1333,7 +1333,7 @@ class _TransportationCardState extends State<_TransportationCard> {
                   Text(
                     step.durationMinutes > 0
                         ? '${step.durationMinutes}분'
-                        : '이동 없음', // 🔥 시간이 0이면 "이동 없음"으로 표시
+                        : '1분', // 1분 미만 '1분'으로 표시
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
