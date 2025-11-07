@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../widgets/bottom_navigation_widget.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/like_service.dart';
-import '../../../shared/helpers/token_manager.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../data/models/review.dart';
 
@@ -18,8 +16,6 @@ class RestaurantDetailScreen extends StatefulWidget {
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   List<Review> _reviews = const [];
   List<String> _tags = const [];
-  bool _loading = true;
-  String? _error;
   bool _isFavorite = false;
 
   @override
@@ -56,19 +52,12 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         _reviews = res.reviews;
         _tags = res.tags;
         _isFavorite = res.isFavorite;
-        _loading = false;
       });
     } catch (e) {
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       print('❌ [Restaurant Detail] 서버 요청 실패');
       print('  → Error: $e');
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
     }
   }
 
@@ -321,15 +310,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 ],
               ),
             ),
-            
-            const SizedBox(height: 80), // 하단바를 위한 공간
           ],
         ),
-      ),
-      
-      bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 0,
-        fromScreen: 'restaurant_detail',
       ),
     );
   }
