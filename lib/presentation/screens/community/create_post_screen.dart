@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'community_screen.dart';
+import '../../widgets/common_dialogs.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final Map<String, dynamic>? selectedTodo;
@@ -367,12 +368,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void _submitPost() {
     if (_isFormValid()) {
       // TODO: 실제로는 서버에 포스트를 저장하는 로직이 들어갑니다
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('글이 등록되었습니다'),
-          backgroundColor: Color(0xFFFF8126),
-          duration: Duration(seconds: 1),
-        ),
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '글이 등록되었습니다',
       );
       // 커뮤니티 화면으로 이동
       Navigator.of(context).pushAndRemoveUntil(

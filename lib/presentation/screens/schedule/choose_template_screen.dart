@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'template_1_screen.dart';
 import 'template_2_screen.dart'; // 🔥 추가
 import '../../../core/theme/app_theme.dart';
+import '../../widgets/common_dialogs.dart';
 
 class ChooseTemplateScreen extends StatefulWidget {
   final Map<String, List<String>> selected;
@@ -109,9 +110,10 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
 
   void _onConfirm() {
     if (_selectedName == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('템플릿을 선택해 주세요.')));
+      CommonDialogs.showError(
+        context: context,
+        message: '템플릿을 선택해 주세요.',
+      );
       return;
     }
 

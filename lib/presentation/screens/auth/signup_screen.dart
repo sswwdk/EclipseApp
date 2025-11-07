@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/user_service.dart';
+import '../../widgets/common_dialogs.dart';
 
 // 회원가입 화면
 class SignUpScreen extends StatefulWidget {
@@ -137,13 +138,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _showSnackBar(String message, {bool isSuccess = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isSuccess ? const Color(0xFFFF8126) : Colors.red,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    if (isSuccess) {
+      CommonDialogs.showSuccess(
+        context: context,
+        message: message,
+      );
+    } else {
+      CommonDialogs.showError(
+        context: context,
+        message: message,
+      );
+    }
   }
 
   @override

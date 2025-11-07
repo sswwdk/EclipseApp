@@ -91,11 +91,9 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         // 새로운 항목 선택
         if (selected.length >= 2) {
           // 최대 2개까지만 선택 가능
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('카테고리별 최대 2개까지 선택할 수 있습니다.'),
-              duration: Duration(seconds: 2),
-            ),
+          CommonDialogs.showError(
+            context: context,
+            message: '카테고리별 최대 2개까지 선택할 수 있습니다.',
           );
           return;
         }
@@ -562,8 +560,9 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                     }
 
                     if (selectedByCategory.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('선택된 장소가 없습니다.')),
+                      CommonDialogs.showError(
+                        context: context,
+                        message: '선택된 장소가 없습니다.',
                       );
                       return;
                     }
@@ -621,8 +620,9 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                     }
 
                     if (selectedByCategory.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('선택된 장소가 없습니다.')),
+                      CommonDialogs.showError(
+                        context: context,
+                        message: '선택된 장소가 없습니다.',
                       );
                       return;
                     }

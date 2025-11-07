@@ -417,12 +417,9 @@ class _ChatScreenState extends State<ChatScreen> {
       title: '사용자 차단',
       content: '${widget.user['nickname']}님을 차단하시겠습니까?',
       onConfirm: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${widget.user['nickname']}님을 차단했습니다'),
-            backgroundColor: const Color(0xFFFF8126),
-            duration: const Duration(seconds: 2),
-          ),
+        CommonDialogs.showSuccess(
+          context: context,
+          message: '${widget.user['nickname']}님을 차단했습니다',
         );
       },
     );
@@ -434,12 +431,9 @@ class _ChatScreenState extends State<ChatScreen> {
       title: '사용자 신고',
       content: '${widget.user['nickname']}님을 신고하시겠습니까?',
       onConfirm: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${widget.user['nickname']}님을 신고했습니다'),
-            backgroundColor: const Color(0xFFFF8126),
-            duration: const Duration(seconds: 1),
-          ),
+        CommonDialogs.showSuccess(
+          context: context,
+          message: '${widget.user['nickname']}님을 신고했습니다',
         );
       },
     );

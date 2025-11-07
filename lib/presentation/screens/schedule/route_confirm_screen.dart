@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 import 'choose_template_screen.dart';
+import '../../widgets/common_dialogs.dart';
 
 class RouteConfirmScreen extends StatefulWidget {
   final Map<String, List<dynamic>> selected; // 카테고리별 선택 목록 (Map 또는 String)
@@ -126,12 +127,9 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
               onPressed: () {
                 // 🔥 좌표 입력 확인
                 if (!_hasValidCoordinates()) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('현재 위치 좌표를 입력해주세요.'),
-                      duration: Duration(seconds: 2),
-                      backgroundColor: Colors.red,
-                    ),
+                  CommonDialogs.showError(
+                    context: context,
+                    message: '현재 위치 좌표를 입력해주세요.',
                   );
                   return;
                 }
@@ -758,8 +756,9 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    CommonDialogs.showMessage(
+      context: context,
+      message: message,
     );
   }
 

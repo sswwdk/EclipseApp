@@ -4,6 +4,7 @@ import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../main/restaurant_detail_screen.dart';
+import '../../widgets/common_dialogs.dart';
 
 /// 찜목록을 보여주는 화면
 class FavoriteListScreen extends StatefulWidget {
@@ -258,11 +259,9 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('찜 취소 중 오류가 발생했습니다: $e'),
-          duration: const Duration(seconds: 2),
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '찜 취소 중 오류가 발생했습니다: $e',
       );
     }
   }

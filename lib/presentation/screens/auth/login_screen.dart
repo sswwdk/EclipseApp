@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/wave_painter.dart';
+import '../../widgets/common_dialogs.dart';
 import 'signup_screen.dart';
 import 'find_account_screen.dart';
 import '../main/main_screen.dart';
@@ -29,7 +30,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLogin() async {
     if (_idController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showSnackBar('아이디와 비밀번호를 입력해주세요.');
+      // 🔥 에러 메시지 (빨간색)
+      CommonDialogs.showError(
+        context: context,
+        message: '아이디와 비밀번호를 입력해주세요.',
+      );
       return;
     }
 
@@ -84,37 +89,35 @@ class _LoginScreenState extends State<LoginScreen> {
         print('TokenManager에 저장된 닉네임: ${TokenManager.userName}');
         print('TokenManager에 저장된 사용자 ID: ${TokenManager.userId}');
         print('TokenManager에 저장된 이메일: ${TokenManager.userEmail}');
-        _showSnackBar('로그인 성공!');
+        
+        // 🔥 성공 메시지 (초록색)
+        CommonDialogs.showSuccess(
+          context: context,
+          message: '로그인 성공!',
+        );
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       } else {
-        _showSnackBar('토큰을 받지 못했습니다.');
+        // 🔥 에러 메시지 (빨간색)
+        CommonDialogs.showError(
+          context: context,
+          message: '토큰을 받지 못했습니다.',
+        );
       }
     } catch (e) {
-      _showSnackBar('로그인 중 오류가 발생했습니다: $e');
+      // 🔥 에러 메시지 (빨간색)
+      CommonDialogs.showError(
+        context: context,
+        message: '로그인 중 오류가 발생했습니다: $e',
+      );
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFFF8126),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
-  /// 로그아웃 처리
-  void _handleLogout() {
-    TokenManager.clearTokens();
-    _showSnackBar('로그아웃되었습니다.');
   }
 
   @override

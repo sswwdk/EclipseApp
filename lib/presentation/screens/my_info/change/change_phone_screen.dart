@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/wave_painter.dart';
 import '../../../../data/services/user_service.dart';
+import '../../../widgets/common_dialogs.dart';
 
 class ChangePhoneScreen extends StatefulWidget {
   const ChangePhoneScreen({Key? key}) : super(key: key);
@@ -108,12 +109,9 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFFF8126),
-        duration: const Duration(seconds: 1),
-      ),
+    CommonDialogs.showMessage(
+      context: context,
+      message: message,
     );
   }
 

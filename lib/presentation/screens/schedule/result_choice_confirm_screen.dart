@@ -5,6 +5,7 @@ import '../../../data/services/history_service.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import 'dart:async';
+import '../../widgets/common_dialogs.dart';
 
 /// 선택된 장소만 모아 보여주는 화면
 class SelectedPlacesScreen extends StatefulWidget {
@@ -194,11 +195,9 @@ class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('일정표 히스토리 "그냥" 탭에 저장되었습니다.'),
-          duration: Duration(seconds: 2),
-        ),
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '일정표 히스토리 "그냥" 탭에 저장되었습니다.',
       );
 
       Navigator.of(context).pushAndRemoveUntil(
@@ -209,12 +208,9 @@ class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
       if (!mounted) return;
 
       print('❌ 히스토리 저장 실패: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('저장 중 오류가 발생했습니다: ${e.toString()}'),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '저장 중 오류가 발생했습니다: ${e.toString()}',
       );
     } finally {
       if (mounted) {

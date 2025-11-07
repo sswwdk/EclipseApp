@@ -5,6 +5,7 @@ import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
 import '../main/main_screen.dart';
 import 'dart:async';
+import '../../widgets/common_dialogs.dart';
 
 class ScheduleBuilderScreen extends StatefulWidget {
   final Map<String, List<String>> selected; // 카테고리별 선택 목록
@@ -514,11 +515,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('일정표 히스토리에 저장되었습니다.'),
-          duration: Duration(seconds: 2),
-        ),
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '일정표 히스토리에 저장되었습니다.',
       );
 
       // 홈 화면으로 이동
@@ -530,12 +529,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       if (!mounted) return;
 
       print('❌ 일정표 저장 실패: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('저장 중 오류가 발생했습니다: ${e.toString()}'),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '저장 중 오류가 발생했습니다: ${e.toString()}',
       );
     } finally {
       if (mounted) {
@@ -556,11 +552,9 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
       final userId = TokenManager.userId;
       if (userId == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('로그인이 필요합니다.'),
-            duration: Duration(seconds: 2),
-          ),
+        CommonDialogs.showError(
+          context: context,
+          message: '로그인이 필요합니다.',
         );
         return;
       }
@@ -573,22 +567,17 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('커뮤니티에 공유되었습니다.'),
-          duration: Duration(seconds: 2),
-        ),
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '커뮤니티에 공유되었습니다.',
       );
     } catch (e) {
       if (!mounted) return;
 
       print('❌ 일정표 공유 실패: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('공유 중 오류가 발생했습니다: ${e.toString()}'),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '공유 중 오류가 발생했습니다: ${e.toString()}',
       );
     } finally {
       if (mounted) {
@@ -1636,8 +1625,9 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    CommonDialogs.showMessage(
+      context: context,
+      message: message,
     );
   }
 

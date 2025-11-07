@@ -75,12 +75,9 @@ class _FindAccountScreenState extends State<FindAccountScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFFF8126),
-        duration: const Duration(seconds: 1),
-      ),
+    CommonDialogs.showMessage(
+      context: context,
+      message: message,
     );
   }
 

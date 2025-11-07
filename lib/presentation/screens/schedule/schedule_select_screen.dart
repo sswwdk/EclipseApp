@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'schedule_chat_screen.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../widgets/common_dialogs.dart';
 
 /// 위치 입력 화면
 class LocationInputScreen extends StatefulWidget {
@@ -23,11 +24,9 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
     final location = _locationController.text.trim();
     
     if (location.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('위치를 입력해주세요.'),
-          duration: Duration(seconds: 1),
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '위치를 입력해주세요.',
       );
       return;
     }
@@ -326,11 +325,9 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
   void _proceedToNext() {
     if (!_canProceed) {
       // 선택하지 않았을 때 알림 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('최소 하나의 카테고리를 선택해주세요.'),
-          duration: Duration(seconds: 2),
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '최소 하나의 카테고리를 선택해주세요.',
       );
       return;
     }

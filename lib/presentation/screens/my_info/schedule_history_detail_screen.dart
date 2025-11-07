@@ -6,6 +6,7 @@ import '../../../data/services/route_service.dart';
 import '../../../data/services/api_service.dart'; // 🔥 Restaurant 모델 사용
 import '../../../data/models/restaurant.dart';
 import '../main/restaurant_detail_screen.dart'; // 🔥 상세 화면 import
+import '../../widgets/common_dialogs.dart';
 
 /// 일정표 히스토리 상세 화면
 class ScheduleHistoryDetailScreen extends StatefulWidget {
@@ -687,11 +688,9 @@ class _TimelineRow extends StatelessWidget {
   /// 🔥 매장 상세 화면으로 이동
   Future<void> _navigateToDetail(BuildContext context) async {
     if (item.categoryId == null || item.categoryId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('매장 정보를 불러올 수 없습니다.'),
-          duration: Duration(seconds: 2),
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '매장 정보를 불러올 수 없습니다.',
       );
       return;
     }
@@ -739,12 +738,9 @@ class _TimelineRow extends StatelessWidget {
       Navigator.pop(context);
 
       print('❌ 매장 상세 화면 이동 실패: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('매장 정보를 불러오는 데 실패했습니다: $e'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: Colors.red,
-        ),
+      CommonDialogs.showError(
+        context: context,
+        message: '매장 정보를 불러오는 데 실패했습니다: $e',
       );
     }
   }
