@@ -82,8 +82,8 @@ class _ScheduleHistoryDetailScreenState
     final categories = data['categories'] as List<dynamic>? ?? [];
 
     // 출발지 정보
-    _originAddress = data['origin_address'] as String?;
-    _originDetailAddress = data['origin_detail_address'] as String?;
+    _originAddress = (data['origin_address'] as String?)?.trim();
+    _originDetailAddress = (data['origin_detail_address'] as String?)?.trim();
 
     print('🔍 서버에서 받은 categories: $categories');
 
@@ -138,9 +138,10 @@ class _ScheduleHistoryDetailScreenState
       }
 
       final address =
-          category['category_detail_address'] as String? ??
-          category['detail_address'] as String? ??
-          category['address'] as String?;
+          (category['category_detail_address'] as String? ??
+                  category['detail_address'] as String? ??
+                  category['address'] as String?)
+              ?.trim();
 
       final categoryTypeRaw = category['category_type'];
       int categoryTypeInt = 0;
