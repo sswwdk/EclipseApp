@@ -59,7 +59,7 @@ class _FavoriteListScreenState extends State<FavoriteListScreen> with SingleTick
         return;
       }
       
-      final responseData = await LikeService.getLikes(userId);
+      final responseData = await LikeService.getLikes();
       
       if (!mounted) return;
       
@@ -233,7 +233,7 @@ class _FavoriteListScreenState extends State<FavoriteListScreen> with SingleTick
       if (userId.isEmpty) return;
       
       // 서버에 찜 취소 요청
-      await LikeService.unlikeStore(restaurant.id, userId);
+      await LikeService.unlikeStore(restaurant.id);
       
       // 목록에서 제거
       if (!mounted) return;

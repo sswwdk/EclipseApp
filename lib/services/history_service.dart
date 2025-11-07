@@ -9,9 +9,8 @@ class HistoryService {
 
   // 내 히스토리 보기
   static Future<Map<String, dynamic>> getMyHistory(
-    String userId, {
-    bool templateType = true,
-  }) async {
+    String userId,
+  ) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/users/me/histories'),
@@ -402,11 +401,11 @@ class HistoryService {
         // 🔥 도보인 경우는 항상 표시, 다른 경우는 0분 이상일 때만 표시
         if (step.type == 'walk') {
           if (step.durationMinutes > 0) {
-            buffer.write(' (${step.durationMinutes}분)');
+            buffer.write(' ${step.durationMinutes}분');
           }
           // 시간이 0이어도 줄바꿈은 추가
         } else if (step.durationMinutes > 0) {
-          buffer.write(' (${step.durationMinutes}분)');
+          buffer.write(' ${step.durationMinutes}분');
         }
 
         // 마지막 항목이 아니면 줄바꿈
@@ -459,16 +458,11 @@ class HistoryService {
 
       final List<Map<String, dynamic>> places = [];
       for (final entry in selectedPlaces.entries) {
-        final category = entry.key;
         final placeList = entry.value;
 
         for (final place in placeList) {
           final placeName =
               place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
-          final placeAddress =
-              place['address'] as String? ??
-              place['detail_address'] as String? ??
-              '';
 
           places.add({
             'category_name': placeName,

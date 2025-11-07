@@ -292,13 +292,13 @@ class RouteService {
         print('🔍 [RouteService] 서버 응답 데이터:');
         print('   전체 응답: $responseData');
         print(
-          '   responseData 키: ${responseData is Map ? (responseData as Map).keys.toList() : 'N/A'}',
+          '   responseData 키: ${responseData is Map ? responseData.keys.toList() : 'N/A'}',
         );
 
         final data = responseData['data'] ?? responseData;
         print('   파싱할 data: $data');
         print(
-          '   data 키: ${data is Map ? (data as Map).keys.toList() : 'N/A'}',
+          '   data 키: ${data is Map ? data.keys.toList() : 'N/A'}',
         );
 
         if (data is Map<String, dynamic>) {
