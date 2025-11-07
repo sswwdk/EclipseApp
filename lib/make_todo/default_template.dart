@@ -523,20 +523,45 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
 
     // 🔥 orderedPlaces가 있으면 순서대로 사용, 없으면 기존 방식
     if (widget.orderedPlaces != null && widget.orderedPlaces!.isNotEmpty) {
+      print('🔍 [_buildScheduleItems] orderedPlaces 사용');
+
       // 순서가 유지되는 리스트 사용
-      for (final placeData in widget.orderedPlaces!) {
+      for (int i = 0; i < widget.orderedPlaces!.length; i++) {
+        final placeData = widget.orderedPlaces![i];
+        print('🔍 [_buildScheduleItems] [$i] placeData: $placeData');
+
         final placeName = placeData['name'] as String? ?? '알 수 없음';
         final category = placeData['category'] as String? ?? '기타';
-        // 🔥 주소 정보 추출
-        final address =
-            placeData['address'] as String? ??
-            placeData['detail_address'] as String?;
+
+        // 🔥 주소 정보 추출 개선 - 여러 키를 확인
+        String? address;
+
+        // 1. 최상위 레벨에서 주소 확인
+        address = placeData['address'] as String?;
+
+        // 2. detail_address 확인
+        if (address == null || address.isEmpty) {
+          address = placeData['detail_address'] as String?;
+        }
+
+        // 3. data 객체 안에서 확인
+        if (address == null || address.isEmpty) {
+          final data = placeData['data'] as Map<String, dynamic>?;
+          if (data != null) {
+            address = data['address'] as String?;
+            if (address == null || address.isEmpty) {
+              address = data['detail_address'] as String?;
+            }
+          }
+        }
+
+        print('🔍 [_buildScheduleItems] [$i] 추출된 주소: $address');
 
         items.add(
           _ScheduleItem(
             title: placeName,
             subtitle: category,
-            address: address, // 🔥 주소 정보 추가
+            address: address, // 🔥 개선된 주소 정보
             icon: _iconFor(category),
             color: const Color(0xFFFF8126),
             type: _ItemType.place,
@@ -548,13 +573,37 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         );
       }
     } else {
+      print('🔍 [_buildScheduleItems] 기존 방식 사용 (selected)');
+
       // 기존 방식: 카테고리별로 그룹화됨 (하위 호환성)
+      // 이 경우 주소 정보를 가져오려면 selectedPlacesWithData를 사용해야 함
       selected.forEach((category, places) {
-        for (final place in places) {
+        for (final placeName in places) {
+          // selectedPlacesWithData에서 해당 장소의 데이터 찾기
+          String? address;
+
+          if (widget.selectedPlacesWithData != null) {
+            final categoryPlaces = widget.selectedPlacesWithData![category];
+            if (categoryPlaces != null) {
+              final placeData = categoryPlaces.firstWhere(
+                (p) => p['name'] == placeName,
+                orElse: () => <String, dynamic>{},
+              );
+
+              if (placeData.isNotEmpty) {
+                address = placeData['address'] as String?;
+                if (address == null || address.isEmpty) {
+                  address = placeData['detail_address'] as String?;
+                }
+              }
+            }
+          }
+
           items.add(
             _ScheduleItem(
-              title: place,
+              title: placeName,
               subtitle: category,
+              address: address, // 🔥 주소 정보 추가
               icon: _iconFor(category),
               color: const Color(0xFFFF8126),
               type: _ItemType.place,
