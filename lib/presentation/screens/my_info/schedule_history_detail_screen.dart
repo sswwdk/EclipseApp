@@ -325,6 +325,43 @@ class _ScheduleHistoryDetailScreenState
           }
           continue;
         }
+        if (line.contains('호선') && line.contains('분')) {
+          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
+
+          // 전체 노선명 추출 (수도권 포함)
+          final subwayMatch = RegExp(r'(수도권\d+호선|\d+호선)').firstMatch(line);
+
+          String subwayInfo = '지하철';
+          if (subwayMatch != null) {
+            subwayInfo = subwayMatch.group(1) ?? '지하철'; // 👈 "수도권9호선" 그대로 사용
+          }
+
+          // 출발지 → 도착지 추출
+          final routeMatch = RegExp(
+            r':\s*([^→]+)\s*→\s*([^\d]+)',
+          ).firstMatch(line);
+          if (routeMatch != null) {
+            final from = routeMatch.group(1)?.trim() ?? '';
+            final to = routeMatch.group(2)?.trim() ?? '';
+            subwayInfo += '\n$from → $to';
+          }
+
+          final duration = durationMatch != null
+              ? int.tryParse(durationMatch.group(1)!) ?? 0
+              : 0;
+
+          if (duration > 0) {
+            steps.add(
+              RouteStep(
+                type: 'transit',
+                description: subwayInfo,
+                durationMinutes: duration,
+              ),
+            );
+            print('✅ 지하철 단계 추가: $subwayInfo, $duration분');
+          }
+          continue;
+        }
       }
 
       print('✅ 파싱 완료 - 단계 수: ${steps.length}');

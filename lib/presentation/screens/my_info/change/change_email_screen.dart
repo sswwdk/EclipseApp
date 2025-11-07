@@ -77,9 +77,25 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
     });
 
     try {
-      await UserService.changeEmail(password: _passwordController.text, newEmail: _newEmailController.text.trim());
+      final newEmail = _newEmailController.text.trim();
+
+      // 이메일 변경 API 호출
+      await UserService.changeEmail(
+        password: _passwordController.text,
+        newEmail: newEmail,
+      );
+
+      // ⭐ 이 부분이 중요합니다!
+      TokenManager.setUserEmail(newEmail);
+      print('TokenManager 이메일 업데이트: ${TokenManager.userEmail}');
+
       _showSnackBar('이메일이 변경되었습니다.');
-      Navigator.of(context).pop();
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        Navigator.of(context).pop(true); // true를 반환
+      }
     } catch (e) {
       _showSnackBar('이메일 변경 중 오류가 발생했습니다: $e');
     } finally {
@@ -112,7 +128,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                 size: Size(MediaQuery.of(context).size.width, 200),
                 painter: WavePainter(),
               ),
-    
+
               // 메인 타이틀
               const Padding(
                 padding: EdgeInsets.only(top: 30, bottom: 10),
@@ -125,18 +141,15 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                   ),
                 ),
               ),
-              
+
               // 서브 타이틀
               const Text(
                 '새로운 이메일 주소를 입력해주세요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // 현재 이메일 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -161,7 +174,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
               ),
 
               const SizedBox(height: 15),
-              
+
               // 비밀번호 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -184,9 +197,9 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // 새 이메일 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -214,9 +227,9 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // 이메일 확인 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -246,9 +259,9 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
-              
+
               // 변경하기 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -269,7 +282,9 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                               strokeWidth: 2,
                             ),
                           )
@@ -284,16 +299,18 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // 취소 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFFF8126),
                       side: const BorderSide(
@@ -315,7 +332,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
             ],
           ),
