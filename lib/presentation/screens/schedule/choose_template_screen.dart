@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'template_1_screen.dart';
 import 'template_2_screen.dart'; // 🔥 추가
+import 'template_3_screen.dart'; // TODO(jjaga): remove import when template3 finalized
 import '../../../core/theme/app_theme.dart';
 import '../../widgets/common_dialogs.dart';
 
@@ -79,6 +80,17 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
               });
             },
           ),
+          _TemplateTile(
+            name: '템플릿 3',
+            description: '새로운 스타일의 맞춤 일정',
+            emoji: '✨',
+            checked: _selectedName == '템플릿 3',
+            onToggle: () {
+              setState(() {
+                _selectedName = _selectedName == '템플릿 3' ? null : '템플릿 3';
+              });
+            },
+          ),
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -121,6 +133,8 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
       _goTemplate1(first: 50, other: 25);
     } else if (_selectedName == '플로우 템플릿') {
       _goTemplate2(first: 50, other: 25); // 🔥 템플릿 2로 이동
+    } else if (_selectedName == '템플릿 3') {
+      _goTemplate3(first: 50, other: 25);
     }
   }
 
@@ -151,6 +165,27 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => Template2Screen(
+          selected: {
+            for (final entry in widget.selected.entries)
+              entry.key: List<String>.from(entry.value),
+          },
+          selectedPlacesWithData: widget.selectedPlacesWithData,
+          categoryIdByName: widget.categoryIdByName,
+          originAddress: widget.originAddress,
+          originDetailAddress: widget.originDetailAddress,
+          firstDurationMinutes: first,
+          otherDurationMinutes: other,
+          orderedPlaces: widget.orderedPlaces,
+        ),
+      ),
+    );
+  }
+
+  void _goTemplate3({required int first, required int other}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Template3Screen(
           selected: {
             for (final entry in widget.selected.entries)
               entry.key: List<String>.from(entry.value),
