@@ -5,6 +5,7 @@ import '../../../shared/helpers/token_manager.dart';
 import 'schedule_history_detail_screen.dart';
 import 'schedule_history_normal_detail_screen.dart';
 import 'schedule_history_template2_detail_screen.dart';
+import 'schedule_history_template3_detail_screen.dart';
 
 class ScheduleHistoryScreen extends StatefulWidget {
   const ScheduleHistoryScreen({Key? key}) : super(key: key);
@@ -517,6 +518,14 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen>
         MaterialPageRoute(
           builder: (context) =>
               ScheduleHistoryTemplate2DetailScreen(historyId: historyId),
+        ),
+      );
+    } else if (templateType == 3) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ScheduleHistoryTemplate3DetailScreen(historyId: historyId),
         ),
       );
     } else {
