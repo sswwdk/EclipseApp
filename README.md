@@ -58,13 +58,17 @@ lib/
 │   │   │   ├── result_choice_confirm_screen.dart		# “그냥” 저장 화면(템플릿 X) 
 │   │   │   ├── route_confirm_screen.dart		#  순서 저장 화면
 │   │   │   ├── choose_template_screen.dart	# 템플릿 선택 화면
-│   │   │   └── template_1_screen.dart	# 1번 템플릿 선택 화면(일정표)
+│   │   │   ├── template_1_screen.dart	# 1번 템플릿 선택 화면(일정표)
+│   │   │   ├── template_2_screen.dart	# 2번 템플릿 선택 화면(일정표)
+│   │   │   └── template_3_screen.dart	# 3번 템플릿 선택 화면(일정표)
 │   │   │
 │   │   ├── my_info/                   # 마이페이지
 │   │   │   ├── my_info_screen.dart		# 하단바에서 내 정보를 눌렀을 때 뜨는 내 정보
 │   │   │   ├── favorite_list_screen.dart		# 찜 목록
 │   │   │   ├── schedule_history_screen.dart	# 일정표 히스토리
-│   │   │   ├── schedule_history_detail_screen.dart		# “일정표” 탭 상세화면
+│   │   │   ├── schedule_history_template1_detail_screen.dart		# “일정표” 탭 상세화면 template1
+│   │   │   ├── schedule_history_template2_detail_screen.dart		# “일정표” 탭 상세화면 template2
+│   │   │   ├── schedule_history_template3_detail_screen.dart		# “일정표” 탭 상세화면 template3
 │   │   │   ├── schedule_history_normal_detail_screen.dart	# “그냥” 탭 상세화면
 │   │   │   ├── my_review_screen.dart	# 내가 쓴 리뷰 화면
 │   │   │   ├── my_posts_screen.dart	# 내가 쓴 게시글 화면
