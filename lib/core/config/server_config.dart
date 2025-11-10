@@ -5,4 +5,5 @@ class ServerConfig {
 
   // API 엔드포인트
   static String get apiBaseUrl => baseUrl;
+  static String get communityApiBaseUrl => communityUrl;
 }
