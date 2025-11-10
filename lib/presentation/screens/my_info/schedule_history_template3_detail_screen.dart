@@ -433,7 +433,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('여행 일정표'),
+        title: const Text('템플릿 3'),
         centerTitle: true,
         backgroundColor: backgroundColor,
         elevation: 0,
