@@ -294,7 +294,7 @@ class _ScheduleHistoryDetailScreenState
         if (line.contains('버스') && line.contains('분')) {
           // 버스 타입과 번호 추출
           final busTypeMatch = RegExp(
-            r'(지선|간선|광역|순환|마을|공항):(\d+[가-힣]*)번',
+            r'(지선|간선|광역|순환|마을|공항|직행좌석):(\d+[가-힣]*)번',
           ).firstMatch(line);
           final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
 
