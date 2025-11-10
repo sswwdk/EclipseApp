@@ -150,7 +150,10 @@ class _ScheduleHistoryTemplate2DetailScreenState
       }
 
       // 🔥 이미지 URL 추출
-      String? imageUrl = category['image_url'] as String?;
+      String? imageUrl =
+          category['image'] as String? ??
+          category['image_url'] as String? ??
+          category['category_image'] as String?;
 
       items.add(
         _ScheduleItem(
@@ -637,8 +640,6 @@ class _PlannerItemCard extends StatelessWidget {
   }
 
   Widget _buildImageSection(BuildContext context) {
-    String emoji = _getEmojiForCategory(item.category);
-
     return InkWell(
       onTap: item.categoryId != null && item.categoryId!.isNotEmpty
           ? () => _navigateToDetail(context)
@@ -653,38 +654,51 @@ class _PlannerItemCard extends StatelessWidget {
               border: Border.all(color: const Color(0xFFD97941), width: 2),
               borderRadius: BorderRadius.circular(8),
             ),
-            clipBehavior: Clip.antiAlias, // 🔥 이미지 모서리 처리
+            clipBehavior: Clip.antiAlias,
             child: item.imageUrl != null && item.imageUrl!.isNotEmpty
                 ? Image.network(
                     item.imageUrl!,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       // 🔥 이미지 로딩 실패 시 이모지 표시
-                      return Center(
-                        child: Text(
-                          emoji,
-                          style: const TextStyle(fontSize: 40),
+                      String emoji = _getEmojiForCategory(item.category);
+                      return Container(
+                        color: const Color(0xFFFFF5E8),
+                        child: Center(
+                          child: Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 40),
+                          ),
                         ),
                       );
                     },
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       // 🔥 로딩 중 표시
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                              : null,
-                          color: const Color(0xFFD97941),
-                          strokeWidth: 2,
+                      return Container(
+                        color: const Color(0xFFFFF5E8),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                : null,
+                            color: const Color(0xFFD97941),
+                            strokeWidth: 2,
+                          ),
                         ),
                       );
                     },
                   )
-                : Center(
-                    // 🔥 이미지 URL이 없으면 이모지 표시
-                    child: Text(emoji, style: const TextStyle(fontSize: 40)),
+                : Container(
+                    // 🔥 이미지 URL이 없으면 이모지와 배경색 표시
+                    color: const Color(0xFFFFF5E8),
+                    child: Center(
+                      child: Text(
+                        _getEmojiForCategory(item.category),
+                        style: const TextStyle(fontSize: 40),
+                      ),
+                    ),
                   ),
           ),
           const SizedBox(height: 8),
@@ -1021,20 +1035,31 @@ class _PlannerItemCard extends StatelessWidget {
         ),
       );
 
-      final restaurant = Restaurant(
-        id: item.categoryId!,
-        name: item.title,
-        subCategory: item.category,
-        detailAddress: item.address,
-        phone: null,
-        rating: null,
-        businessHour: null,
-        image: null,
+      // 🔥 매장 상세 정보 API 호출 (이미지 포함)
+      print('🔍 매장 상세 정보 조회 시작: ${item.categoryId}');
+      final detailedRestaurant = await ApiService.getRestaurant(
+        item.categoryId!,
       );
+      print('✅ 매장 상세 정보 조회 완료: ${detailedRestaurant.image}');
 
       if (!context.mounted) return;
+      Navigator.pop(context); // 로딩 닫기
 
-      Navigator.pop(context);
+      // 🔥 API에서 받은 전체 정보로 Restaurant 객체 생성
+      final restaurant = Restaurant(
+        id: item.categoryId!,
+        name: detailedRestaurant.name.isNotEmpty
+            ? detailedRestaurant.name
+            : item.title,
+        subCategory: detailedRestaurant.subCategory ?? item.category,
+        detailAddress: detailedRestaurant.detailAddress ?? item.address,
+        image: detailedRestaurant.image, // 🔥 API에서 받은 이미지 사용
+        phone: detailedRestaurant.phone,
+        rating: detailedRestaurant.rating ?? item.rating,
+        businessHour: detailedRestaurant.businessHour,
+      );
+
+      print('🏪 Restaurant 객체 생성 완료: image = ${restaurant.image}');
 
       Navigator.push(
         context,
@@ -1044,9 +1069,9 @@ class _PlannerItemCard extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
-
       Navigator.pop(context);
 
+      print('❌ 매장 상세 화면 이동 실패: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('매장 정보를 불러오는 데 실패했습니다: $e'),
