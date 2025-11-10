@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:characters/characters.dart';
 import '../../widgets/bottom_navigation_widget.dart';
 import 'choose_schedule_screen.dart';
 import 'post_detail_screen.dart';
@@ -563,14 +564,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final initial = nickname.trim().isNotEmpty
         ? nickname.characters.first.toUpperCase()
         : '?';
+    final colors = _avatarColorsFor(initial);
 
     return CircleAvatar(
       radius: 20,
-      backgroundColor: AppTheme.primaryColorWithOpacity10,
+      backgroundColor: colors.background,
       child: Text(
         initial,
-        style: const TextStyle(
-          color: AppTheme.primaryColor,
+        style: TextStyle(
+          color: colors.foreground,
           fontWeight: FontWeight.bold,
           fontSize: 16,
         ),
@@ -584,5 +586,31 @@ class _CommunityScreenState extends State<CommunityScreen> {
       color: AppTheme.dividerColor,
     );
   }
+
+  _AvatarColors _avatarColorsFor(String initial) {
+    if (initial.isEmpty) {
+      return _avatarColorPalettes.first;
+    }
+    final rune = initial.runes.first;
+    final index = rune.abs() % _avatarColorPalettes.length;
+    return _avatarColorPalettes[index];
+  }
 }
 
+class _AvatarColors {
+  final Color background;
+  final Color foreground;
+
+  const _AvatarColors(this.background, this.foreground);
+}
+
+const List<_AvatarColors> _avatarColorPalettes = [
+  _AvatarColors(Color(0xFFFFE5E0), Color(0xFFFF6B57)),
+  _AvatarColors(Color(0xFFE3F2FD), Color(0xFF1565C0)),
+  _AvatarColors(Color(0xFFF1F8E9), Color(0xFF2E7D32)),
+  _AvatarColors(Color(0xFFEDE7F6), Color(0xFF5E35B1)),
+  _AvatarColors(Color(0xFFFFF3E0), Color(0xFFEF6C00)),
+  _AvatarColors(Color(0xFFE0F2F1), Color(0xFF00897B)),
+  _AvatarColors(Color(0xFFFFEBEE), Color(0xFFD81B60)),
+  _AvatarColors(Color(0xFFF3E5F5), Color(0xFF8E24AA)),
+];

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:characters/characters.dart';
 import 'chat_screen.dart';
 import '../../widgets/common_dialogs.dart';
 import '../../../data/services/community_service.dart';
@@ -380,7 +381,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     items.add(
                       const PopupMenuItem<String>(
                         value: 'delete',
-                        child: Text('댓글 삭제'),
+                        child: Text('댓글 삭제하기'),
                       ),
                     );
                   } else {
@@ -922,14 +923,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final initial = trimmed.isNotEmpty
         ? trimmed.characters.first.toUpperCase()
         : '?';
+    final colors = _avatarColorsFor(initial);
 
     return CircleAvatar(
       radius: radius,
-      backgroundColor: const Color(0xFFFF8126).withOpacity(0.15),
+      backgroundColor: colors.background,
       child: Text(
         initial,
         style: TextStyle(
-          color: const Color(0xFFFF8126),
+          color: colors.foreground,
           fontWeight: FontWeight.bold,
           fontSize: fontSize,
         ),
@@ -1079,4 +1081,31 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       ),
     );
   }
+
+  _AvatarColors _avatarColorsFor(String initial) {
+    if (initial.isEmpty) {
+      return _avatarColorPalettes.first;
+    }
+    final rune = initial.runes.first;
+    final index = rune.abs() % _avatarColorPalettes.length;
+    return _avatarColorPalettes[index];
+  }
 }
+
+class _AvatarColors {
+  final Color background;
+  final Color foreground;
+
+  const _AvatarColors(this.background, this.foreground);
+}
+
+const List<_AvatarColors> _avatarColorPalettes = [
+  _AvatarColors(Color(0xFFFFE5E0), Color(0xFFFF6B57)),
+  _AvatarColors(Color(0xFFE3F2FD), Color(0xFF1565C0)),
+  _AvatarColors(Color(0xFFF1F8E9), Color(0xFF2E7D32)),
+  _AvatarColors(Color(0xFFEDE7F6), Color(0xFF5E35B1)),
+  _AvatarColors(Color(0xFFFFF3E0), Color(0xFFEF6C00)),
+  _AvatarColors(Color(0xFFE0F2F1), Color(0xFF00897B)),
+  _AvatarColors(Color(0xFFFFEBEE), Color(0xFFD81B60)),
+  _AvatarColors(Color(0xFFF3E5F5), Color(0xFF8E24AA)),
+];
