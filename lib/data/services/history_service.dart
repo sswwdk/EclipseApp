@@ -356,6 +356,33 @@ class HistoryService {
     }
   }
 
+  static Future<void> saveTemplate3Schedule({
+    required Map<String, List<String>> selectedPlaces,
+    Map<String, String>? categoryIdByName,
+    Map<String, List<Map<String, dynamic>>>? selectedPlacesWithData,
+    List<Map<String, dynamic>>? orderedPlaces,
+    String? originAddress,
+    String? originDetailAddress,
+    Map<int, int>? transportTypes,
+    Map<int, RouteResult>? routeResults,
+    int? firstDurationMinutes,
+    int? otherDurationMinutes,
+  }) {
+    return saveSchedule(
+      selectedPlaces: selectedPlaces,
+      categoryIdByName: categoryIdByName,
+      selectedPlacesWithData: selectedPlacesWithData,
+      orderedPlaces: orderedPlaces,
+      originAddress: originAddress,
+      originDetailAddress: originDetailAddress,
+      transportTypes: transportTypes,
+      routeResults: routeResults,
+      firstDurationMinutes: firstDurationMinutes,
+      otherDurationMinutes: otherDurationMinutes,
+      templateType: 3,
+    );
+  }
+
   /// 대중교통 경로 상세 정보를 텍스트로 변환
   static String _buildTransportDescription(RouteResult route) {
     final buffer = StringBuffer();
@@ -486,7 +513,7 @@ class HistoryService {
             },
             body: json.encode({
               'user_id': userId,
-              'template_type': '1', // 1: 그냥
+              'template_type': '0', // 0: 그냥
               'date': DateTime.now().toIso8601String().split('T')[0],
               'schedule_title': scheduleTitle,
               'category': places,
