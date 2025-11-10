@@ -10,16 +10,16 @@ import '../main/restaurant_detail_screen.dart';
 class ScheduleHistoryNormalDetailScreen extends StatefulWidget {
   final String historyId;
 
-  const ScheduleHistoryNormalDetailScreen({
-    Key? key,
-    required this.historyId,
-  }) : super(key: key);
+  const ScheduleHistoryNormalDetailScreen({Key? key, required this.historyId})
+    : super(key: key);
 
   @override
-  State<ScheduleHistoryNormalDetailScreen> createState() => _ScheduleHistoryNormalDetailScreenState();
+  State<ScheduleHistoryNormalDetailScreen> createState() =>
+      _ScheduleHistoryNormalDetailScreenState();
 }
 
-class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNormalDetailScreen> {
+class _ScheduleHistoryNormalDetailScreenState
+    extends State<ScheduleHistoryNormalDetailScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   Map<String, List<Map<String, dynamic>>> _selectedPlaces = {};
@@ -49,19 +49,23 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
       }
 
       // 히스토리 상세 정보 가져오기
-      final detailResponse = await HistoryService.getHistoryDetail(userId, widget.historyId);
-      
+      final detailResponse = await HistoryService.getHistoryDetail(
+        userId,
+        widget.historyId,
+      );
+
       if (!mounted) return;
 
       print('🔍 [Normal Detail] 서버 응답: $detailResponse');
 
       // 상세 정보 파싱
       final parsedData = _parseHistoryDetail(detailResponse);
-      
+
       if (!mounted) return;
-      
+
       setState(() {
-        _selectedPlaces = parsedData['places'] as Map<String, List<Map<String, dynamic>>>;
+        _selectedPlaces =
+            parsedData['places'] as Map<String, List<Map<String, dynamic>>>;
         _dateText = parsedData['date'] as String?;
         _isLoading = false;
       });
@@ -76,18 +80,20 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
   }
 
   /// 히스토리 상세 데이터 파싱
-  Map<String, dynamic> _parseHistoryDetail(Map<String, dynamic> detailResponse) {
+  Map<String, dynamic> _parseHistoryDetail(
+    Map<String, dynamic> detailResponse,
+  ) {
     print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     print('📦 [Normal Detail] 전체 서버 응답:');
     print(detailResponse);
     print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
+
     final data = detailResponse['data'] ?? detailResponse;
-    
+
     print('📦 [Normal Detail] data 부분:');
     print(data);
     print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
+
     // 날짜 정보 추출
     String? dateText;
     if (data['visited_at'] != null) {
@@ -101,21 +107,21 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
 
     // 장소 정보 추출
     final Map<String, List<Map<String, dynamic>>> places = {};
-    
+
     // categories 형식으로 저장된 경우
     if (data['categories'] != null && data['categories'] is List) {
       print('🏷️ [Normal Detail] categories 형식으로 파싱 시작');
       final categories = data['categories'] as List<dynamic>;
       print('🏷️ [Normal Detail] categories 개수: ${categories.length}');
-      
+
       for (int idx = 0; idx < categories.length; idx++) {
         final category = categories[idx];
         print('━━━ Category ${idx + 1} ━━━');
         print('원본 데이터: $category');
-        
+
         final categoryMap = category as Map<String, dynamic>;
         print('사용 가능한 필드들: ${categoryMap.keys.toList()}');
-        
+
         // category_type을 실제 카테고리로 변환 (String 또는 int 처리)
         final categoryTypeRaw = categoryMap['category_type'];
         int categoryType = 0;
@@ -127,16 +133,17 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
         final categoryName = _getCategoryNameFromType(categoryType);
         final placeName = categoryMap['category_name'] as String? ?? '';
         final placeId = categoryMap['category_id'] as String? ?? '';
-        final placeAddress = categoryMap['category_detail_address'] as String? ?? '주소 정보 없음';
+        final placeAddress =
+            categoryMap['category_detail_address'] as String? ?? '주소 정보 없음';
         final subCategory = categoryMap['sub_category'] as String? ?? '';
-        
+
         print('  → categoryType: $categoryType');
         print('  → categoryName: $categoryName');
         print('  → placeName: $placeName');
         print('  → placeId: $placeId');
         print('  → placeAddress: $placeAddress');
         print('  → subCategory: $subCategory');
-        
+
         if (placeName.isEmpty) {
           print('  ⚠️ placeName이 비어있어서 스킵');
           continue;
@@ -157,37 +164,40 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
         print('  ✅ 추가됨');
       }
     }
-    
     // places 형식으로 저장된 경우 (saveOtherHistory)
     else if (data['places'] != null && data['places'] is List) {
       print('📍 [Normal Detail] places 형식으로 파싱 시작');
       final placesList = data['places'] as List<dynamic>;
       print('📍 [Normal Detail] places 개수: ${placesList.length}');
-      
+
       for (int idx = 0; idx < placesList.length; idx++) {
         final place = placesList[idx];
         print('━━━ Place ${idx + 1} ━━━');
         print('원본 데이터: $place');
-        
+
         final placeMap = place as Map<String, dynamic>;
         print('사용 가능한 필드들: ${placeMap.keys.toList()}');
-        
+
         final category = placeMap['category'] as String? ?? '기타';
-        final placeId = placeMap['place_id'] as String? ?? placeMap['id'] as String? ?? '';
+        final placeId =
+            placeMap['place_id'] as String? ?? placeMap['id'] as String? ?? '';
         final placeName = placeMap['name'] as String? ?? '알 수 없음';
         final placeAddress = placeMap['address'] as String? ?? '주소 정보 없음';
-        final placeImage = placeMap['image_url'] as String? ?? placeMap['image'] as String? ?? '';
-        
+        final placeImage =
+            placeMap['image_url'] as String? ??
+            placeMap['image'] as String? ??
+            '';
+
         print('  → category: $category');
         print('  → placeId: $placeId');
         print('  → placeName: $placeName');
         print('  → placeAddress: $placeAddress');
         print('  → placeImage: $placeImage');
-        
+
         if (!places.containsKey(category)) {
           places[category] = [];
         }
-        
+
         places[category]!.add({
           'id': placeId,
           'title': placeName,
@@ -198,8 +208,7 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
         });
         print('  ✅ 추가됨');
       }
-    }
-    else {
+    } else {
       print('⚠️ [Normal Detail] categories도 places도 없음!');
       print('data의 키들: ${data.keys.toList()}');
     }
@@ -208,10 +217,7 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
     print('🔍 [Normal Detail] 최종 파싱된 장소: $places');
     print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    return {
-      'places': places,
-      'date': dateText,
-    };
+    return {'places': places, 'date': dateText};
   }
 
   /// category_type을 카테고리 이름으로 변환
@@ -238,7 +244,7 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
       } else if (dateStr.contains(' ')) {
         datePart = dateStr.split(' ')[0];
       }
-      
+
       if (datePart.contains('-')) {
         return datePart.replaceAll('-', '.');
       }
@@ -274,56 +280,59 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
               child: CircularProgressIndicator(color: AppTheme.primaryColor),
             )
           : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondaryColor,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadHistoryDetail,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('다시 시도'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : _selectedPlaces.isEmpty
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          '저장된 장소가 없습니다.',
-                          style: TextStyle(
-                            color: AppTheme.textSecondaryColor,
-                            fontSize: 14,
-                          ),
-                        ),
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondaryColor,
+                        fontSize: 14,
                       ),
-                    )
-                  : _buildPlacesList(),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadHistoryDetail,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('다시 시도'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : _selectedPlaces.isEmpty
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  '저장된 장소가 없습니다.',
+                  style: TextStyle(
+                    color: AppTheme.textSecondaryColor,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            )
+          : _buildPlacesList(),
     );
   }
 
   Widget _buildPlacesList() {
     final categories = _selectedPlaces.keys.toList();
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: categories.fold<int>(0, (sum, c) => sum + _selectedPlaces[c]!.length + 1),
+      itemCount: categories.fold<int>(
+        0,
+        (sum, c) => sum + _selectedPlaces[c]!.length + 1,
+      ),
       itemBuilder: (context, i) {
         int running = 0;
         for (final category in categories) {
@@ -333,7 +342,10 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 children: [
-                  Icon(_iconForCategory(category), color: const Color(0xFFFF8126)),
+                  Icon(
+                    _iconForCategory(category),
+                    color: const Color(0xFFFF8126),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     category,
@@ -348,7 +360,7 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
             );
           }
           running += 1;
-          
+
           // 장소 카드
           final items = _selectedPlaces[category]!;
           if (i < running + items.length) {
@@ -363,12 +375,12 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
   }
 
   Widget _buildPlaceCard(Map<String, dynamic> place, String category) {
-    final placeName = place['title'] as String? ?? 
-                     place['name'] as String? ?? 
-                     '알 수 없음';
-    final placeAddress = place['address'] as String? ??
-                       place['detail_address'] as String? ??
-                       '주소 정보 없음';
+    final placeName =
+        place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
+    final placeAddress =
+        place['address'] as String? ??
+        place['detail_address'] as String? ??
+        '주소 정보 없음';
 
     return GestureDetector(
       onTap: () => _navigateToPlaceDetail(place, category),
@@ -413,32 +425,91 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
     );
   }
 
-  void _navigateToPlaceDetail(Map<String, dynamic> place, String category) {
+  Future<void> _navigateToPlaceDetail(
+    Map<String, dynamic> place,
+    String category,
+  ) async {
     final placeId = place['id'] as String? ?? '';
-    final placeName = place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
-    final placeAddress = place['address'] as String? ?? place['detail_address'] as String? ?? '주소 정보 없음';
-    final placeCategory = place['category'] as String? ?? 
-                         place['sub_category'] as String? ?? 
-                         category;
-    final placeImage = place['image_url'] as String? ?? 
-                      place['image'] as String? ?? 
-                      '';
-    
-    final restaurant = Restaurant(
-      id: placeId,
-      name: placeName,
-      detailAddress: placeAddress,
-      subCategory: placeCategory,
-      image: placeImage.isNotEmpty ? placeImage : null,
-      rating: null,
-    );
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
-      ),
-    );
+    if (placeId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('매장 정보를 불러올 수 없습니다.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    try {
+      // 🔥 로딩 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+          ),
+        ),
+      );
+
+      // 🔥 매장 상세 정보 API 호출 (이미지 포함)
+      print('🔍 [Normal Detail] 매장 상세 정보 조회 시작: $placeId');
+      final detailedRestaurant = await ApiService.getRestaurant(placeId);
+      print('✅ [Normal Detail] 매장 상세 정보 조회 완료: ${detailedRestaurant.image}');
+
+      if (!mounted) return;
+      Navigator.pop(context); // 로딩 닫기
+
+      // 🔥 API에서 받은 전체 정보로 Restaurant 객체 생성
+      final placeName =
+          place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
+      final placeAddress =
+          place['address'] as String? ??
+          place['detail_address'] as String? ??
+          '주소 정보 없음';
+      final placeCategory =
+          place['category'] as String? ??
+          place['sub_category'] as String? ??
+          category;
+
+      final restaurant = Restaurant(
+        id: placeId,
+        name: detailedRestaurant.name.isNotEmpty
+            ? detailedRestaurant.name
+            : placeName,
+        detailAddress: detailedRestaurant.detailAddress ?? placeAddress,
+        subCategory: detailedRestaurant.subCategory ?? placeCategory,
+        image: detailedRestaurant.image, // 🔥 API에서 받은 이미지 사용
+        phone: detailedRestaurant.phone,
+        rating: detailedRestaurant.rating,
+        businessHour: detailedRestaurant.businessHour,
+      );
+
+      print(
+        '🏪 [Normal Detail] Restaurant 객체 생성 완료: image = ${restaurant.image}',
+      );
+
+      // 🔥 상세 화면으로 이동
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // 로딩 닫기
+
+      print('❌ [Normal Detail] 매장 상세 화면 이동 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('매장 정보를 불러오는 데 실패했습니다: $e'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   IconData _iconForCategory(String category) {
@@ -454,4 +525,3 @@ class _ScheduleHistoryNormalDetailScreenState extends State<ScheduleHistoryNorma
     }
   }
 }
-

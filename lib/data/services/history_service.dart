@@ -318,12 +318,30 @@ class HistoryService {
 
       print('📍 최종 categories 데이터: $categories');
 
+      final scheduleTitle = categories
+          .map(
+            (c) => (c['category_name'] as String?)?.trim(),
+          )
+          .whereType<String>()
+          .where((name) => name.isNotEmpty)
+          .join(' → ');
+      print('📝 schedule_title: $scheduleTitle');
+
       final userId = TokenManager.userId;
       if (userId == null || userId.isEmpty) {
         throw Exception('로그인이 필요합니다. user_id 없음');
       }
 
       // 🔥 template_type을 문자열로 변환하여 전송
+      final Map<String, dynamic> requestBody = {
+        'template_type': templateType.toString(), // 🔥 0, 2 등
+        'category': categories,
+      };
+
+      if (scheduleTitle.isNotEmpty) {
+        requestBody['schedule_title'] = scheduleTitle;
+      }
+
       final response = await http
           .post(
             Uri.parse('$baseUrl/api/service/histories'),
@@ -331,10 +349,7 @@ class HistoryService {
               'Content-Type': 'application/json',
               ...TokenManager.jwtHeader,
             },
-            body: json.encode({
-              'template_type': templateType.toString(), // 🔥 0, 2 등
-              'category': categories,
-            }),
+            body: json.encode(requestBody),
           )
           .timeout(
             const Duration(seconds: 30),
@@ -502,7 +517,7 @@ class HistoryService {
       final scheduleTitle = places
           .map((p) => (p['category_name'] ?? p['name'] ?? '') as String)
           .where((s) => s.isNotEmpty)
-          .join(' → ');
+          .join(', ');
 
       final response = await http
           .post(
