@@ -4,13 +4,13 @@ import '../../shared/helpers/token_manager.dart';
 import '../../core/config/server_config.dart';
 
 class CommunityService {
-  static String get baseUrl => ServerConfig.baseUrl;
+  static String get communityUrl => ServerConfig.communityUrl;
 
   // 모든 글 조회 (커뮤니티 메인 접속)
-  static Future<Map<String, dynamic>> getAllPosts() async {
+  static Future<Map<String, dynamic>> getAllPosts({int page = 1}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/community'),
+        Uri.parse('$communityUrl/api/community/home/$page'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -32,7 +32,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> getSpecificPost(String query) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/community/post/$query'),
+        Uri.parse('$communityUrl/api/community/post/$query'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -54,7 +54,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> createPost(String userId, String title, String content) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/community/post'),
+        Uri.parse('$communityUrl/api/community/post'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -81,7 +81,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> deletePost(String postId, String userId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/community/post/$postId'),
+        Uri.parse('$communityUrl/api/community/post/$postId'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -104,7 +104,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> getMyPosts(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/community/post/me?user_id=$userId'),
+        Uri.parse('$communityUrl/api/community/post/me?user_id=$userId'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -126,7 +126,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> getComments(String postId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/community/$postId/comment'),
+        Uri.parse('$communityUrl/api/community/$postId/comment'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -148,7 +148,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> createComment(String postId, String userId, String content) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/community/$postId/comment'),
+        Uri.parse('$communityUrl/api/community/$postId/comment'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -174,7 +174,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> deleteComment(String postId, String commentId, String userId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/community/$postId/comment'),
+        Uri.parse('$communityUrl/api/community/$postId/comment'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -200,7 +200,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> getMyComments(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/community/comment/me?user_id=$userId'),
+        Uri.parse('$communityUrl/api/community/comment/me?user_id=$userId'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -222,7 +222,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> reportContent(String userId, String contentType, String contentId, String reason) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/community/report'),
+        Uri.parse('$communityUrl/api/community/report'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -250,7 +250,7 @@ class CommunityService {
   static Future<Map<String, dynamic>> getReportHistory(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/community/report?user_id=$userId'),
+        Uri.parse('$communityUrl/api/community/report?user_id=$userId'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
