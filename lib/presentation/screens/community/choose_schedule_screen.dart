@@ -1,5 +1,24 @@
 import 'package:flutter/material.dart';
 import 'create_post_screen.dart';
+import '../../../data/services/history_service.dart';
+import '../../../shared/helpers/token_manager.dart';
+import '../../../core/theme/app_theme.dart';
+
+class _ScheduleSummary {
+  final String historyId;
+  final String title;
+  final String dateText;
+  final List<String> categories;
+  final List<Map<String, dynamic>> places;
+
+  const _ScheduleSummary({
+    required this.historyId,
+    required this.title,
+    required this.dateText,
+    required this.categories,
+    required this.places,
+  });
+}
 
 class TodoListScreen extends StatefulWidget {
   const TodoListScreen({super.key});
@@ -9,65 +28,15 @@ class TodoListScreen extends StatefulWidget {
 }
 
 class _TodoListScreenState extends State<TodoListScreen> {
-  // 샘플 일정표 데이터 (실제로는 서버에서 가져올 데이터)
-  final List<Map<String, dynamic>> _todoList = [
-    {
-      'id': '1',
-      'title': '메가커피 노량진점 → 카츠진 → 영등포 CGV',
-      'date': '2024-01-15',
-      'time': '19:00',
-      'people': 2,
-      'categories': ['카페', '음식점', '콘텐츠'],
-      'description': '노량진 메가커피에서 시작해서 카츠진에서 저녁 먹고 영등포 CGV에서 영화 보기',
-      'schedule': [
-        {'place': '메가커피 노량진점', 'activity': '커피 마시며 대화'},
-        {'place': '카츠진', 'activity': '일식 저녁 식사'},
-        {'place': '영등포 CGV', 'activity': '영화 관람'},
-      ],
-    },
-    {
-      'id': '2',
-      'title': '홍대 스타벅스 → 망원시장 → 홍대 클럽',
-      'date': '2024-01-16',
-      'time': '18:30',
-      'people': 3,
-      'categories': ['카페', '음식점', '콘텐츠'],
-      'description': '홍대 스타벅스에서 만나서 망원시장에서 간식 먹고 홍대 클럽에서 놀기',
-      'schedule': [
-        {'place': '홍대 스타벅스', 'activity': '커피와 간단한 대화'},
-        {'place': '망원시장', 'activity': '길거리 음식과 쇼핑'},
-        {'place': '홍대 클럽', 'activity': '클럽에서 춤과 음악'},
-      ],
-    },
-    {
-      'id': '3',
-      'title': '강남 이마트 → 코엑스 아쿠아리움 → 봉은사',
-      'date': '2024-01-17',
-      'time': '14:00',
-      'people': 1,
-      'categories': ['콘텐츠'],
-      'description': '강남 이마트에서 쇼핑하고 코엑스 아쿠아리움 구경한 후 봉은사에서 산책',
-      'schedule': [
-        {'place': '강남 이마트', 'activity': '생활용품 쇼핑'},
-        {'place': '코엑스 아쿠아리움', 'activity': '수족관 관람'},
-        {'place': '봉은사', 'activity': '절에서 산책과 명상'},
-      ],
-    },
-    {
-      'id': '4',
-      'title': '잠실 롯데월드 → 잠실 래미안 → 송파구청',
-      'date': '2024-01-20',
-      'time': '09:00',
-      'people': 4,
-      'categories': ['콘텐츠'],
-      'description': '잠실 롯데월드에서 놀이기구 타고 잠실 래미안에서 쇼핑 후 송파구청에서 공원 산책',
-      'schedule': [
-        {'place': '잠실 롯데월드', 'activity': '놀이기구와 어트랙션'},
-        {'place': '잠실 래미안', 'activity': '쇼핑몰에서 쇼핑'},
-        {'place': '송파구청', 'activity': '공원에서 산책과 휴식'},
-      ],
-    },
-  ];
+  bool _isLoading = false;
+  String? _errorMessage;
+  List<_ScheduleSummary> _schedules = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSchedules();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,16 +66,69 @@ class _TodoListScreenState extends State<TodoListScreen> {
           ),
         ),
       ),
-      body: _todoList.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _todoList.length,
-              itemBuilder: (context, index) {
-                final todo = _todoList[index];
-                return _buildTodoCard(todo);
-              },
-            ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFFFF8126)),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.red[400],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textSecondaryColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadSchedules,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF8126),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('다시 시도'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_schedules.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadSchedules,
+      color: const Color(0xFFFF8126),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _schedules.length,
+        itemBuilder: (context, index) {
+          final schedule = _schedules[index];
+          return _buildTodoCard(schedule);
+        },
+      ),
     );
   }
 
@@ -142,7 +164,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
     );
   }
 
-  Widget _buildTodoCard(Map<String, dynamic> todo) {
+  Widget _buildTodoCard(_ScheduleSummary todo) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -185,7 +207,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                 
                 // 제목
                 Text(
-                  todo['title'],
+                  todo.title,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -204,21 +226,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      todo['date'],
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.people,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${todo['people']}명',
+                      todo.dateText,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -231,32 +239,57 @@ class _TodoListScreenState extends State<TodoListScreen> {
                 // 카테고리 (카페, 음식점, 콘텐츠만 표시)
                 Wrap(
                   spacing: 6,
-                  children: (todo['categories'] as List<String>)
-                      .where((category) => ['카페', '음식점', '콘텐츠'].contains(category))
-                      .map((category) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF8126).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        category,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFFFF8126),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                  runSpacing: 4,
+                  children: todo.categories.isEmpty
+                      ? [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF8126).withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              '일정',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFFFF8126),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ]
+                      : todo.categories
+                          .map(
+                            (category) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF8126).withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                category,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFFFF8126),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
                 ),
                 const SizedBox(height: 8),
                 
                 // 일정 정보
-                if (todo['schedule'] != null) ...[
+                if (todo.places.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  ...(todo['schedule'] as List<Map<String, dynamic>>).map((scheduleItem) {
+                  ...todo.places.map((scheduleItem) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(
@@ -274,7 +307,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              scheduleItem['place'],
+                              scheduleItem['place'] ?? '',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey[600],
@@ -297,11 +330,236 @@ class _TodoListScreenState extends State<TodoListScreen> {
     );
   }
 
-  void _navigateToWritePost(Map<String, dynamic> selectedTodo) {
+  void _navigateToWritePost(_ScheduleSummary selectedTodo) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => CreatePostScreen(selectedTodo: selectedTodo),
+        builder: (context) => CreatePostScreen(
+          selectedTodo: {
+            'historyId': selectedTodo.historyId,
+            'title': selectedTodo.title,
+            'date': selectedTodo.dateText,
+            'categories': selectedTodo.categories,
+            'schedule': selectedTodo.places,
+          },
+        ),
       ),
     );
   }
+
+  Future<void> _loadSchedules() async {
+    final userId = TokenManager.userId;
+    if (userId == null || userId.isEmpty) {
+      setState(() {
+        _errorMessage = '로그인이 필요합니다.';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await HistoryService.getMyHistory(userId);
+      final historyItems = _extractHistoryItems(response);
+
+      final List<_ScheduleSummary> schedules = [];
+
+      for (final history in historyItems) {
+        try {
+          final detail = await HistoryService.getHistoryDetail(
+            userId,
+            history.historyId,
+          );
+          final parsed = _parseDetail(history, detail);
+          schedules.add(parsed);
+        } catch (e) {
+          print('❌ 일정 상세 조회 실패 (${history.historyId}): $e');
+          schedules.add(_fallbackSummary(history));
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _schedules = schedules;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '일정표를 불러오는 중 오류가 발생했습니다.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  _ScheduleSummary _parseDetail(_HistoryListItem history, Map<String, dynamic> detail) {
+    final data = detail['data'] ?? detail;
+    final categories = (data['categories'] as List<dynamic>? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .toList();
+
+    final places = <Map<String, dynamic>>[];
+    final categoryTags = <String>{};
+
+    for (final category in categories) {
+      final name = (category['category_name'] ??
+              category['name'] ??
+              category['title'])
+          ?.toString()
+          .trim();
+      if (name != null && name.isNotEmpty) {
+        places.add({'place': name});
+      }
+
+      final type = _mapCategoryType(category['category_type']);
+      if (type != null) {
+        categoryTags.add(type);
+      }
+    }
+
+    if (places.isEmpty && history.title.isNotEmpty) {
+      final segments = history.title.split('→').map((e) => e.trim()).where((e) => e.isNotEmpty);
+      for (final segment in segments) {
+        places.add({'place': segment});
+      }
+    }
+
+    return _ScheduleSummary(
+      historyId: history.historyId,
+      title: history.title.isNotEmpty
+          ? history.title
+          : places.map((e) => e['place']).whereType<String>().join(' → '),
+      dateText: history.dateText,
+      categories: _sortCategories(categoryTags),
+      places: places,
+    );
+  }
+
+  String? _mapCategoryType(dynamic rawType) {
+    int type = 0;
+    if (rawType is int) {
+      type = rawType;
+    } else if (rawType is String) {
+      type = int.tryParse(rawType) ?? 0;
+    }
+
+    switch (type) {
+      case 0:
+        return '음식점';
+      case 1:
+        return '카페';
+      case 2:
+        return '콘텐츠';
+      default:
+        return null;
+    }
+  }
+
+  List<_HistoryListItem> _extractHistoryItems(Map<String, dynamic> response) {
+    List<dynamic> data =
+        response['data'] as List<dynamic>? ??
+        response['histories'] as List<dynamic>? ??
+        response['items'] as List<dynamic>? ??
+        response['history'] as List<dynamic>? ??
+        [];
+
+    if (data.isEmpty) {
+      for (final value in response.values) {
+        if (value is List && value.isNotEmpty) {
+          data = value;
+          break;
+        }
+      }
+    }
+
+    final List<_HistoryListItem> items = [];
+
+    for (final item in data) {
+      if (item is! Map<String, dynamic>) continue;
+      final map = item;
+
+      final id = map['id']?.toString() ??
+          map['history_id']?.toString() ??
+          map['merge_history_id']?.toString();
+      if (id == null || id.isEmpty) continue;
+
+      final title = map['categories_name']?.toString() ??
+          map['category_name']?.toString() ??
+          map['name']?.toString() ??
+          '';
+
+      final date = _formatDate(
+        map['visited_at']?.toString() ??
+            map['date']?.toString() ??
+            '',
+      );
+
+      items.add(_HistoryListItem(
+        historyId: id,
+        title: title,
+        dateText: date,
+      ));
+    }
+
+    return items;
+  }
+
+  String _formatDate(String raw) {
+    if (raw.isEmpty) return '';
+    String datePart = raw;
+    if (raw.contains('T')) {
+      datePart = raw.split('T').first;
+    } else if (raw.contains(' ')) {
+      datePart = raw.split(' ').first;
+    }
+    return datePart;
+  }
+
+  List<String> _sortCategories(Set<String> categories) {
+    if (categories.isEmpty) return [];
+    const order = ['카페', '음식점', '콘텐츠'];
+    final ordered = <String>[];
+    for (final name in order) {
+      if (categories.contains(name)) {
+        ordered.add(name);
+      }
+    }
+    final others = categories
+        .where((c) => !order.contains(c))
+        .toList()
+      ..sort();
+    return [...ordered, ...others];
+  }
+
+  _ScheduleSummary _fallbackSummary(_HistoryListItem history) {
+    final places = history.title
+        .split('→')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .map((name) => {'place': name})
+        .toList();
+
+    return _ScheduleSummary(
+      historyId: history.historyId,
+      title: history.title,
+      dateText: history.dateText,
+      categories: const [],
+      places: places,
+    );
+  }
+}
+
+class _HistoryListItem {
+  final String historyId;
+  final String title;
+  final String dateText;
+
+  const _HistoryListItem({
+    required this.historyId,
+    required this.title,
+    required this.dateText,
+  });
 }

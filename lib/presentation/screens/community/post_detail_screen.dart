@@ -29,10 +29,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   late Future<_PostDetailData> _detailFuture;
   final TextEditingController _commentController = TextEditingController();
   bool _isSubmittingComment = false;
+  Map<String, dynamic>? _currentPost;
 
   @override
   void initState() {
     super.initState();
+    _currentPost = Map<String, dynamic>.from(widget.post);
     _detailFuture = _loadPostDetail();
   }
 
@@ -66,22 +68,45 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.black87),
             onSelected: (String value) {
-              if (value == 'report') {
-                _showReportDialog();
+              switch (value) {
+                case 'delete':
+                  _confirmDeletePost();
+                  break;
+                case 'report':
+                  _showReportDialog();
+                  break;
               }
             },
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<String>(
-                value: 'report',
-                child: Row(
-                  children: [
-                    Icon(Icons.report, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
-                    Text('게시글 신고하기'),
-                  ],
+            itemBuilder: (BuildContext context) {
+              final isMyPost = _isMyPost();
+              if (isMyPost) {
+                return [
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                        SizedBox(width: 8),
+                        Text('게시글 삭제하기'),
+                      ],
+                    ),
+                  ),
+                ];
+              }
+
+              return [
+                const PopupMenuItem<String>(
+                  value: 'report',
+                  child: Row(
+                    children: [
+                      Icon(Icons.report, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text('게시글 신고하기'),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ];
+            },
           ),
         ],
         bottom: PreferredSize(
@@ -579,6 +604,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       final rawComments = _extractComments(response['comments'] ?? response);
       final comments = rawComments.map(_normalizeComment).toList();
       normalizedPost['commentCount'] = comments.length;
+      _currentPost = normalizedPost;
       return _PostDetailData(
         post: normalizedPost,
         comments: comments,
@@ -618,6 +644,20 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final id = _resolvePostId();
     if (id == null) return null;
     return int.tryParse(id);
+  }
+
+  bool _isMyPost() {
+    final post = _latestPostData();
+    final postUserId = post?['userId'] ?? post?['user_id'];
+    final currentUserId = TokenManager.userId;
+    if (postUserId == null || currentUserId == null) {
+      return false;
+    }
+    return postUserId.toString() == currentUserId.toString();
+  }
+
+  Map<String, dynamic>? _latestPostData() {
+    return _currentPost ?? widget.post;
   }
 
   int? _commentCountFromPost(Map<String, dynamic> post) {
@@ -911,6 +951,39 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       );
     } catch (e) {
       _showSnackBar('신고에 실패했습니다. 다시 시도해주세요.');
+    }
+  }
+
+  void _confirmDeletePost() {
+    CommonDialogs.showConfirmation(
+      context: context,
+      title: '게시글 삭제',
+      content: '게시글을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      confirmButtonColor: Colors.red,
+      onConfirm: _deletePost,
+    );
+  }
+
+  Future<void> _deletePost() async {
+    final postIdInt = _resolvePostIdAsInt();
+    final userId = TokenManager.userId;
+
+    if (postIdInt == null || userId == null) {
+      _showSnackBar('게시글 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      await CommunityService.deletePost(postIdInt, userId);
+      if (!mounted) return;
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '게시글이 삭제되었습니다.',
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      _showSnackBar('게시글 삭제에 실패했습니다. 다시 시도해주세요.');
     }
   }
 
