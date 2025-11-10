@@ -511,6 +511,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
         routeResults: routeResults, // 🔥 실제 경로 정보 전달
         firstDurationMinutes: widget.firstDurationMinutes,
         otherDurationMinutes: widget.otherDurationMinutes,
+        templateType: 1,
       );
 
       if (!mounted) return;
