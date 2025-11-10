@@ -159,8 +159,10 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen>
               // 0: "그냥" 탭, 나머지는 일정표 템플릿으로 분류
               isScheduleType = parsedInt != 0;
             } else {
-              final String t =
-                  templateTypeValue.toString().trim().toLowerCase();
+              final String t = templateTypeValue
+                  .toString()
+                  .trim()
+                  .toLowerCase();
               if (t == 'just' || t == 'other') {
                 isScheduleType = false;
               } else {
@@ -204,23 +206,27 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen>
     }
   }
 
-  /// 날짜 형식 변환 (YYYY-MM-DD 또는 ISO 형식 -> YYYY.MM.DD)
+  /// 날짜 형식 변환 (ISO 형식 -> YYYY.MM.DD HH:mm)
   String _formatDate(String dateStr) {
     if (dateStr.isEmpty) return '';
     try {
-      // ISO 형식 (2025-11-05T00:00:00)에서 날짜 부분만 추출
-      String datePart = dateStr;
+      DateTime dateTime;
+
+      // ISO 형식 또는 다양한 날짜 형식 파싱
       if (dateStr.contains('T')) {
-        datePart = dateStr.split('T')[0];
+        // ISO 형식: 2025-11-05T15:30:45 또는 2025-11-05T15:30:45.000Z
+        dateTime = DateTime.parse(dateStr);
       } else if (dateStr.contains(' ')) {
-        datePart = dateStr.split(' ')[0];
+        // 공백 포함 형식: 2025-11-05 15:30:45
+        dateTime = DateTime.parse(dateStr);
+      } else {
+        // 날짜만 있는 경우: 2025-11-05
+        dateTime = DateTime.parse(dateStr);
       }
 
-      // YYYY-MM-DD 형식을 YYYY.MM.DD로 변환
-      if (datePart.contains('-')) {
-        return datePart.replaceAll('-', '.');
-      }
-      return datePart;
+      // YYYY.MM.DD HH:mm 형식으로 변환 (초 제외)
+      return '${dateTime.year}.${dateTime.month.toString().padLeft(2, '0')}.${dateTime.day.toString().padLeft(2, '0')} '
+          '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return dateStr;
     }
