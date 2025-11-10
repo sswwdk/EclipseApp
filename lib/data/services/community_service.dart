@@ -51,7 +51,7 @@ class CommunityService {
   }
 
   // 글 작성
-  static Future<Map<String, dynamic>> createPost(String userId, String title, String content) async {
+  static Future<String> createPost(String title, String content, String mergeHistoryId) async {
     try {
       final response = await http.post(
         Uri.parse('$communityUrl/api/community/post'),
@@ -60,9 +60,9 @@ class CommunityService {
           ...TokenManager.jwtHeader,
         },
         body: json.encode({
-          'user_id': userId,
           'title': title,
-          'content': content,
+          'body': content,
+          'merge_history_id': mergeHistoryId,
         }),
       );
 
@@ -78,15 +78,18 @@ class CommunityService {
   }
 
   // 글 삭제
-  static Future<Map<String, dynamic>> deletePost(String postId, String userId) async {
+  static Future<String> deletePost(int postId, String userId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$communityUrl/api/community/post/$postId'),
+        Uri.parse('$communityUrl/api/community/post'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
-        body: json.encode({'user_id': userId}),
+        body: json.encode({
+          'post_id': postId,
+          'user_id': userId,
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -171,10 +174,10 @@ class CommunityService {
   }
 
   // 댓글 삭제
-  static Future<Map<String, dynamic>> deleteComment(String postId, String commentId, String userId) async {
+  static Future<String> deleteComment(String postId, String commentId, String userId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$communityUrl/api/community/$postId/comment'),
+        Uri.parse('$communityUrl/api/community/comment'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -182,6 +185,7 @@ class CommunityService {
         body: json.encode({
           'comment_id': commentId,
           'user_id': userId,
+          'post_id': postId,
         }),
       );
 
