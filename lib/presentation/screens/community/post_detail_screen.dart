@@ -3,6 +3,7 @@ import 'chat_screen.dart';
 import '../../widgets/common_dialogs.dart';
 import '../../../data/services/community_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/helpers/token_manager.dart';
 
 class _PostDetailData {
   final Map<String, dynamic> post;
@@ -331,9 +332,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final nickname = (comment['nickname'] ?? '익명 사용자').toString();
     final timeAgo = (comment['timeAgo'] ?? '방금 전').toString();
     final content = (comment['content'] ?? '').toString();
-    final likes = comment['likes'] is int
-        ? comment['likes'] as int
-        : int.tryParse(comment['likes']?.toString() ?? '') ?? 0;
+    final commentUserId = comment['userId']?.toString();
+    final currentUserId = TokenManager.userId;
+    final isOwnComment =
+        currentUserId != null && commentUserId != null && commentUserId == currentUserId;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -380,23 +382,34 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ],
                 ),
               ),
-              // 좋아요 버튼
-              Row(
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    color: Colors.grey[400],
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$likes',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert,
+                  color: Colors.grey[500],
+                  size: 18,
+                ),
+                onSelected: (value) => _onCommentMenuSelected(value, comment),
+                itemBuilder: (context) {
+                  final items = <PopupMenuEntry<String>>[];
+
+                  if (isOwnComment) {
+                    items.add(
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Text('댓글 삭제'),
+                      ),
+                    );
+                  } else {
+                    items.add(
+                      const PopupMenuItem<String>(
+                        value: 'report',
+                        child: Text('댓글 신고하기'),
+                      ),
+                    );
+                  }
+
+                  return items;
+                },
               ),
             ],
           ),
@@ -758,6 +771,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         raw['writer'] ??
         raw['member'];
 
+    final userId = _firstNonEmptyString([
+      raw['user_id'],
+      raw['userId'],
+      raw['author_id'],
+      raw['writer_id'],
+      if (userData is Map<String, dynamic>) ...[
+        userData['user_id'],
+        userData['id'],
+      ],
+    ]);
+
     final nickname = _firstNonEmptyString([
           raw['user_nickname'],
           raw['userNickname'],
@@ -821,8 +845,96 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       'timeAgo': timeDisplay,
       'content': content,
       'likes': likeCount,
+      'userId': userId,
       'raw': raw,
     };
+  }
+
+  void _onCommentMenuSelected(String action, Map<String, dynamic> comment) {
+    switch (action) {
+      case 'delete':
+        _confirmDeleteComment(comment);
+        break;
+      case 'report':
+        _confirmReportComment(comment);
+        break;
+    }
+  }
+
+  void _confirmDeleteComment(Map<String, dynamic> comment) {
+    CommonDialogs.showConfirmation(
+      context: context,
+      title: '댓글 삭제',
+      content: '댓글을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      confirmButtonColor: Colors.red,
+      onConfirm: () => _deleteComment(comment),
+    );
+  }
+
+  Future<void> _deleteComment(Map<String, dynamic> comment) async {
+    final postId = _resolvePostId();
+    final commentId = comment['commentId']?.toString();
+    final userId = TokenManager.userId;
+
+    if (postId == null || commentId == null || commentId.isEmpty || userId == null) {
+      _showSnackBar('댓글 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      await CommunityService.deleteComment(postId, commentId, userId);
+      if (!mounted) return;
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '댓글이 삭제되었습니다.',
+      );
+      setState(() {
+        _detailFuture = _loadPostDetail();
+      });
+    } catch (e) {
+      _showSnackBar('댓글 삭제에 실패했습니다. 다시 시도해주세요.');
+    }
+  }
+
+  void _confirmReportComment(Map<String, dynamic> comment) {
+    CommonDialogs.showReportConfirmation(
+      context: context,
+      title: '댓글 신고하기',
+      content: '해당 댓글을 신고하시겠습니까?',
+      onConfirm: () => _reportComment(comment),
+    );
+  }
+
+  Future<void> _reportComment(Map<String, dynamic> comment) async {
+    final userId = TokenManager.userId;
+    final commentId = comment['commentId']?.toString();
+
+    if (userId == null) {
+      _showSnackBar('로그인이 필요합니다.');
+      return;
+    }
+
+    if (commentId == null || commentId.isEmpty) {
+      _showSnackBar('댓글 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      await CommunityService.reportContent(
+        userId,
+        'comment',
+        commentId,
+        '부적절한 댓글 신고',
+      );
+      if (!mounted) return;
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '신고가 접수되었습니다.',
+      );
+    } catch (e) {
+      _showSnackBar('신고에 실패했습니다. 다시 시도해주세요.');
+    }
   }
 
   String? _firstNonEmptyString(List<dynamic> values) {
