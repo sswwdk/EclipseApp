@@ -146,20 +146,32 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen>
             templateType: templateType, // 🔥 추가
           );
 
-          bool isScheduleType =
-              !(itemMap.containsKey('schedule_title') ||
-                  itemMap.containsKey('places'));
-
+          bool isScheduleType;
           if (templateTypeValue != null) {
-            final String t = templateTypeValue.toString().trim().toLowerCase();
-            if (t == '0' ||
-                t == '2' ||
-                t == 'default' ||
-                t == 'travel_planning') {
-              isScheduleType = true;
-            } else if (t == '1' || t == 'just' || t == 'other') {
-              isScheduleType = false;
+            int? parsedInt;
+            if (templateTypeValue is int) {
+              parsedInt = templateTypeValue;
+            } else if (templateTypeValue is String) {
+              parsedInt = int.tryParse(templateTypeValue);
             }
+
+            if (parsedInt != null) {
+              // 0: "그냥" 탭, 나머지는 일정표 템플릿으로 분류
+              isScheduleType = parsedInt != 0;
+            } else {
+              final String t =
+                  templateTypeValue.toString().trim().toLowerCase();
+              if (t == 'just' || t == 'other') {
+                isScheduleType = false;
+              } else {
+                isScheduleType = true;
+              }
+            }
+          } else {
+            // 템플릿 타입 정보가 없으면 기존 휴리스틱 사용
+            isScheduleType =
+                !(itemMap.containsKey('schedule_title') ||
+                    itemMap.containsKey('places'));
           }
 
           if (isScheduleType) {
