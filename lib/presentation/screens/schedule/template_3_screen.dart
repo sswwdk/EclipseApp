@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../data/services/route_service.dart';
 import '../../../data/services/history_service.dart';
 import '../../../data/services/service_api.dart';
+import '../../../data/models/restaurant.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../main/main_screen.dart';
+import '../main/restaurant_detail_screen.dart';
 import '../../widgets/common_dialogs.dart';
 
 class Template3Screen extends StatefulWidget {
@@ -422,6 +424,7 @@ class _Template3ScreenState extends State<Template3Screen> {
             children: [
               for (int i = 0; i < _stops.length; i++) ...[
                 _buildTimelineStop(
+                  context,
                   _stops[i],
                   i == 0,
                   i == _stops.length - 1,
@@ -458,6 +461,7 @@ class _Template3ScreenState extends State<Template3Screen> {
   }
 
   Widget _buildTimelineStop(
+    BuildContext context,
     _TimelineStop stop,
     bool isFirst,
     bool isLast,
@@ -466,92 +470,197 @@ class _Template3ScreenState extends State<Template3Screen> {
     TextTheme textTheme,
     double width,
   ) {
+    final bool isClickable =
+        stop.placeId != null && stop.placeId!.isNotEmpty;
+
     return SizedBox(
       width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 카테고리 영역 (고정 높이 30px + 마진 12px = 42px)
-          SizedBox(
-            height: 42,
-            child: stop.category != null && stop.category!.trim().isNotEmpty
-                ? Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      stop.category!,
-                      style: textTheme.labelMedium?.copyWith(
-                        color: accentColor,
-                        fontWeight: FontWeight.bold,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: isClickable ? () => _handleStopTap(stop) : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 카테고리 영역 (고정 높이 30px + 마진 12px = 42px)
+            SizedBox(
+              height: 42,
+              child: stop.category != null && stop.category!.trim().isNotEmpty
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: accentColor, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: accentColor.withOpacity(0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+                      child: Text(
+                        stop.category!,
+                        style: textTheme.labelMedium?.copyWith(
+                          color: accentColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
-            child: Icon(
-              stop.icon,
-              size: 30,
-              color: accentColor,
-            ),
-          ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF0F4),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: accentColor.withOpacity(0.15),
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: accentColor, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: accentColor.withOpacity(0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Icon(
+                stop.icon,
+                size: 30,
+                color: accentColor,
               ),
             ),
-            child: Column(
-              children: [
-                Text(
-                  stop.title,
-                  style: textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF4E4A4A),
-                  ),
-                  textAlign: TextAlign.center,
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF0F4),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: accentColor.withOpacity(0.15),
                 ),
-                if (stop.subtitle != null && stop.subtitle!.trim().isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      stop.subtitle!,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                        height: 1.3,
-                      ),
-                      textAlign: TextAlign.center,
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    stop.title,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF4E4A4A),
                     ),
+                    textAlign: TextAlign.center,
                   ),
-              ],
+                  if (stop.subtitle != null && stop.subtitle!.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        stop.subtitle!,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                          height: 1.3,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  void _handleStopTap(_TimelineStop stop) {
+    final restaurant = _buildRestaurantFromStop(stop);
+    if (restaurant == null) {
+      CommonDialogs.showError(
+        context: context,
+        message: '매장 정보를 불러올 수 없습니다.',
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RestaurantDetailScreen(restaurant: restaurant),
+      ),
+    );
+  }
+
+  Restaurant? _buildRestaurantFromStop(_TimelineStop stop) {
+    final placeId = stop.placeId;
+    if (placeId == null || placeId.isEmpty) {
+      return null;
+    }
+
+    final Map<String, dynamic>? data = stop.placeData;
+    final Map<String, dynamic>? nestedData =
+        data?['data'] is Map<String, dynamic> ? (data!['data'] as Map<String, dynamic>) : null;
+
+    String? detailAddress = stop.subtitle;
+    detailAddress ??= _stringFromDynamic(data?['detail_address']) ??
+        _stringFromDynamic(data?['address']) ??
+        _stringFromDynamic(nestedData?['detail_address']) ??
+        _stringFromDynamic(nestedData?['address']);
+
+    final String? subCategory = _stringFromDynamic(data?['category']) ??
+        _stringFromDynamic(data?['sub_category']) ??
+        (stop.category?.trim().isNotEmpty == true ? stop.category : null);
+
+    final String? image = _stringFromDynamic(data?['image_url']) ??
+        _stringFromDynamic(data?['image']) ??
+        _stringFromDynamic(nestedData?['image_url']) ??
+        _stringFromDynamic(nestedData?['image']);
+
+    final String? latitude = _stringFromDynamic(
+          data?['latitude'] ?? data?['lat'],
+        ) ??
+        _stringFromDynamic(nestedData?['latitude'] ?? nestedData?['lat']);
+    final String? longitude = _stringFromDynamic(
+          data?['longitude'] ?? data?['lng'],
+        ) ??
+        _stringFromDynamic(nestedData?['longitude'] ?? nestedData?['lng']);
+
+    final String? phone = _stringFromDynamic(data?['phone']) ??
+        _stringFromDynamic(nestedData?['phone']);
+    final String? businessHour = _stringFromDynamic(data?['business_hour']) ??
+        _stringFromDynamic(nestedData?['business_hour']);
+    final String? type = _stringFromDynamic(data?['type']) ??
+        _stringFromDynamic(nestedData?['type']);
+
+    final double? rating =
+        _doubleFromDynamic(data?['rating']) ?? _doubleFromDynamic(nestedData?['rating']);
+
+    return Restaurant(
+      id: placeId,
+      name: stop.title,
+      detailAddress: detailAddress,
+      subCategory: subCategory,
+      businessHour: businessHour,
+      phone: phone,
+      type: type,
+      image: image,
+      latitude: latitude,
+      longitude: longitude,
+      rating: rating,
+    );
+  }
+
+  String? _stringFromDynamic(dynamic value) {
+    if (value == null) return null;
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty || trimmed == 'null') {
+        return null;
+      }
+      return trimmed;
+    }
+    final stringified = value.toString().trim();
+    if (stringified.isEmpty || stringified == 'null') {
+      return null;
+    }
+    return stringified;
+  }
+
+  double? _doubleFromDynamic(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 
   Widget _buildTransportSelector(
@@ -1036,19 +1145,21 @@ class _Template3ScreenState extends State<Template3Screen> {
 
     if (widget.orderedPlaces != null && widget.orderedPlaces!.isNotEmpty) {
       stops = widget.orderedPlaces!
-          .map(
-            (place) => _TimelineStop(
-              title: (place['name'] as String?)?.trim().isNotEmpty == true
-                  ? (place['name'] as String).trim()
-                  : '알 수 없는 장소',
-              subtitle: _extractSubtitle(place),
-              category: (place['category'] as String?)?.trim(),
+          .map((place) {
+            final placeMap = Map<String, dynamic>.from(place as Map);
+            final title = (placeMap['name'] as String?)?.trim();
+            return _TimelineStop(
+              title: title != null && title.isNotEmpty ? title : '알 수 없는 장소',
+              subtitle: _extractSubtitle(placeMap),
+              category: (placeMap['category'] as String?)?.trim(),
               icon: _resolveIcon(
-                place['name'] as String? ?? '',
-                place['category'] as String?,
+                placeMap['name'] as String? ?? '',
+                placeMap['category'] as String?,
               ),
-            ),
-          )
+              placeId: _stringFromDynamic(placeMap['id']),
+              placeData: placeMap,
+            );
+          })
           .toList();
     } else if (widget.selectedPlacesWithData != null &&
         widget.selectedPlacesWithData!.isNotEmpty) {
@@ -1056,15 +1167,18 @@ class _Template3ScreenState extends State<Template3Screen> {
       stops = [];
       widget.selectedPlacesWithData!.forEach((category, placeList) {
         for (final place in placeList) {
-          final title = (place['name'] as String?)?.trim() ?? '';
+          final placeMap = Map<String, dynamic>.from(place as Map);
+          final title = (placeMap['name'] as String?)?.trim() ?? '';
           if (title.isEmpty || visited.contains(title)) continue;
           visited.add(title);
           stops.add(
             _TimelineStop(
               title: title,
-              subtitle: _extractSubtitle(place),
+              subtitle: _extractSubtitle(placeMap),
               category: category,
               icon: _resolveIcon(title, category),
+              placeId: _stringFromDynamic(placeMap['id']),
+              placeData: placeMap,
             ),
           );
         }
@@ -1327,12 +1441,16 @@ class _TimelineStop {
   final String? subtitle;
   final String? category;
   final IconData icon;
+  final String? placeId;
+  final Map<String, dynamic>? placeData;
 
   const _TimelineStop({
     required this.title,
-    required this.subtitle,
-    required this.category,
+    this.subtitle,
+    this.category,
     required this.icon,
+    this.placeId,
+    this.placeData,
   });
 }
 

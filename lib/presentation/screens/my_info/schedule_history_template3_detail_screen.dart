@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../data/services/history_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
+import '../../../data/models/restaurant.dart';
+import '../main/restaurant_detail_screen.dart';
 
 class ScheduleHistoryTemplate3DetailScreen extends StatefulWidget {
   final String historyId;
@@ -149,6 +151,10 @@ class _ScheduleHistoryTemplate3DetailScreenState
         }
       }
 
+      final placeId = _stringFromDynamic(category['category_id']) ??
+          _stringFromDynamic(category['categoryId']) ??
+          _stringFromDynamic(category['id']);
+
       stops.add(
         _TimelineStop(
           title: categoryName,
@@ -156,6 +162,8 @@ class _ScheduleHistoryTemplate3DetailScreenState
           category: categoryType,
           icon: _iconFor(categoryType),
           durationMinutes: durationMinutes,
+          placeId: placeId,
+          placeData: category,
         ),
       );
 
@@ -537,6 +545,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
             children: [
               for (int i = 0; i < _stops.length; i++) ...[
                 _buildTimelineStop(
+                  context,
                   _stops[i],
                   i == 0,
                   i == _stops.length - 1,
@@ -574,6 +583,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
   }
 
   Widget _buildTimelineStop(
+    BuildContext context,
     _TimelineStop stop,
     bool isFirst,
     bool isLast,
@@ -582,96 +592,190 @@ class _ScheduleHistoryTemplate3DetailScreenState
     TextTheme textTheme,
     double width,
   ) {
+    final bool isClickable =
+        stop.placeId != null && stop.placeId!.isNotEmpty;
+
     return SizedBox(
       width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 카테고리 영역 (고정 높이 30px + 마진 12px = 42px)
-          SizedBox(
-            height: 42,
-            child: stop.category != null && stop.category!.trim().isNotEmpty
-                ? Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      stop.category!,
-                      style: textTheme.labelMedium?.copyWith(
-                        color: accentColor,
-                        fontWeight: FontWeight.bold,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: isClickable ? () => _handleStopTap(stop) : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 카테고리 영역 (고정 높이 30px + 마진 12px = 42px)
+            SizedBox(
+              height: 42,
+              child: stop.category != null && stop.category!.trim().isNotEmpty
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: accentColor, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: accentColor.withOpacity(0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+                      child: Text(
+                        stop.category!,
+                        style: textTheme.labelMedium?.copyWith(
+                          color: accentColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
-            child: Icon(
-              stop.icon,
-              size: 30,
-              color: accentColor,
-            ),
-          ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF0F4),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: accentColor.withOpacity(0.15),
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: accentColor, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: accentColor.withOpacity(0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Icon(
+                stop.icon,
+                size: 30,
+                color: accentColor,
               ),
             ),
-            child: Column(
-              children: [
-                Text(
-                  stop.title,
-                  style: textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF4E4A4A),
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF0F4),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: accentColor.withOpacity(0.15),
                 ),
-                if (stop.subtitle != null && stop.subtitle!.trim().isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      stop.subtitle!,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                        height: 1.3,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    stop.title,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF4E4A4A),
                     ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  if (stop.subtitle != null && stop.subtitle!.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        stop.subtitle!,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                          height: 1.3,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  void _handleStopTap(_TimelineStop stop) {
+    final restaurant = _buildRestaurantFromStop(stop);
+    if (restaurant == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('매장 정보를 불러올 수 없습니다.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RestaurantDetailScreen(restaurant: restaurant),
+      ),
+    );
+  }
+
+  Restaurant? _buildRestaurantFromStop(_TimelineStop stop) {
+    final placeId = stop.placeId;
+    if (placeId == null || placeId.isEmpty) {
+      return null;
+    }
+
+    final Map<String, dynamic>? data =
+        stop.placeData is Map<String, dynamic> ? stop.placeData : null;
+
+    String? detailAddress = stop.subtitle;
+    detailAddress ??= _stringFromDynamic(data?['category_detail_address']) ??
+        _stringFromDynamic(data?['detail_address']) ??
+        _stringFromDynamic(data?['address']);
+
+    final String? subCategory = _stringFromDynamic(data?['category']) ??
+        _stringFromDynamic(data?['sub_category']) ??
+        (stop.category?.trim().isNotEmpty == true ? stop.category : null);
+
+    final String? image = _stringFromDynamic(data?['image_url']) ??
+        _stringFromDynamic(data?['image']);
+    final String? phone = _stringFromDynamic(data?['phone']);
+    final String? businessHour = _stringFromDynamic(data?['business_hour']);
+    final String? type = _stringFromDynamic(data?['type']);
+    final double? rating = _doubleFromDynamic(data?['rating']);
+
+    final String? latitude =
+        _stringFromDynamic(data?['latitude']) ?? _stringFromDynamic(data?['lat']);
+    final String? longitude =
+        _stringFromDynamic(data?['longitude']) ?? _stringFromDynamic(data?['lng']);
+
+    return Restaurant(
+      id: placeId,
+      name: stop.title,
+      detailAddress: detailAddress,
+      subCategory: subCategory,
+      businessHour: businessHour,
+      phone: phone,
+      type: type,
+      image: image,
+      latitude: latitude,
+      longitude: longitude,
+      rating: rating,
+    );
+  }
+
+  String? _stringFromDynamic(dynamic value) {
+    if (value == null) return null;
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty || trimmed == 'null') {
+        return null;
+      }
+      return trimmed;
+    }
+    final stringified = value.toString().trim();
+    if (stringified.isEmpty || stringified == 'null') {
+      return null;
+    }
+    return stringified;
+  }
+
+  double? _doubleFromDynamic(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 
   Widget _buildTransportInfo(
@@ -917,6 +1021,8 @@ class _TimelineStop {
   final String? category;
   final IconData icon;
   final int? durationMinutes;
+  final String? placeId;
+  final Map<String, dynamic>? placeData;
 
   _TimelineStop({
     required this.title,
@@ -924,5 +1030,7 @@ class _TimelineStop {
     this.category,
     required this.icon,
     this.durationMinutes,
+    this.placeId,
+    this.placeData,
   });
 }
