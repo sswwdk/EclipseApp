@@ -29,10 +29,10 @@ class CommunityService {
   }
 
   // 특정 글 조회
-  static Future<Map<String, dynamic>> getSpecificPost(String query) async {
+  static Future<Map<String, dynamic>> getSpecificPost(String postId) async {
     try {
       final response = await http.get(
-        Uri.parse('$communityUrl/api/community/post/$query'),
+        Uri.parse('$communityUrl/api/community/post/$postId'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
@@ -145,17 +145,17 @@ class CommunityService {
   }
 
   // 댓글 작성
-  static Future<Map<String, dynamic>> createComment(String postId, String userId, String content) async {
+  static Future<String> createComment(int postId, String content) async {
     try {
       final response = await http.post(
-        Uri.parse('$communityUrl/api/community/$postId/comment'),
+        Uri.parse('$communityUrl/api/community/comment/$postId'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
         body: json.encode({
-          'user_id': userId,
-          'content': content,
+          'post_id': postId,
+          'body': content,
         }),
       );
 

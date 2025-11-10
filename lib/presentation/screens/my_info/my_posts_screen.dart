@@ -146,6 +146,7 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
             builder: (context) => PostDetailScreen(
               post: {
                 'id': post.id,
+                'postId': post.id,
                 'title': post.title,
                 'content': post.content,
                 'comment_count': post.commentCount,

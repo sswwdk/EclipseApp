@@ -413,6 +413,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             MaterialPageRoute(
               builder: (context) => PostDetailScreen(
                 post: {
+                  'postId': post['postId'],
                   'profileImage': Icons.person,
                   'profileImageUrl': profileImageUrl,
                   'nickname': nickname,
@@ -420,6 +421,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   'title': title,
                   'content': content,
                   'schedule': schedule,
+                  'raw': post['raw'],
                 },
               ),
             ),
