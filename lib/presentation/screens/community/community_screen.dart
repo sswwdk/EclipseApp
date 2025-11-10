@@ -436,7 +436,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           Row(
             children: [
               // 프로필 이미지
-              _buildProfileAvatar(profileImageUrl),
+              _buildProfileAvatar(profileImageUrl, nickname),
               const SizedBox(width: 12),
               // 닉네임과 위치, 시간
               Expanded(
@@ -551,7 +551,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  Widget _buildProfileAvatar(String? profileImageUrl) {
+  Widget _buildProfileAvatar(String? profileImageUrl, String nickname) {
     if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
       return CircleAvatar(
         radius: 20,
@@ -560,13 +560,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
       );
     }
 
+    final initial = nickname.trim().isNotEmpty
+        ? nickname.characters.first.toUpperCase()
+        : '?';
+
     return CircleAvatar(
       radius: 20,
-      backgroundColor: AppTheme.dividerColor,
-      child: Icon(
-        Icons.person,
-        color: AppTheme.textSecondaryColor,
-        size: 20,
+      backgroundColor: AppTheme.primaryColorWithOpacity10,
+      child: Text(
+        initial,
+        style: const TextStyle(
+          color: AppTheme.primaryColor,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
       ),
     );
   }

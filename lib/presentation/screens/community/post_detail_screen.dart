@@ -140,18 +140,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           Row(
             children: [
               // 프로필 이미지
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  post['profileImage'] ?? Icons.person,
-                  color: Colors.grey[600],
-                  size: 24,
-                ),
+              _buildProfileAvatar(
+                (post['nickname'] ?? '익명 사용자').toString(),
+                radius: 25,
+                fontSize: 18,
               ),
               const SizedBox(width: 12),
               // 닉네임과 시간
@@ -345,18 +337,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           Row(
             children: [
               // 프로필 이미지
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.person,
-                  color: Colors.grey[600],
-                  size: 16,
-                ),
+              _buildProfileAvatar(
+                nickname,
+                radius: 16,
+                fontSize: 13,
               ),
               const SizedBox(width: 8),
               // 닉네임과 시간
@@ -438,19 +422,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       child: Row(
         children: [
           // 프로필 이미지
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.person,
-              color: Colors.grey[600],
-              size: 16,
-            ),
-          ),
+      _buildProfileAvatar(
+        TokenManager.userName ?? '유저',
+        radius: 16,
+        fontSize: 13,
+      ),
           const SizedBox(width: 12),
           // 댓글 입력 필드
           Expanded(
@@ -935,6 +911,30 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     } catch (e) {
       _showSnackBar('신고에 실패했습니다. 다시 시도해주세요.');
     }
+  }
+
+  Widget _buildProfileAvatar(
+    String name, {
+    double radius = 20,
+    double fontSize = 16,
+  }) {
+    final trimmed = name.trim();
+    final initial = trimmed.isNotEmpty
+        ? trimmed.characters.first.toUpperCase()
+        : '?';
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: const Color(0xFFFF8126).withOpacity(0.15),
+      child: Text(
+        initial,
+        style: TextStyle(
+          color: const Color(0xFFFF8126),
+          fontWeight: FontWeight.bold,
+          fontSize: fontSize,
+        ),
+      ),
+    );
   }
 
   String? _firstNonEmptyString(List<dynamic> values) {
