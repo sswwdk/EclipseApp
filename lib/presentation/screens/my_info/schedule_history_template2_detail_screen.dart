@@ -4,6 +4,7 @@ import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
+import '../../../shared/helpers/history_parser.dart';
 import '../main/restaurant_detail_screen.dart';
 
 class ScheduleHistoryTemplate2DetailScreen extends StatefulWidget {
@@ -184,230 +185,36 @@ class _ScheduleHistoryTemplate2DetailScreenState
   }
 
   String _getCategoryNameFromType(int categoryType) {
-    switch (categoryType) {
-      case 0:
-        return '음식점';
-      case 1:
-        return '카페';
-      case 2:
-        return '콘텐츠';
-      default:
-        return '기타';
-    }
+    return HistoryParser.getCategoryNameFromType(categoryType);
   }
 
   IconData _iconFor(String category) {
-    switch (category) {
-      case '음식점':
-        return Icons.restaurant;
-      case '카페':
-        return Icons.local_cafe;
-      case '콘텐츠':
-        return Icons.movie_filter;
-      default:
-        return Icons.place;
-    }
+    return HistoryParser.getIconForCategory(category);
   }
 
   RouteResult _parseDescriptionToRouteResult(
     String description,
     int defaultDuration,
   ) {
-    try {
-      final lines = description
-          .split('\n')
-          .where((line) => line.trim().isNotEmpty)
-          .toList();
-
-      int durationMinutes = defaultDuration;
-      int distanceMeters = 0;
-      List<RouteStep> steps = [];
-
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i].trim();
-
-        if (line.startsWith('대중교통') ||
-            line.startsWith('도보') && line.contains('약')) {
-          final match = RegExp(r'약\s*(\d+)분').firstMatch(line);
-          if (match != null) {
-            durationMinutes = int.tryParse(match.group(1)!) ?? durationMinutes;
-          }
-          continue;
-        }
-
-        if (line.startsWith('거리')) {
-          final kmMatch = RegExp(r'약\s*([\d.]+)km').firstMatch(line);
-          final mMatch = RegExp(r'약\s*(\d+)m').firstMatch(line);
-
-          if (kmMatch != null) {
-            final km = double.tryParse(kmMatch.group(1)!) ?? 0;
-            distanceMeters = (km * 1000).round();
-          } else if (mMatch != null) {
-            distanceMeters = int.tryParse(mMatch.group(1)!) ?? 0;
-          }
-          continue;
-        }
-
-        if (line.contains('도보') && line.contains('분')) {
-          final match = RegExp(r'도보\s*(\d+)분').firstMatch(line);
-          if (match != null) {
-            final duration = int.tryParse(match.group(1)!) ?? 0;
-            steps.add(
-              RouteStep(
-                type: 'walk',
-                description: '도보',
-                durationMinutes: duration,
-              ),
-            );
-          }
-          continue;
-        }
-
-        if (line == '도보' || line.trim() == '도보') {
-          steps.add(
-            RouteStep(type: 'walk', description: '도보', durationMinutes: 0),
-          );
-          continue;
-        }
-
-        if (line.contains('버스') && line.contains('분')) {
-          final busTypeMatch = RegExp(
-            r'(지선|간선|광역|순환|마을|공항|직행좌석):(\d+[가-힣]*)번',
-          ).firstMatch(line);
-          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
-
-          String busInfo = '버스';
-          if (busTypeMatch != null) {
-            final busType = busTypeMatch.group(1) ?? '';
-            final busNumber = busTypeMatch.group(2) ?? '';
-            busInfo = '$busType $busNumber번';
-          }
-
-          final routeMatch = RegExp(
-            r':\s*([^→]+)\s*→\s*([^\d]+)',
-          ).firstMatch(line);
-          if (routeMatch != null) {
-            final from = routeMatch.group(1)?.trim() ?? '';
-            final to = routeMatch.group(2)?.trim() ?? '';
-            busInfo += '\n$from → $to';
-          }
-
-          final duration = durationMatch != null
-              ? int.tryParse(durationMatch.group(1)!) ?? 0
-              : 0;
-
-          if (duration > 0) {
-            steps.add(
-              RouteStep(
-                type: 'transit',
-                description: busInfo,
-                durationMinutes: duration,
-              ),
-            );
-          }
-          continue;
-        }
-
-        if (line.contains('호선') && line.contains('분')) {
-          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
-          final subwayMatch = RegExp(r'(수도권\d+호선|\d+호선)').firstMatch(line);
-
-          String subwayInfo = '지하철';
-          if (subwayMatch != null) {
-            subwayInfo = subwayMatch.group(1) ?? '지하철';
-          }
-
-          final routeMatch = RegExp(
-            r':\s*([^→]+)\s*→\s*([^\d]+)',
-          ).firstMatch(line);
-          if (routeMatch != null) {
-            final from = routeMatch.group(1)?.trim() ?? '';
-            final to = routeMatch.group(2)?.trim() ?? '';
-            subwayInfo += '\n$from → $to';
-          }
-
-          final duration = durationMatch != null
-              ? int.tryParse(durationMatch.group(1)!) ?? 0
-              : 0;
-
-          if (duration > 0) {
-            steps.add(
-              RouteStep(
-                type: 'transit',
-                description: subwayInfo,
-                durationMinutes: duration,
-              ),
-            );
-          }
-          continue;
-        }
-      }
-
-      return RouteResult(
-        durationMinutes: durationMinutes,
-        durationSeconds: durationMinutes * 60,
-        distanceMeters: distanceMeters,
-        steps: steps.isNotEmpty ? steps : null,
-        summary: description,
-      );
-    } catch (e) {
-      return RouteResult(
-        durationMinutes: defaultDuration,
-        durationSeconds: defaultDuration * 60,
-        distanceMeters: 0,
-        steps: null,
-        summary: description,
-      );
-    }
+    return HistoryParser.parseDescriptionToRouteResult(
+      description,
+      defaultDuration,
+    );
   }
 
   RouteResult _parseRouteInfo(
     Map<String, dynamic> category,
     int defaultDuration,
   ) {
-    try {
-      int? durationSeconds;
-      if (category.containsKey('duration')) {
-        final duration = category['duration'];
-        if (duration is int) {
-          durationSeconds = duration;
-        } else if (duration is String) {
-          durationSeconds = int.tryParse(duration);
-        }
-      }
+    return HistoryParser.parseRouteInfo(category, defaultDuration);
+  }
 
-      int durationMinutes = defaultDuration;
-      if (durationSeconds != null) {
-        durationMinutes = (durationSeconds / 60).round();
-      }
+  String? _stringFromDynamic(dynamic value) {
+    return HistoryParser.stringFromDynamic(value);
+  }
 
-      double? distanceValue;
-      if (category.containsKey('distance')) {
-        final distance = category['distance'];
-        if (distance is num) {
-          distanceValue = distance.toDouble();
-        } else if (distance is String) {
-          distanceValue = double.tryParse(distance);
-        }
-      }
-      int distanceMeters = (distanceValue ?? 0).round();
-
-      return RouteResult(
-        durationMinutes: durationMinutes,
-        durationSeconds: durationSeconds ?? (durationMinutes * 60),
-        distanceMeters: distanceMeters,
-        steps: null,
-        summary: null,
-      );
-    } catch (e) {
-      return RouteResult(
-        durationMinutes: defaultDuration,
-        durationSeconds: defaultDuration * 60,
-        distanceMeters: 0,
-        steps: null,
-        summary: null,
-      );
-    }
+  double? _doubleFromDynamic(dynamic value) {
+    return HistoryParser.doubleFromDynamic(value);
   }
 
   @override

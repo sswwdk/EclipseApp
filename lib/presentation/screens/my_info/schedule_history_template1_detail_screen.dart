@@ -5,6 +5,7 @@ import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
 import '../../../data/services/api_service.dart'; // 🔥 Restaurant 모델 사용
 import '../../../data/models/restaurant.dart';
+import '../../../shared/helpers/history_parser.dart';
 import '../main/restaurant_detail_screen.dart'; // 🔥 상세 화면 import
 import '../../widgets/common_dialogs.dart';
 
@@ -191,30 +192,12 @@ class _ScheduleHistoryDetailScreenState
 
   /// category_type을 카테고리 이름으로 변환
   String _getCategoryNameFromType(int categoryType) {
-    switch (categoryType) {
-      case 0:
-        return '음식점';
-      case 1:
-        return '카페';
-      case 2:
-        return '콘텐츠';
-      default:
-        return '기타';
-    }
+    return HistoryParser.getCategoryNameFromType(categoryType);
   }
 
   /// 카테고리에 따른 아이콘 반환
   IconData _iconFor(String category) {
-    switch (category) {
-      case '음식점':
-        return Icons.restaurant;
-      case '카페':
-        return Icons.local_cafe;
-      case '콘텐츠':
-        return Icons.movie_filter;
-      default:
-        return Icons.place;
-    }
+    return HistoryParser.getIconForCategory(category);
   }
 
   /// description 문자열을 파싱하여 RouteResult 객체로 변환
@@ -222,173 +205,10 @@ class _ScheduleHistoryDetailScreenState
     String description,
     int defaultDuration,
   ) {
-    try {
-      final lines = description
-          .split('\n')
-          .where((line) => line.trim().isNotEmpty)
-          .toList();
-
-      print('🔍 파싱할 description lines: $lines');
-
-      int durationMinutes = defaultDuration;
-      int distanceMeters = 0;
-      List<RouteStep> steps = [];
-
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i].trim();
-        print('📝 처리 중인 라인: $line');
-
-        // "대중교통 약 39분" 파싱
-        if (line.startsWith('대중교통') ||
-            line.startsWith('도보') && line.contains('약')) {
-          final match = RegExp(r'약\s*(\d+)분').firstMatch(line);
-          if (match != null) {
-            durationMinutes = int.tryParse(match.group(1)!) ?? durationMinutes;
-            print('⏱️ 총 소요시간: $durationMinutes분');
-          }
-          continue;
-        }
-
-        // "거리 약 11.8km" 파싱
-        if (line.startsWith('거리')) {
-          final kmMatch = RegExp(r'약\s*([\d.]+)km').firstMatch(line);
-          final mMatch = RegExp(r'약\s*(\d+)m').firstMatch(line);
-
-          if (kmMatch != null) {
-            final km = double.tryParse(kmMatch.group(1)!) ?? 0;
-            distanceMeters = (km * 1000).round();
-          } else if (mMatch != null) {
-            distanceMeters = int.tryParse(mMatch.group(1)!) ?? 0;
-          }
-          print('📏 거리: $distanceMeters미터');
-          continue;
-        }
-
-        // " 도보 4분" 형태 파싱 (시간이 있는 도보)
-        if (line.contains('도보') && line.contains('분')) {
-          final match = RegExp(r'도보\s*(\d+)분').firstMatch(line);
-          if (match != null) {
-            final duration = int.tryParse(match.group(1)!) ?? 0;
-            steps.add(
-              RouteStep(
-                type: 'walk',
-                description: '도보',
-                durationMinutes: duration,
-              ),
-            );
-            print('✅ 도보 단계 추가: $duration분');
-          }
-          continue;
-        }
-
-        // "도보"만 있는 경우 (환승) - "이동 없음"으로 표시
-        if (line == '도보' || line.trim() == '도보') {
-          steps.add(
-            RouteStep(type: 'walk', description: '도보', durationMinutes: 0),
-          );
-          print('✅ 환승 도보 추가 (이동 없음)');
-          continue;
-        }
-
-        // " 지선:8641번 버스: 신길1동새마을금고 → 흑석동효사정앞 10분" 형태 파싱
-        if (line.contains('버스') && line.contains('분')) {
-          // 버스 타입과 번호 추출
-          final busTypeMatch = RegExp(
-            r'(지선|간선|광역|순환|마을|공항|직행좌석):(\d+[가-힣]*)번',
-          ).firstMatch(line);
-          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
-
-          String busInfo = '버스';
-          if (busTypeMatch != null) {
-            final busType = busTypeMatch.group(1) ?? '';
-            final busNumber = busTypeMatch.group(2) ?? '';
-            busInfo = '$busType $busNumber번';
-          }
-
-          // 출발지 → 도착지 추출
-          final routeMatch = RegExp(
-            r':\s*([^→]+)\s*→\s*([^\d]+)',
-          ).firstMatch(line);
-          if (routeMatch != null) {
-            final from = routeMatch.group(1)?.trim() ?? '';
-            final to = routeMatch.group(2)?.trim() ?? '';
-            busInfo += '\n$from → $to';
-          }
-
-          final duration = durationMatch != null
-              ? int.tryParse(durationMatch.group(1)!) ?? 0
-              : 0;
-
-          if (duration > 0) {
-            steps.add(
-              RouteStep(
-                type: 'transit',
-                description: busInfo,
-                durationMinutes: duration,
-              ),
-            );
-            print('✅ 버스 단계 추가: $busInfo, $duration분');
-          }
-          continue;
-        }
-        if (line.contains('호선') && line.contains('분')) {
-          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
-
-          // 전체 노선명 추출 (수도권 포함)
-          final subwayMatch = RegExp(r'(수도권\d+호선|\d+호선)').firstMatch(line);
-
-          String subwayInfo = '지하철';
-          if (subwayMatch != null) {
-            subwayInfo = subwayMatch.group(1) ?? '지하철'; // 👈 "수도권9호선" 그대로 사용
-          }
-
-          // 출발지 → 도착지 추출
-          final routeMatch = RegExp(
-            r':\s*([^→]+)\s*→\s*([^\d]+)',
-          ).firstMatch(line);
-          if (routeMatch != null) {
-            final from = routeMatch.group(1)?.trim() ?? '';
-            final to = routeMatch.group(2)?.trim() ?? '';
-            subwayInfo += '\n$from → $to';
-          }
-
-          final duration = durationMatch != null
-              ? int.tryParse(durationMatch.group(1)!) ?? 0
-              : 0;
-
-          if (duration > 0) {
-            steps.add(
-              RouteStep(
-                type: 'transit',
-                description: subwayInfo,
-                durationMinutes: duration,
-              ),
-            );
-            print('✅ 지하철 단계 추가: $subwayInfo, $duration분');
-          }
-          continue;
-        }
-      }
-
-      print('✅ 파싱 완료 - 단계 수: ${steps.length}');
-
-      return RouteResult(
-        durationMinutes: durationMinutes,
-        durationSeconds: durationMinutes * 60,
-        distanceMeters: distanceMeters,
-        steps: steps.isNotEmpty ? steps : null,
-        summary: description,
-      );
-    } catch (e) {
-      print('❌ description 파싱 실패: $e');
-      return RouteResult(
-        durationMinutes: defaultDuration,
-        durationSeconds: defaultDuration * 60,
-        distanceMeters: 0,
-        steps: null,
-        summary: description,
-      );
-    }
+    return HistoryParser.parseDescriptionToRouteResult(
+      description,
+      defaultDuration,
+    );
   }
 
   /// 서버에서 받은 category 데이터에서 경로 정보 파싱
@@ -396,50 +216,15 @@ class _ScheduleHistoryDetailScreenState
     Map<String, dynamic> category,
     int defaultDuration,
   ) {
-    try {
-      int? durationSeconds;
-      if (category.containsKey('duration')) {
-        final duration = category['duration'];
-        if (duration is int) {
-          durationSeconds = duration;
-        } else if (duration is String) {
-          durationSeconds = int.tryParse(duration);
-        }
-      }
+    return HistoryParser.parseRouteInfo(category, defaultDuration);
+  }
 
-      int durationMinutes = defaultDuration;
-      if (durationSeconds != null) {
-        durationMinutes = (durationSeconds / 60).round();
-      }
+  String? _stringFromDynamic(dynamic value) {
+    return HistoryParser.stringFromDynamic(value);
+  }
 
-      double? distanceValue;
-      if (category.containsKey('distance')) {
-        final distance = category['distance'];
-        if (distance is num) {
-          distanceValue = distance.toDouble();
-        } else if (distance is String) {
-          distanceValue = double.tryParse(distance);
-        }
-      }
-      int distanceMeters = (distanceValue ?? 0).round();
-
-      return RouteResult(
-        durationMinutes: durationMinutes,
-        durationSeconds: durationSeconds ?? (durationMinutes * 60),
-        distanceMeters: distanceMeters,
-        steps: null,
-        summary: null,
-      );
-    } catch (e) {
-      print('❌ 경로 정보 파싱 실패: $e');
-      return RouteResult(
-        durationMinutes: defaultDuration,
-        durationSeconds: defaultDuration * 60,
-        distanceMeters: 0,
-        steps: null,
-        summary: null,
-      );
-    }
+  double? _doubleFromDynamic(dynamic value) {
+    return HistoryParser.doubleFromDynamic(value);
   }
 
   @override
