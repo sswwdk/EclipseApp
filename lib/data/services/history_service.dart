@@ -513,7 +513,7 @@ class HistoryService {
             },
             body: json.encode({
               'user_id': userId,
-              'template_type': '1', // 1: 그냥
+              'template_type': '0', // 0: 그냥
               'date': DateTime.now().toIso8601String().split('T')[0],
               'schedule_title': scheduleTitle,
               'category': places,

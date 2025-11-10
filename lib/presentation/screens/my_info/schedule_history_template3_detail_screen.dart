@@ -89,15 +89,18 @@ class _ScheduleHistoryTemplate3DetailScreenState
     List<_TimelineStop> stops = [];
 
     // 출발지 추가
-    String originTitle = _originAddress ?? '집';
-    if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty) {
-      originTitle += '\n$_originDetailAddress';
-    }
+    final originSubtitleParts = <String>[
+      if (_originAddress != null && _originAddress!.isNotEmpty)
+        _originAddress!,
+      if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty)
+        _originDetailAddress!,
+    ];
+    final originSubtitle = originSubtitleParts.join('\n');
 
     stops.add(
       _TimelineStop(
-        title: originTitle,
-        subtitle: null,
+        title: '출발지',
+        subtitle: originSubtitle.isNotEmpty ? originSubtitle : '출발',
         category: '출발지',
         icon: Icons.home_outlined,
         durationMinutes: null,
@@ -521,46 +524,52 @@ class _ScheduleHistoryTemplate3DetailScreenState
     Color accentColor,
     TextTheme textTheme,
   ) {
-    const double minCardWidth = 160.0;
-    const double spacing = 16.0;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : MediaQuery.of(context).size.width;
-        final count = _stops.length;
-        final calculatedWidth = count > 0
-            ? (maxWidth - spacing * (count - 1)) / count
-            : maxWidth;
-        final useScroll = calculatedWidth < minCardWidth;
-        final cardWidth = useScroll ? minCardWidth : calculatedWidth;
-
-        final content = Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (int i = 0; i < count; i++) ...[
-              _buildTimelineStop(
-                _stops[i],
-                i == 0,
-                i == count - 1,
-                trackColor,
-                accentColor,
-                textTheme,
-                cardWidth,
-              ),
-              if (i != count - 1) const SizedBox(width: spacing),
+    if (_stops.isEmpty) return const SizedBox.shrink();
+    
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (int i = 0; i < _stops.length; i++) ...[
+                _buildTimelineStop(
+                  _stops[i],
+                  i == 0,
+                  i == _stops.length - 1,
+                  trackColor,
+                  accentColor,
+                  textTheme,
+                  160.0,
+                ),
+                if (i < _stops.length - 1)
+                  _buildConnectorLine(trackColor),
+              ],
             ],
-          ],
-        );
+          ),
+        ),
+      ),
+    );
+  }
 
-        return useScroll
-            ? SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: content,
-              )
-            : content;
-      },
+
+  /// 원과 원 사이의 연결선 박스
+  Widget _buildConnectorLine(Color trackColor) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 42), // 카테고리(30) + 마진(12) = 42
+      child: Container(
+        width: 60,
+        height: 68, // 원의 높이와 동일
+        alignment: Alignment.center,
+        child: Container(
+          width: 60,
+          height: 4,
+          color: trackColor,
+        ),
+      ),
     );
   }
 
@@ -576,72 +585,50 @@ class _ScheduleHistoryTemplate3DetailScreenState
     return SizedBox(
       width: width,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (stop.category != null && stop.category!.trim().isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                stop.category!,
-                style: textTheme.labelMedium?.copyWith(
-                  color: accentColor,
-                  fontWeight: FontWeight.bold,
+          // 카테고리 영역 (고정 높이 30px + 마진 12px = 42px)
+          SizedBox(
+            height: 42,
+            child: stop.category != null && stop.category!.trim().isNotEmpty
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: accentColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      stop.category!,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: accentColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: accentColor, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: accentColor.withOpacity(0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
                 ),
-                textAlign: TextAlign.center,
-              ),
+              ],
             ),
-          ],
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (!isFirst)
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: trackColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              Container(
-                width: 68,
-                height: 68,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: accentColor, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentColor.withOpacity(0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  stop.icon,
-                  size: 30,
-                  color: accentColor,
-                ),
-              ),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 8),
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: trackColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-            ],
+            child: Icon(
+              stop.icon,
+              size: 30,
+              color: accentColor,
+            ),
           ),
           const SizedBox(height: 18),
           Container(
@@ -939,4 +926,3 @@ class _TimelineStop {
     this.durationMinutes,
   });
 }
-
