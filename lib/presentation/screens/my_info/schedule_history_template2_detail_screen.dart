@@ -4,6 +4,7 @@ import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
+import '../../../shared/helpers/history_parser.dart';
 import '../main/restaurant_detail_screen.dart';
 
 class ScheduleHistoryTemplate2DetailScreen extends StatefulWidget {
@@ -150,7 +151,10 @@ class _ScheduleHistoryTemplate2DetailScreenState
       }
 
       // 🔥 이미지 URL 추출
-      String? imageUrl = category['image_url'] as String?;
+      String? imageUrl =
+          category['image'] as String? ??
+          category['image_url'] as String? ??
+          category['category_image'] as String?;
 
       items.add(
         _ScheduleItem(
@@ -181,230 +185,36 @@ class _ScheduleHistoryTemplate2DetailScreenState
   }
 
   String _getCategoryNameFromType(int categoryType) {
-    switch (categoryType) {
-      case 0:
-        return '음식점';
-      case 1:
-        return '카페';
-      case 2:
-        return '콘텐츠';
-      default:
-        return '기타';
-    }
+    return HistoryParser.getCategoryNameFromType(categoryType);
   }
 
   IconData _iconFor(String category) {
-    switch (category) {
-      case '음식점':
-        return Icons.restaurant;
-      case '카페':
-        return Icons.local_cafe;
-      case '콘텐츠':
-        return Icons.movie_filter;
-      default:
-        return Icons.place;
-    }
+    return HistoryParser.getIconForCategory(category);
   }
 
   RouteResult _parseDescriptionToRouteResult(
     String description,
     int defaultDuration,
   ) {
-    try {
-      final lines = description
-          .split('\n')
-          .where((line) => line.trim().isNotEmpty)
-          .toList();
-
-      int durationMinutes = defaultDuration;
-      int distanceMeters = 0;
-      List<RouteStep> steps = [];
-
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i].trim();
-
-        if (line.startsWith('대중교통') ||
-            line.startsWith('도보') && line.contains('약')) {
-          final match = RegExp(r'약\s*(\d+)분').firstMatch(line);
-          if (match != null) {
-            durationMinutes = int.tryParse(match.group(1)!) ?? durationMinutes;
-          }
-          continue;
-        }
-
-        if (line.startsWith('거리')) {
-          final kmMatch = RegExp(r'약\s*([\d.]+)km').firstMatch(line);
-          final mMatch = RegExp(r'약\s*(\d+)m').firstMatch(line);
-
-          if (kmMatch != null) {
-            final km = double.tryParse(kmMatch.group(1)!) ?? 0;
-            distanceMeters = (km * 1000).round();
-          } else if (mMatch != null) {
-            distanceMeters = int.tryParse(mMatch.group(1)!) ?? 0;
-          }
-          continue;
-        }
-
-        if (line.contains('도보') && line.contains('분')) {
-          final match = RegExp(r'도보\s*(\d+)분').firstMatch(line);
-          if (match != null) {
-            final duration = int.tryParse(match.group(1)!) ?? 0;
-            steps.add(
-              RouteStep(
-                type: 'walk',
-                description: '도보',
-                durationMinutes: duration,
-              ),
-            );
-          }
-          continue;
-        }
-
-        if (line == '도보' || line.trim() == '도보') {
-          steps.add(
-            RouteStep(type: 'walk', description: '도보', durationMinutes: 0),
-          );
-          continue;
-        }
-
-        if (line.contains('버스') && line.contains('분')) {
-          final busTypeMatch = RegExp(
-            r'(지선|간선|광역|순환|마을|공항):(\d+[가-힣]*)번',
-          ).firstMatch(line);
-          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
-
-          String busInfo = '버스';
-          if (busTypeMatch != null) {
-            final busType = busTypeMatch.group(1) ?? '';
-            final busNumber = busTypeMatch.group(2) ?? '';
-            busInfo = '$busType $busNumber번';
-          }
-
-          final routeMatch = RegExp(
-            r':\s*([^→]+)\s*→\s*([^\d]+)',
-          ).firstMatch(line);
-          if (routeMatch != null) {
-            final from = routeMatch.group(1)?.trim() ?? '';
-            final to = routeMatch.group(2)?.trim() ?? '';
-            busInfo += '\n$from → $to';
-          }
-
-          final duration = durationMatch != null
-              ? int.tryParse(durationMatch.group(1)!) ?? 0
-              : 0;
-
-          if (duration > 0) {
-            steps.add(
-              RouteStep(
-                type: 'transit',
-                description: busInfo,
-                durationMinutes: duration,
-              ),
-            );
-          }
-          continue;
-        }
-
-        if (line.contains('호선') && line.contains('분')) {
-          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
-          final subwayMatch = RegExp(r'(수도권\d+호선|\d+호선)').firstMatch(line);
-
-          String subwayInfo = '지하철';
-          if (subwayMatch != null) {
-            subwayInfo = subwayMatch.group(1) ?? '지하철';
-          }
-
-          final routeMatch = RegExp(
-            r':\s*([^→]+)\s*→\s*([^\d]+)',
-          ).firstMatch(line);
-          if (routeMatch != null) {
-            final from = routeMatch.group(1)?.trim() ?? '';
-            final to = routeMatch.group(2)?.trim() ?? '';
-            subwayInfo += '\n$from → $to';
-          }
-
-          final duration = durationMatch != null
-              ? int.tryParse(durationMatch.group(1)!) ?? 0
-              : 0;
-
-          if (duration > 0) {
-            steps.add(
-              RouteStep(
-                type: 'transit',
-                description: subwayInfo,
-                durationMinutes: duration,
-              ),
-            );
-          }
-          continue;
-        }
-      }
-
-      return RouteResult(
-        durationMinutes: durationMinutes,
-        durationSeconds: durationMinutes * 60,
-        distanceMeters: distanceMeters,
-        steps: steps.isNotEmpty ? steps : null,
-        summary: description,
-      );
-    } catch (e) {
-      return RouteResult(
-        durationMinutes: defaultDuration,
-        durationSeconds: defaultDuration * 60,
-        distanceMeters: 0,
-        steps: null,
-        summary: description,
-      );
-    }
+    return HistoryParser.parseDescriptionToRouteResult(
+      description,
+      defaultDuration,
+    );
   }
 
   RouteResult _parseRouteInfo(
     Map<String, dynamic> category,
     int defaultDuration,
   ) {
-    try {
-      int? durationSeconds;
-      if (category.containsKey('duration')) {
-        final duration = category['duration'];
-        if (duration is int) {
-          durationSeconds = duration;
-        } else if (duration is String) {
-          durationSeconds = int.tryParse(duration);
-        }
-      }
+    return HistoryParser.parseRouteInfo(category, defaultDuration);
+  }
 
-      int durationMinutes = defaultDuration;
-      if (durationSeconds != null) {
-        durationMinutes = (durationSeconds / 60).round();
-      }
+  String? _stringFromDynamic(dynamic value) {
+    return HistoryParser.stringFromDynamic(value);
+  }
 
-      double? distanceValue;
-      if (category.containsKey('distance')) {
-        final distance = category['distance'];
-        if (distance is num) {
-          distanceValue = distance.toDouble();
-        } else if (distance is String) {
-          distanceValue = double.tryParse(distance);
-        }
-      }
-      int distanceMeters = (distanceValue ?? 0).round();
-
-      return RouteResult(
-        durationMinutes: durationMinutes,
-        durationSeconds: durationSeconds ?? (durationMinutes * 60),
-        distanceMeters: distanceMeters,
-        steps: null,
-        summary: null,
-      );
-    } catch (e) {
-      return RouteResult(
-        durationMinutes: defaultDuration,
-        durationSeconds: defaultDuration * 60,
-        distanceMeters: 0,
-        steps: null,
-        summary: null,
-      );
-    }
+  double? _doubleFromDynamic(dynamic value) {
+    return HistoryParser.doubleFromDynamic(value);
   }
 
   @override
@@ -637,8 +447,6 @@ class _PlannerItemCard extends StatelessWidget {
   }
 
   Widget _buildImageSection(BuildContext context) {
-    String emoji = _getEmojiForCategory(item.category);
-
     return InkWell(
       onTap: item.categoryId != null && item.categoryId!.isNotEmpty
           ? () => _navigateToDetail(context)
@@ -653,38 +461,51 @@ class _PlannerItemCard extends StatelessWidget {
               border: Border.all(color: const Color(0xFFD97941), width: 2),
               borderRadius: BorderRadius.circular(8),
             ),
-            clipBehavior: Clip.antiAlias, // 🔥 이미지 모서리 처리
+            clipBehavior: Clip.antiAlias,
             child: item.imageUrl != null && item.imageUrl!.isNotEmpty
                 ? Image.network(
                     item.imageUrl!,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       // 🔥 이미지 로딩 실패 시 이모지 표시
-                      return Center(
-                        child: Text(
-                          emoji,
-                          style: const TextStyle(fontSize: 40),
+                      String emoji = _getEmojiForCategory(item.category);
+                      return Container(
+                        color: const Color(0xFFFFF5E8),
+                        child: Center(
+                          child: Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 40),
+                          ),
                         ),
                       );
                     },
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       // 🔥 로딩 중 표시
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                              : null,
-                          color: const Color(0xFFD97941),
-                          strokeWidth: 2,
+                      return Container(
+                        color: const Color(0xFFFFF5E8),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                : null,
+                            color: const Color(0xFFD97941),
+                            strokeWidth: 2,
+                          ),
                         ),
                       );
                     },
                   )
-                : Center(
-                    // 🔥 이미지 URL이 없으면 이모지 표시
-                    child: Text(emoji, style: const TextStyle(fontSize: 40)),
+                : Container(
+                    // 🔥 이미지 URL이 없으면 이모지와 배경색 표시
+                    color: const Color(0xFFFFF5E8),
+                    child: Center(
+                      child: Text(
+                        _getEmojiForCategory(item.category),
+                        style: const TextStyle(fontSize: 40),
+                      ),
+                    ),
                   ),
           ),
           const SizedBox(height: 8),
@@ -1021,20 +842,31 @@ class _PlannerItemCard extends StatelessWidget {
         ),
       );
 
-      final restaurant = Restaurant(
-        id: item.categoryId!,
-        name: item.title,
-        subCategory: item.category,
-        detailAddress: item.address,
-        phone: null,
-        rating: null,
-        businessHour: null,
-        image: null,
+      // 🔥 매장 상세 정보 API 호출 (이미지 포함)
+      print('🔍 매장 상세 정보 조회 시작: ${item.categoryId}');
+      final detailedRestaurant = await ApiService.getRestaurant(
+        item.categoryId!,
       );
+      print('✅ 매장 상세 정보 조회 완료: ${detailedRestaurant.image}');
 
       if (!context.mounted) return;
+      Navigator.pop(context); // 로딩 닫기
 
-      Navigator.pop(context);
+      // 🔥 API에서 받은 전체 정보로 Restaurant 객체 생성
+      final restaurant = Restaurant(
+        id: item.categoryId!,
+        name: detailedRestaurant.name.isNotEmpty
+            ? detailedRestaurant.name
+            : item.title,
+        subCategory: detailedRestaurant.subCategory ?? item.category,
+        detailAddress: detailedRestaurant.detailAddress ?? item.address,
+        image: detailedRestaurant.image, // 🔥 API에서 받은 이미지 사용
+        phone: detailedRestaurant.phone,
+        rating: detailedRestaurant.rating ?? item.rating,
+        businessHour: detailedRestaurant.businessHour,
+      );
+
+      print('🏪 Restaurant 객체 생성 완료: image = ${restaurant.image}');
 
       Navigator.push(
         context,
@@ -1044,9 +876,9 @@ class _PlannerItemCard extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
-
       Navigator.pop(context);
 
+      print('❌ 매장 상세 화면 이동 실패: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('매장 정보를 불러오는 데 실패했습니다: $e'),

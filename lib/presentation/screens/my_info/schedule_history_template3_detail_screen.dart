@@ -3,6 +3,7 @@ import '../../../data/services/history_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
 import '../../../data/models/restaurant.dart';
+import '../../../shared/helpers/history_parser.dart';
 import '../main/restaurant_detail_screen.dart';
 
 class ScheduleHistoryTemplate3DetailScreen extends StatefulWidget {
@@ -92,8 +93,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
 
     // 출발지 추가
     final originSubtitleParts = <String>[
-      if (_originAddress != null && _originAddress!.isNotEmpty)
-        _originAddress!,
+      if (_originAddress != null && _originAddress!.isNotEmpty) _originAddress!,
       if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty)
         _originDetailAddress!,
     ];
@@ -112,10 +112,11 @@ class _ScheduleHistoryTemplate3DetailScreenState
     for (int i = 0; i < sortedCategories.length; i++) {
       final category = sortedCategories[i];
       final categoryName = category['category_name'] as String? ?? '';
-      final address = (category['category_detail_address'] as String? ??
-              category['detail_address'] as String? ??
-              category['address'] as String?)
-          ?.trim();
+      final address =
+          (category['category_detail_address'] as String? ??
+                  category['detail_address'] as String? ??
+                  category['address'] as String?)
+              ?.trim();
 
       final categoryTypeRaw = category['category_type'];
       int categoryTypeInt = 0;
@@ -151,7 +152,8 @@ class _ScheduleHistoryTemplate3DetailScreenState
         }
       }
 
-      final placeId = _stringFromDynamic(category['category_id']) ??
+      final placeId =
+          _stringFromDynamic(category['category_id']) ??
           _stringFromDynamic(category['categoryId']) ??
           _stringFromDynamic(category['id']);
 
@@ -185,240 +187,36 @@ class _ScheduleHistoryTemplate3DetailScreenState
   }
 
   String _getCategoryNameFromType(int categoryType) {
-    switch (categoryType) {
-      case 0:
-        return '음식점';
-      case 1:
-        return '카페';
-      case 2:
-        return '콘텐츠';
-      default:
-        return '기타';
-    }
+    return HistoryParser.getCategoryNameFromType(categoryType);
   }
 
   IconData _iconFor(String category) {
-    switch (category) {
-      case '음식점':
-        return Icons.restaurant;
-      case '카페':
-        return Icons.local_cafe;
-      case '콘텐츠':
-        return Icons.movie_filter;
-      case '출발지':
-        return Icons.home_outlined;
-      default:
-        return Icons.place;
-    }
+    return HistoryParser.getIconForCategory(category);
   }
 
-  /// description 문자열을 파싱하여 RouteResult 객체로 변환
   RouteResult _parseDescriptionToRouteResult(
     String description,
     int defaultDuration,
   ) {
-    try {
-      final lines = description
-          .split('\n')
-          .where((line) => line.trim().isNotEmpty)
-          .toList();
-
-      int durationMinutes = defaultDuration;
-      int distanceMeters = 0;
-      List<RouteStep> steps = [];
-
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i].trim();
-
-        // "대중교통 약 39분" 파싱
-        if (line.startsWith('대중교통') ||
-            line.startsWith('도보') && line.contains('약')) {
-          final match = RegExp(r'약\s*(\d+)분').firstMatch(line);
-          if (match != null) {
-            durationMinutes = int.tryParse(match.group(1)!) ?? durationMinutes;
-          }
-          continue;
-        }
-
-        // "거리 약 11.8km" 파싱
-        if (line.startsWith('거리')) {
-          final kmMatch = RegExp(r'약\s*([\d.]+)km').firstMatch(line);
-          final mMatch = RegExp(r'약\s*(\d+)m').firstMatch(line);
-
-          if (kmMatch != null) {
-            final km = double.tryParse(kmMatch.group(1)!) ?? 0;
-            distanceMeters = (km * 1000).round();
-          } else if (mMatch != null) {
-            distanceMeters = int.tryParse(mMatch.group(1)!) ?? 0;
-          }
-          continue;
-        }
-
-        // " 도보 4분" 형태 파싱 (시간이 있는 도보)
-        if (line.contains('도보') && line.contains('분')) {
-          final match = RegExp(r'도보\s*(\d+)분').firstMatch(line);
-          if (match != null) {
-            final duration = int.tryParse(match.group(1)!) ?? 0;
-            steps.add(
-              RouteStep(
-                type: 'walk',
-                description: '도보',
-                durationMinutes: duration,
-              ),
-            );
-          }
-          continue;
-        }
-
-        // "도보"만 있는 경우 (환승)
-        if (line == '도보' || line.trim() == '도보') {
-          steps.add(
-            RouteStep(type: 'walk', description: '도보', durationMinutes: 0),
-          );
-          continue;
-        }
-
-        // 버스 정보 파싱
-        if (line.contains('버스') && line.contains('분')) {
-          final busTypeMatch = RegExp(
-            r'(지선|간선|광역|순환|마을|공항):(\d+[가-힣]*)번',
-          ).firstMatch(line);
-          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
-
-          String busInfo = '버스';
-          if (busTypeMatch != null) {
-            final busType = busTypeMatch.group(1) ?? '';
-            final busNumber = busTypeMatch.group(2) ?? '';
-            busInfo = '$busType $busNumber번';
-          }
-
-          final routeMatch = RegExp(
-            r':\s*([^→]+)\s*→\s*([^\d]+)',
-          ).firstMatch(line);
-          if (routeMatch != null) {
-            final from = routeMatch.group(1)?.trim() ?? '';
-            final to = routeMatch.group(2)?.trim() ?? '';
-            busInfo += '\n$from → $to';
-          }
-
-          final duration = durationMatch != null
-              ? int.tryParse(durationMatch.group(1)!) ?? 0
-              : 0;
-
-          if (duration > 0) {
-            steps.add(
-              RouteStep(
-                type: 'transit',
-                description: busInfo,
-                durationMinutes: duration,
-              ),
-            );
-          }
-          continue;
-        }
-
-        // 지하철 정보 파싱
-        if (line.contains('호선') && line.contains('분')) {
-          final durationMatch = RegExp(r'(\d+)분').firstMatch(line);
-          final subwayMatch = RegExp(r'(수도권\d+호선|\d+호선)').firstMatch(line);
-
-          String subwayInfo = '지하철';
-          if (subwayMatch != null) {
-            subwayInfo = subwayMatch.group(1) ?? '지하철';
-          }
-
-          final routeMatch = RegExp(
-            r':\s*([^→]+)\s*→\s*([^\d]+)',
-          ).firstMatch(line);
-          if (routeMatch != null) {
-            final from = routeMatch.group(1)?.trim() ?? '';
-            final to = routeMatch.group(2)?.trim() ?? '';
-            subwayInfo += '\n$from → $to';
-          }
-
-          final duration = durationMatch != null
-              ? int.tryParse(durationMatch.group(1)!) ?? 0
-              : 0;
-
-          if (duration > 0) {
-            steps.add(
-              RouteStep(
-                type: 'transit',
-                description: subwayInfo,
-                durationMinutes: duration,
-              ),
-            );
-          }
-          continue;
-        }
-      }
-
-      return RouteResult(
-        durationMinutes: durationMinutes,
-        durationSeconds: durationMinutes * 60,
-        distanceMeters: distanceMeters,
-        steps: steps.isNotEmpty ? steps : null,
-        summary: description,
-      );
-    } catch (e) {
-      return RouteResult(
-        durationMinutes: defaultDuration,
-        durationSeconds: defaultDuration * 60,
-        distanceMeters: 0,
-        steps: null,
-        summary: description,
-      );
-    }
+    return HistoryParser.parseDescriptionToRouteResult(
+      description,
+      defaultDuration,
+    );
   }
 
-  /// 서버에서 받은 category 데이터에서 경로 정보 파싱
   RouteResult _parseRouteInfo(
     Map<String, dynamic> category,
     int defaultDuration,
   ) {
-    try {
-      int? durationSeconds;
-      if (category.containsKey('duration')) {
-        final duration = category['duration'];
-        if (duration is int) {
-          durationSeconds = duration;
-        } else if (duration is String) {
-          durationSeconds = int.tryParse(duration);
-        }
-      }
+    return HistoryParser.parseRouteInfo(category, defaultDuration);
+  }
 
-      int durationMinutes = defaultDuration;
-      if (durationSeconds != null) {
-        durationMinutes = (durationSeconds / 60).round();
-      }
+  String? _stringFromDynamic(dynamic value) {
+    return HistoryParser.stringFromDynamic(value);
+  }
 
-      double? distanceValue;
-      if (category.containsKey('distance')) {
-        final distance = category['distance'];
-        if (distance is num) {
-          distanceValue = distance.toDouble();
-        } else if (distance is String) {
-          distanceValue = double.tryParse(distance);
-        }
-      }
-      int distanceMeters = (distanceValue ?? 0).round();
-
-      return RouteResult(
-        durationMinutes: durationMinutes,
-        durationSeconds: durationSeconds ?? (durationMinutes * 60),
-        distanceMeters: distanceMeters,
-        steps: null,
-        summary: null,
-      );
-    } catch (e) {
-      return RouteResult(
-        durationMinutes: defaultDuration,
-        durationSeconds: defaultDuration * 60,
-        distanceMeters: 0,
-        steps: null,
-        summary: null,
-      );
-    }
+  double? _doubleFromDynamic(dynamic value) {
+    return HistoryParser.doubleFromDynamic(value);
   }
 
   @override
@@ -433,7 +231,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('여행 일정표'),
+        title: const Text('템플릿 3'),
         centerTitle: true,
         backgroundColor: backgroundColor,
         elevation: 0,
@@ -444,86 +242,82 @@ class _ScheduleHistoryTemplate3DetailScreenState
               child: CircularProgressIndicator(color: Color(0xFFFB7C9E)),
             )
           : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.black54,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadHistoryDetail,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accentColor,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('다시 시도'),
-                        ),
-                      ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 16,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadHistoryDetail,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('다시 시도'),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 32,
-                      horizontal: 24,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildTimelineSection(
-                          trackColor,
-                          accentColor,
-                          textTheme,
-                        ),
-                        const SizedBox(height: 32),
-                        if (_stops.length > 1)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                '이동수단 및 소요시간',
-                                style: textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: accentColor,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              ...List.generate(
-                                _stops.length - 1,
-                                (index) => _buildTransportInfo(
-                                  index,
-                                  accentColor,
-                                  textTheme,
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 16,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 32,
+                  horizontal: 24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildTimelineSection(trackColor, accentColor, textTheme),
+                    const SizedBox(height: 32),
+                    if (_stops.length > 1)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            '이동수단 및 소요시간',
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: accentColor,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...List.generate(
+                            _stops.length - 1,
+                            (index) => _buildTransportInfo(
+                              index,
+                              accentColor,
+                              textTheme,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -533,7 +327,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
     TextTheme textTheme,
   ) {
     if (_stops.isEmpty) return const SizedBox.shrink();
-    
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Padding(
@@ -554,8 +348,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
                   textTheme,
                   160.0,
                 ),
-                if (i < _stops.length - 1)
-                  _buildConnectorLine(trackColor),
+                if (i < _stops.length - 1) _buildConnectorLine(trackColor),
               ],
             ],
           ),
@@ -563,7 +356,6 @@ class _ScheduleHistoryTemplate3DetailScreenState
       ),
     );
   }
-
 
   /// 원과 원 사이의 연결선 박스
   Widget _buildConnectorLine(Color trackColor) {
@@ -573,11 +365,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
         width: 60,
         height: 68, // 원의 높이와 동일
         alignment: Alignment.center,
-        child: Container(
-          width: 60,
-          height: 4,
-          color: trackColor,
-        ),
+        child: Container(width: 60, height: 4, color: trackColor),
       ),
     );
   }
@@ -592,8 +380,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
     TextTheme textTheme,
     double width,
   ) {
-    final bool isClickable =
-        stop.placeId != null && stop.placeId!.isNotEmpty;
+    final bool isClickable = stop.placeId != null && stop.placeId!.isNotEmpty;
 
     return SizedBox(
       width: width,
@@ -608,7 +395,10 @@ class _ScheduleHistoryTemplate3DetailScreenState
               height: 42,
               child: stop.category != null && stop.category!.trim().isNotEmpty
                   ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: accentColor.withOpacity(0.15),
@@ -640,11 +430,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
                   ),
                 ],
               ),
-              child: Icon(
-                stop.icon,
-                size: 30,
-                color: accentColor,
-              ),
+              child: Icon(stop.icon, size: 30, color: accentColor),
             ),
             const SizedBox(height: 18),
             Container(
@@ -652,9 +438,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF0F4),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: accentColor.withOpacity(0.15),
-                ),
+                border: Border.all(color: accentColor.withOpacity(0.15)),
               ),
               child: Column(
                 children: [
@@ -695,11 +479,9 @@ class _ScheduleHistoryTemplate3DetailScreenState
     final restaurant = _buildRestaurantFromStop(stop);
     if (restaurant == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('매장 정보를 불러올 수 없습니다.'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('매장 정보를 불러올 수 없습니다.')));
       }
       return;
     }
@@ -717,19 +499,23 @@ class _ScheduleHistoryTemplate3DetailScreenState
       return null;
     }
 
-    final Map<String, dynamic>? data =
-        stop.placeData is Map<String, dynamic> ? stop.placeData : null;
+    final Map<String, dynamic>? data = stop.placeData is Map<String, dynamic>
+        ? stop.placeData
+        : null;
 
     String? detailAddress = stop.subtitle;
-    detailAddress ??= _stringFromDynamic(data?['category_detail_address']) ??
+    detailAddress ??=
+        _stringFromDynamic(data?['category_detail_address']) ??
         _stringFromDynamic(data?['detail_address']) ??
         _stringFromDynamic(data?['address']);
 
-    final String? subCategory = _stringFromDynamic(data?['category']) ??
+    final String? subCategory =
+        _stringFromDynamic(data?['category']) ??
         _stringFromDynamic(data?['sub_category']) ??
         (stop.category?.trim().isNotEmpty == true ? stop.category : null);
 
-    final String? image = _stringFromDynamic(data?['image_url']) ??
+    final String? image =
+        _stringFromDynamic(data?['image_url']) ??
         _stringFromDynamic(data?['image']);
     final String? phone = _stringFromDynamic(data?['phone']);
     final String? businessHour = _stringFromDynamic(data?['business_hour']);
@@ -737,9 +523,11 @@ class _ScheduleHistoryTemplate3DetailScreenState
     final double? rating = _doubleFromDynamic(data?['rating']);
 
     final String? latitude =
-        _stringFromDynamic(data?['latitude']) ?? _stringFromDynamic(data?['lat']);
+        _stringFromDynamic(data?['latitude']) ??
+        _stringFromDynamic(data?['lat']);
     final String? longitude =
-        _stringFromDynamic(data?['longitude']) ?? _stringFromDynamic(data?['lng']);
+        _stringFromDynamic(data?['longitude']) ??
+        _stringFromDynamic(data?['lng']);
 
     return Restaurant(
       id: placeId,
@@ -754,28 +542,6 @@ class _ScheduleHistoryTemplate3DetailScreenState
       longitude: longitude,
       rating: rating,
     );
-  }
-
-  String? _stringFromDynamic(dynamic value) {
-    if (value == null) return null;
-    if (value is String) {
-      final trimmed = value.trim();
-      if (trimmed.isEmpty || trimmed == 'null') {
-        return null;
-      }
-      return trimmed;
-    }
-    final stringified = value.toString().trim();
-    if (stringified.isEmpty || stringified == 'null') {
-      return null;
-    }
-    return stringified;
-  }
-
-  double? _doubleFromDynamic(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    return double.tryParse(value.toString());
   }
 
   Widget _buildTransportInfo(
@@ -810,7 +576,8 @@ class _ScheduleHistoryTemplate3DetailScreenState
     }
 
     // 경로 결과에서 duration 정보 우선 사용, 없으면 도착지의 duration 사용
-    final durationMinutes = routeResult?.durationMinutes ?? toStop.durationMinutes;
+    final durationMinutes =
+        routeResult?.durationMinutes ?? toStop.durationMinutes;
     final distanceMeters = routeResult?.distanceMeters ?? 0;
     final distanceKm = distanceMeters / 1000.0;
 
@@ -841,10 +608,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
                     ),
                   ],
                 ),
-                child: Icon(
-                  transportIcon,
-                  color: accentColor,
-                ),
+                child: Icon(transportIcon, color: accentColor),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -863,11 +627,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(
-                          transportIcon,
-                          size: 16,
-                          color: accentColor,
-                        ),
+                        Icon(transportIcon, size: 16, color: accentColor),
                         const SizedBox(width: 4),
                         Text(
                           transportLabel,
@@ -934,7 +694,9 @@ class _ScheduleHistoryTemplate3DetailScreenState
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...routeResult.steps!.map((step) => _buildRouteStep(step, accentColor, textTheme)),
+                  ...routeResult.steps!.map(
+                    (step) => _buildRouteStep(step, accentColor, textTheme),
+                  ),
                 ],
               ),
             ),
@@ -944,7 +706,11 @@ class _ScheduleHistoryTemplate3DetailScreenState
     );
   }
 
-  Widget _buildRouteStep(RouteStep step, Color accentColor, TextTheme textTheme) {
+  Widget _buildRouteStep(
+    RouteStep step,
+    Color accentColor,
+    TextTheme textTheme,
+  ) {
     IconData icon;
     Color iconColor;
 
