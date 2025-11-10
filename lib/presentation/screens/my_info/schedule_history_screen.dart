@@ -248,7 +248,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen>
                 dividerColor: Colors.transparent,
                 tabs: const [
                   Tab(text: '일정표'),
-                  Tab(text: '그냥'),
+                  Tab(text: '기본'),
                 ],
               ),
               Container(height: 1, color: AppTheme.primaryColor),
