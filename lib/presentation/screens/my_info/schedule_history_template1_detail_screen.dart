@@ -127,6 +127,10 @@ class _ScheduleHistoryDetailScreenState
       final categoryName = category['category_name'] as String? ?? '';
       final categoryId =
           category['category_id'] as String? ?? ''; // 🔥 매장 ID 추출
+      final imageUrl =
+          category['image'] as String? ??
+          category['image_url'] as String? ??
+          category['category_image'] as String?;
       final duration = category['duration'] as int? ?? 3600; // 초 단위
 
       int transportation = 1;
@@ -163,6 +167,7 @@ class _ScheduleHistoryDetailScreenState
           color: const Color(0xFFFF8126),
           type: _ItemType.place,
           categoryId: categoryId, // 🔥 매장 ID 추가
+          imageUrl: imageUrl,
         ),
       );
 
@@ -532,7 +537,8 @@ class _ScheduleItem {
   final IconData icon;
   final Color color;
   final _ItemType type;
-  final String? categoryId; // 🔥 매장 ID (클릭 시 사용)
+  final String? categoryId;
+  final String? imageUrl; // 🔥 추가
 
   _ScheduleItem({
     required this.title,
@@ -541,7 +547,8 @@ class _ScheduleItem {
     required this.icon,
     required this.color,
     required this.type,
-    this.categoryId, // 🔥 추가
+    this.categoryId,
+    this.imageUrl, // 🔥 추가
   });
 }
 
@@ -688,10 +695,7 @@ class _TimelineRow extends StatelessWidget {
   /// 🔥 매장 상세 화면으로 이동
   Future<void> _navigateToDetail(BuildContext context) async {
     if (item.categoryId == null || item.categoryId!.isEmpty) {
-      CommonDialogs.showError(
-        context: context,
-        message: '매장 정보를 불러올 수 없습니다.',
-      );
+      CommonDialogs.showError(context: context, message: '매장 정보를 불러올 수 없습니다.');
       return;
     }
 
@@ -707,22 +711,34 @@ class _TimelineRow extends StatelessWidget {
         ),
       );
 
-      // 🔥 Restaurant 객체 생성 (RestaurantDetailScreen에서 필요한 형식)
-      final restaurant = Restaurant(
-        id: item.categoryId!,
-        name: item.title,
-        subCategory: item.subtitle,
-        detailAddress: item.address,
-        phone: null,
-        rating: null,
-        businessHour: null,
-        image: null,
+      // 🔥 매장 상세 정보 API 호출 (이미지 포함)
+      print('🔍 매장 상세 정보 조회 시작: ${item.categoryId}');
+      final detailedRestaurant = await ApiService.getRestaurant(
+        item.categoryId!,
       );
+      print('✅ 매장 상세 정보 조회 완료: ${detailedRestaurant.image}');
 
       if (!context.mounted) return;
 
       // 로딩 다이얼로그 닫기
       Navigator.pop(context);
+
+      // 🔥 API에서 받은 전체 정보로 Restaurant 객체 생성
+      final restaurant = Restaurant(
+        id: item.categoryId!,
+        name: detailedRestaurant.name.isNotEmpty
+            ? detailedRestaurant.name
+            : item.title,
+        subCategory: detailedRestaurant.subCategory ?? item.subtitle,
+        detailAddress: detailedRestaurant.detailAddress ?? item.address,
+        image: detailedRestaurant.image, // 🔥 API에서 받은 이미지 사용
+        phone: detailedRestaurant.phone,
+        rating: detailedRestaurant.rating,
+        businessHour: detailedRestaurant.businessHour,
+      );
+
+      print('🏪 Restaurant 객체 생성 완료:');
+      print('  → image: ${restaurant.image}');
 
       // 🔥 상세 화면으로 이동
       Navigator.push(
