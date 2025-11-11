@@ -369,7 +369,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
     ]);
     final scheduleTitle = _extractScheduleTitle(schedule);
     final schedulePlaces = _extractSchedulePlaces(schedule, mergeHistory);
-    final scheduleDate = _extractScheduleDate(raw, schedule, createdAt);
     final scheduleTime = _extractScheduleTime(raw, schedule);
 
     return {
@@ -394,7 +393,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
       'raw': raw,
       'scheduleTitle': scheduleTitle,
       'schedulePlaces': schedulePlaces,
-      'scheduleDate': scheduleDate,
       'scheduleTime': scheduleTime,
       'mergeHistory': mergeHistory,
     };
@@ -555,7 +553,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final profileImageUrl = post['profileImageUrl'] as String?;
     final scheduleTitle = post['scheduleTitle'] as String?;
     final schedulePlaces = (post['schedulePlaces'] as List?)?.cast<String>() ?? const [];
-    final scheduleDate = post['scheduleDate'] as String?;
     final scheduleTime = post['scheduleTime'] as String?;
 
     return Material(
@@ -578,7 +575,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   'raw': post['raw'],
                   'scheduleTitle': scheduleTitle,
                   'schedulePlaces': schedulePlaces,
-                  'scheduleDate': scheduleDate,
                   'scheduleTime': scheduleTime,
                 },
               ),
@@ -647,12 +643,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
               color: Colors.black87,
             ),
           ),
-          if (scheduleTitle != null || schedulePlaces.isNotEmpty || scheduleDate != null || scheduleTime != null) ...[
+          if (scheduleTitle != null || schedulePlaces.isNotEmpty || scheduleTime != null) ...[
             const SizedBox(height: 12),
             _buildSchedulePreview(
               title: scheduleTitle,
               places: schedulePlaces,
-              dateText: scheduleDate,
               timeText: scheduleTime,
             ),
             const SizedBox(height: 12),
@@ -715,7 +710,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget _buildSchedulePreview({
     String? title,
     List<String>? places,
-    String? dateText,
     String? timeText,
   }) {
     const textStyle = TextStyle(
@@ -766,41 +760,23 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
               ],
             ),
-            if (routeWidgets.isNotEmpty || dateText != null || timeText != null)
+          if (routeWidgets.isNotEmpty || timeText != null)
               const SizedBox(height: 6),
           ],
-          if (dateText != null || timeText != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  if (dateText != null) ...[
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 14,
-                      color: Color(0xFFFF8126),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      dateText,
-                      style: textStyle,
-                    ),
-                    if (timeText != null) const SizedBox(width: 12),
-                  ],
-                  if (timeText != null) ...[
-                    const Icon(
-                      Icons.schedule,
-                      size: 14,
-                      color: Color(0xFFFF8126),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      timeText,
-                      style: textStyle,
-                    ),
-                  ],
-                ],
-              ),
+          if (timeText != null)
+            Row(
+              children: [
+                const Icon(
+                  Icons.schedule,
+                  size: 14,
+                  color: Color(0xFFFF8126),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  timeText,
+                  style: textStyle,
+                ),
+              ],
             ),
           if (routeWidgets.isNotEmpty)
             Wrap(
@@ -885,44 +861,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return deduped;
   }
 
-  String? _extractScheduleDate(
-    Map<String, dynamic> raw,
-    Map<String, dynamic>? schedule,
-    dynamic fallback,
-  ) {
-    final candidates = [
-      raw['schedule_date'],
-      raw['scheduleDate'],
-      raw['merge_history_date'],
-      raw['mergeHistoryDate'],
-      raw['merge_history_created_at'],
-      raw['mergeHistoryCreatedAt'],
-      raw['merge_history_uploaded_at'],
-      raw['date'],
-      if (raw['merge_history'] is Map<String, dynamic>) ...[
-        (raw['merge_history'] as Map<String, dynamic>)['date'],
-        (raw['merge_history'] as Map<String, dynamic>)['created_at'],
-        (raw['merge_history'] as Map<String, dynamic>)['createdAt'],
-      ],
-      schedule?['date'],
-      schedule?['scheduleDate'],
-      schedule?['schedule_date'],
-      schedule?['visited_at'],
-      schedule?['visitedAt'],
-      fallback,
-    ];
-    for (final candidate in candidates) {
-      if (candidate == null) continue;
-      final text = candidate.toString().trim();
-      if (text.isEmpty) continue;
-      final formatted = _formatDateText(text);
-      if (formatted != null) {
-        return formatted;
-      }
-    }
-    return null;
-  }
-
   String? _extractScheduleTime(
     Map<String, dynamic> raw,
     Map<String, dynamic>? schedule,
@@ -953,26 +891,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
       }
     }
     return null;
-  }
-
-  String? _formatDateText(String input) {
-    try {
-      if (input.contains('T') || input.contains('-')) {
-        final date = DateTime.tryParse(input.replaceAll('/', '-'));
-        if (date != null) {
-          return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        }
-      }
-      if (input.length == 8 && int.tryParse(input) != null) {
-        final year = input.substring(0, 4);
-        final month = input.substring(4, 6);
-        final day = input.substring(6, 8);
-        return '$year-$month-$day';
-      }
-      return input;
-    } catch (_) {
-      return input;
-    }
   }
 
   String? _formatTimeText(String input) {
