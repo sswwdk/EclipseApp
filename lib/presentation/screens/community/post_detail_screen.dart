@@ -35,6 +35,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   void initState() {
     super.initState();
     _currentPost = Map<String, dynamic>.from(widget.post);
+    final initialPostId = _coerceToInt(_currentPost?['postId'] ?? _currentPost?['post_id'] ?? _currentPost?['id']);
+    if (initialPostId != null) {
+      _currentPost?['postId'] = initialPostId;
+    }
     _detailFuture = _loadPostDetail();
   }
 
@@ -541,14 +545,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _handleSubmitComment() async {
     final postId = _resolvePostId();
-    final postIdInt = _resolvePostIdAsInt();
     final trimmed = _commentController.text.trim();
 
     if (_isSubmittingComment) {
       return;
     }
 
-    if (postId == null || postId.isEmpty || postIdInt == null) {
+    if (postId == null) {
       _showSnackBar('게시글 정보를 찾을 수 없습니다.');
       return;
     }
@@ -563,7 +566,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     });
 
     try {
-      await CommunityService.createComment(postIdInt, trimmed);
+      await CommunityService.createComment(postId, trimmed);
       _commentController.clear();
       FocusScope.of(context).unfocus();
       if (!mounted) return;
@@ -589,7 +592,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<_PostDetailData> _loadPostDetail() async {
     final postId = _resolvePostId();
-    if (postId == null || postId.isEmpty) {
+    if (postId == null) {
       return _PostDetailData(
         post: Map<String, dynamic>.from(widget.post),
         comments: const [],
@@ -597,7 +600,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
 
     try {
-      final response = await CommunityService.getSpecificPost(postId);
+      final response = await CommunityService.getSpecificPost(postId.toString());
       final normalizedPost =
           _normalizePostDetail(response, Map<String, dynamic>.from(widget.post))
             ..['postId'] = postId;
@@ -614,10 +617,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  String? _resolvePostId() {
+  int? _resolvePostId() {
     final raw = widget.post;
     final rawData = raw['raw'];
-
     final candidates = [
       raw['postId'],
       raw['post_id'],
@@ -630,20 +632,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     ];
 
     for (final candidate in candidates) {
-      if (candidate == null) continue;
-      final text = candidate.toString().trim();
-      if (text.isNotEmpty) {
-        return text;
+      final parsed = _coerceToInt(candidate);
+      if (parsed != null) {
+        return parsed;
       }
     }
 
-    return null;
-  }
-
-  int? _resolvePostIdAsInt() {
-    final id = _resolvePostId();
-    if (id == null) return null;
-    return int.tryParse(id);
+    return _coerceToInt(_currentPost?['postId']);
   }
 
   bool _isMyPost() {
@@ -686,13 +681,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final normalized = Map<String, dynamic>.from(fallback);
 
     normalized['raw'] = raw;
-    normalized['postId'] = _firstNonEmptyString([
+    final normalizedPostId = _firstValidInt([
       raw['id'],
       raw['post_id'],
       raw['postId'],
       fallback['postId'],
       fallback['id'],
-    ])?.toString();
+    ]);
+    if (normalizedPostId != null) {
+      normalized['postId'] = normalizedPostId;
+    } else {
+      normalized.remove('postId');
+    }
 
     normalized['nickname'] = _firstNonEmptyString([
           raw['user_nickname'],
@@ -853,10 +853,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         : int.tryParse(likesValue.toString()) ?? 0;
 
     return {
-      'commentId': _firstNonEmptyString([
-        raw['id']?.toString(),
-        raw['commentId']?.toString(),
-        raw['comment_id']?.toString(),
+      'commentId': _firstValidInt([
+        raw['id'],
+        raw['commentId'],
+        raw['comment_id'],
       ]),
       'nickname': nickname,
       'timeAgo': timeDisplay,
@@ -891,16 +891,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _deleteComment(Map<String, dynamic> comment) async {
     final postId = _resolvePostId();
-    final commentId = comment['commentId']?.toString();
+    final commentId = _coerceToInt(comment['commentId']);
     final userId = TokenManager.userId;
 
-    if (postId == null || commentId == null || commentId.isEmpty || userId == null) {
+    if (postId == null || commentId == null || userId == null) {
       _showSnackBar('댓글 정보를 찾을 수 없습니다.');
       return;
     }
 
     try {
-      await CommunityService.deleteComment(postId, commentId, userId);
+      await CommunityService.deleteComment(postId.toString(), commentId.toString());
       if (!mounted) return;
       CommonDialogs.showSuccess(
         context: context,
@@ -925,14 +925,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _reportComment(Map<String, dynamic> comment) async {
     final userId = TokenManager.userId;
-    final commentId = comment['commentId']?.toString();
+    final commentId = _coerceToInt(comment['commentId']);
 
     if (userId == null) {
       _showSnackBar('로그인이 필요합니다.');
       return;
     }
 
-    if (commentId == null || commentId.isEmpty) {
+    if (commentId == null) {
       _showSnackBar('댓글 정보를 찾을 수 없습니다.');
       return;
     }
@@ -941,7 +941,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       await CommunityService.reportContent(
         userId,
         'comment',
-        commentId,
+        commentId.toString(),
         '부적절한 댓글 신고',
       );
       if (!mounted) return;
@@ -966,16 +966,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _deletePost() async {
-    final postIdInt = _resolvePostIdAsInt();
+    final postId = _resolvePostId();
     final userId = TokenManager.userId;
 
-    if (postIdInt == null || userId == null) {
+    if (postId == null || userId == null) {
       _showSnackBar('게시글 정보를 찾을 수 없습니다.');
       return;
     }
 
     try {
-      await CommunityService.deletePost(postIdInt, userId);
+      await CommunityService.deletePost(postId, userId);
       if (!mounted) return;
       CommonDialogs.showSuccess(
         context: context,
@@ -1021,6 +1021,24 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       }
     }
     return null;
+  }
+
+  int? _firstValidInt(List<dynamic> values) {
+    for (final value in values) {
+      final parsed = _coerceToInt(value);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+    return null;
+  }
+
+  int? _coerceToInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    final text = value.toString().trim();
+    if (text.isEmpty) return null;
+    return int.tryParse(text);
   }
 
   String _formatTimeAgo(dynamic time) {

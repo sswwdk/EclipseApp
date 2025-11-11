@@ -174,7 +174,7 @@ class CommunityService {
   }
 
   // 댓글 삭제
-  static Future<String> deleteComment(String postId, String commentId, String userId) async {
+  static Future<String> deleteComment(String postId, String commentId) async {
     try {
       final response = await http.delete(
         Uri.parse('$communityUrl/api/community/comment'),
@@ -184,7 +184,6 @@ class CommunityService {
         },
         body: json.encode({
           'comment_id': commentId,
-          'user_id': userId,
           'post_id': postId,
         }),
       );
