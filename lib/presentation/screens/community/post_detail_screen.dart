@@ -186,6 +186,65 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       rawUser?['user_id'],
     ]);
 
+    Map<String, dynamic>? schedule;
+    final scheduleData = post['schedule'] ?? rawMap?['schedule'];
+    if (scheduleData is Map<String, dynamic>) {
+      schedule = Map<String, dynamic>.from(scheduleData);
+    } else if (scheduleData is Map) {
+      schedule = Map<String, dynamic>.from(scheduleData.cast<String, dynamic>());
+    }
+
+    final mergeHistory = _firstNonEmptyString([
+      post['mergeHistory'],
+      post['merge_history'],
+      post['merge_history_name'],
+      rawMap?['merge_history_name'],
+      rawMap?['mergeHistoryName'],
+      if (rawMap?['merge_history'] is Map<String, dynamic>)
+        (rawMap?['merge_history'] as Map<String, dynamic>)['name'],
+    ]);
+
+    final scheduleTitle = _firstNonEmptyString([
+          post['scheduleTitle'],
+          post['schedule_title'],
+        ]) ??
+        _extractScheduleTitle(schedule);
+
+    final schedulePlaces = <String>{
+      ...(post['schedulePlaces'] is List
+          ? (post['schedulePlaces'] as List)
+              .whereType<String>()
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+          : const Iterable<String>.empty()),
+      ..._extractSchedulePlaces(schedule, mergeHistory),
+    }.toList();
+
+    final scheduleDate = _firstNonEmptyString([
+          post['scheduleDate'],
+          post['schedule_date'],
+        ]) ??
+        _extractScheduleDate(
+          rawMap ?? Map<String, dynamic>.from(post),
+          schedule,
+          post['createdAt'],
+        );
+
+    final scheduleTime = _firstNonEmptyString([
+          post['scheduleTime'],
+          post['schedule_time'],
+        ]) ??
+        _extractScheduleTime(
+          rawMap ?? Map<String, dynamic>.from(post),
+          schedule,
+        );
+
+    final shouldShowSchedule = schedule != null ||
+        scheduleTitle != null ||
+        schedulePlaces.isNotEmpty ||
+        scheduleDate != null ||
+        scheduleTime != null;
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(16),
@@ -277,39 +336,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           const SizedBox(height: 16),
           
           // 일정표 정보 (있는 경우에만 표시)
-          if (post['schedule'] != null) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF8126).withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFFF8126).withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    color: const Color(0xFFFF8126),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '일정표가 뜰 예정입니다',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFFF8126),
-                      ),
-                      softWrap: true,
-                      overflow: TextOverflow.visible,
-                    ),
-                  ),
-                ],
-              ),
+          if (shouldShowSchedule) ...[
+            _buildSchedulePreview(
+              title: scheduleTitle,
+              places: schedulePlaces,
+              dateText: scheduleDate,
+              timeText: scheduleTime,
             ),
             const SizedBox(height: 16),
           ],
@@ -347,6 +379,290 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildSchedulePreview({
+    String? title,
+    List<String>? places,
+    String? dateText,
+    String? timeText,
+  }) {
+    const accentColor = Color(0xFFFF8126);
+    const backgroundColor = Color(0xFFFFF3E8);
+    final borderColor = const Color(0xFFFFA86C).withValues(alpha: 0.4);
+    const textStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: accentColor,
+    );
+
+    final routeWidgets = <Widget>[];
+    final safePlaces = (places ?? const []).where((e) => e.trim().isNotEmpty);
+    for (final place in safePlaces) {
+      if (routeWidgets.isNotEmpty) {
+        routeWidgets.add(const Text(' → ', style: textStyle));
+      }
+      routeWidgets.add(Text(place, style: textStyle));
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: borderColor,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null && title.trim().isNotEmpty) ...[
+            Row(
+              children: [
+                const Icon(Icons.article, size: 16, color: accentColor),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: textStyle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            if (routeWidgets.isNotEmpty || dateText != null || timeText != null)
+              const SizedBox(height: 6),
+          ],
+          if (dateText != null || timeText != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  if (dateText != null) ...[
+                    const Icon(Icons.calendar_today,
+                        size: 14, color: accentColor),
+                    const SizedBox(width: 4),
+                    Text(dateText, style: textStyle),
+                    if (timeText != null) const SizedBox(width: 12),
+                  ],
+                  if (timeText != null) ...[
+                    const Icon(Icons.schedule, size: 14, color: accentColor),
+                    const SizedBox(width: 4),
+                    Text(timeText, style: textStyle),
+                  ],
+                ],
+              ),
+            ),
+          if (routeWidgets.isNotEmpty)
+            Wrap(
+              spacing: 2,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: routeWidgets,
+            )
+          else if (title == null || title.trim().isEmpty)
+            const Text(
+              '일정 정보가 없습니다.',
+              style: TextStyle(
+                fontSize: 12,
+                color: accentColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _extractSchedulePlaces(
+    Map<String, dynamic>? schedule,
+    String? mergeHistory,
+  ) {
+    final results = <String>[];
+
+    void extract(dynamic node) {
+      if (node == null) return;
+      if (node is List) {
+        for (final item in node) {
+          extract(item);
+        }
+      } else if (node is Map) {
+        final map = Map<String, dynamic>.from(node);
+        final place = map['place'] ?? map['placeName'] ?? map['name'];
+        if (place != null) {
+          final text = place.toString().trim();
+          if (text.isNotEmpty) {
+            results.add(text);
+          }
+        }
+        extract(map['places']);
+        extract(map['schedule']);
+        extract(map['routes']);
+        extract(map['steps']);
+        extract(map['items']);
+        extract(map['children']);
+      } else if (node is String) {
+        final trimmed = node.trim();
+        if (trimmed.contains('→')) {
+          results.addAll(
+            trimmed
+                .split('→')
+                .map((segment) => segment.trim())
+                .where((segment) => segment.isNotEmpty),
+          );
+        } else if (trimmed.isNotEmpty) {
+          results.add(trimmed);
+        }
+      }
+    }
+
+    extract(schedule);
+
+    if (mergeHistory != null && mergeHistory.contains('→')) {
+      results.addAll(
+        mergeHistory
+            .split('→')
+            .map((segment) => segment.trim())
+            .where((segment) => segment.isNotEmpty),
+      );
+    }
+
+    final seen = <String>{};
+    final deduped = <String>[];
+    for (final place in results) {
+      if (seen.add(place)) {
+        deduped.add(place);
+      }
+    }
+    return deduped;
+  }
+
+  String? _extractScheduleDate(
+    Map<String, dynamic> raw,
+    Map<String, dynamic>? schedule,
+    dynamic fallback,
+  ) {
+    final candidates = [
+      raw['schedule_date'],
+      raw['scheduleDate'],
+      raw['merge_history_date'],
+      raw['mergeHistoryDate'],
+      raw['merge_history_created_at'],
+      raw['mergeHistoryCreatedAt'],
+      raw['merge_history_uploaded_at'],
+      raw['date'],
+      if (raw['merge_history'] is Map<String, dynamic>) ...[
+        (raw['merge_history'] as Map<String, dynamic>)['date'],
+        (raw['merge_history'] as Map<String, dynamic>)['created_at'],
+        (raw['merge_history'] as Map<String, dynamic>)['createdAt'],
+      ],
+      schedule?['date'],
+      schedule?['scheduleDate'],
+      schedule?['schedule_date'],
+      schedule?['visited_at'],
+      schedule?['visitedAt'],
+      fallback,
+    ];
+    for (final candidate in candidates) {
+      if (candidate == null) continue;
+      final text = candidate.toString().trim();
+      if (text.isEmpty) continue;
+      final formatted = _formatDateText(text);
+      if (formatted != null) {
+        return formatted;
+      }
+    }
+    return null;
+  }
+
+  String? _extractScheduleTime(
+    Map<String, dynamic> raw,
+    Map<String, dynamic>? schedule,
+  ) {
+    final candidates = <String?>[
+      raw['schedule_time']?.toString(),
+      raw['scheduleTime']?.toString(),
+      raw['time']?.toString(),
+      if (raw['merge_history_time'] != null)
+        raw['merge_history_time'].toString(),
+      if (raw['merge_history'] is Map<String, dynamic>)
+        (raw['merge_history'] as Map<String, dynamic>)['time']?.toString(),
+      _firstNonEmptyString([
+        schedule?['time'],
+        schedule?['startTime'],
+        schedule?['start_time'],
+        schedule?['scheduleTime'],
+      ]),
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate == null) continue;
+      final trimmed = candidate.trim();
+      if (trimmed.isEmpty) continue;
+      final formatted = _formatTimeText(trimmed);
+      if (formatted != null) {
+        return formatted;
+      }
+    }
+    return null;
+  }
+
+  String? _formatDateText(String input) {
+    try {
+      if (input.contains('T') || input.contains('-')) {
+        final date = DateTime.tryParse(input.replaceAll('/', '-'));
+        if (date != null) {
+          return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        }
+      }
+      if (input.length == 8 && int.tryParse(input) != null) {
+        final year = input.substring(0, 4);
+        final month = input.substring(4, 6);
+        final day = input.substring(6, 8);
+        return '$year-$month-$day';
+      }
+      return input;
+    } catch (_) {
+      return input;
+    }
+  }
+
+  String? _formatTimeText(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.contains(':')) {
+      final parts = trimmed.split(':');
+      final hour = parts[0].padLeft(2, '0');
+      final minute = parts.length > 1 ? parts[1].padLeft(2, '0') : '00';
+      return '$hour:$minute';
+    }
+    if (trimmed.length == 4 && int.tryParse(trimmed) != null) {
+      final hour = trimmed.substring(0, 2);
+      final minute = trimmed.substring(2, 4);
+      return '$hour:$minute';
+    }
+    return trimmed;
+  }
+
+  String? _extractScheduleTitle(Map<String, dynamic>? schedule) {
+    if (schedule == null) return null;
+    final candidates = [
+      schedule['title'],
+      schedule['name'],
+      schedule['label'],
+      schedule['scheduleTitle'],
+    ];
+    for (final candidate in candidates) {
+      if (candidate == null) continue;
+      final text = candidate.toString().trim();
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+    return null;
   }
 
   Widget _buildCommentsSection(List<Map<String, dynamic>> comments) {
@@ -770,6 +1086,93 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     if (!normalized.containsKey('profileImageUrl')) {
       normalized['profileImageUrl'] = fallback['profileImageUrl'];
+    }
+
+    Map<String, dynamic>? schedule;
+    final scheduleRaw = raw['schedule'];
+    if (scheduleRaw is Map<String, dynamic>) {
+      schedule = Map<String, dynamic>.from(scheduleRaw);
+    } else if (scheduleRaw is Map) {
+      schedule = Map<String, dynamic>.from(scheduleRaw.cast<String, dynamic>());
+    } else if (fallback['schedule'] is Map<String, dynamic>) {
+      schedule = Map<String, dynamic>.from(fallback['schedule'] as Map<String, dynamic>);
+    } else if (fallback['schedule'] is Map) {
+      schedule = Map<String, dynamic>.from(
+        (fallback['schedule'] as Map).cast<String, dynamic>(),
+      );
+    }
+
+    if (schedule != null) {
+      normalized['schedule'] = schedule;
+    } else {
+      normalized.remove('schedule');
+    }
+
+    final mergeHistory = _firstNonEmptyString([
+      raw['merge_history_name'],
+      raw['mergeHistoryName'],
+      if (raw['merge_history'] is Map<String, dynamic>)
+        (raw['merge_history'] as Map<String, dynamic>)['name'],
+      fallback['mergeHistory'],
+      fallback['merge_history'],
+      fallback['merge_history_name'],
+    ]);
+    if (mergeHistory != null) {
+      normalized['mergeHistory'] = mergeHistory;
+    }
+
+    final scheduleTitle = _extractScheduleTitle(schedule) ??
+        _firstNonEmptyString([
+          raw['schedule_title'],
+          raw['scheduleTitle'],
+          fallback['scheduleTitle'],
+          fallback['schedule_title'],
+        ]);
+    if (scheduleTitle != null) {
+      normalized['scheduleTitle'] = scheduleTitle;
+    } else {
+      normalized.remove('scheduleTitle');
+    }
+
+    final schedulePlaces = _extractSchedulePlaces(schedule, mergeHistory);
+    if (fallback['schedulePlaces'] is List && schedulePlaces.isEmpty) {
+      schedulePlaces.addAll(
+        (fallback['schedulePlaces'] as List)
+            .whereType<String>()
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty),
+      );
+    }
+    if (schedulePlaces.isNotEmpty) {
+      normalized['schedulePlaces'] = schedulePlaces;
+    } else {
+      normalized.remove('schedulePlaces');
+    }
+
+    final scheduleDate = _extractScheduleDate(raw, schedule, createdAt) ??
+        _firstNonEmptyString([
+          raw['schedule_date'],
+          raw['scheduleDate'],
+          fallback['scheduleDate'],
+          fallback['schedule_date'],
+        ]);
+    if (scheduleDate != null) {
+      normalized['scheduleDate'] = scheduleDate;
+    } else {
+      normalized.remove('scheduleDate');
+    }
+
+    final scheduleTime = _extractScheduleTime(raw, schedule) ??
+        _firstNonEmptyString([
+          raw['schedule_time'],
+          raw['scheduleTime'],
+          fallback['scheduleTime'],
+          fallback['schedule_time'],
+        ]);
+    if (scheduleTime != null) {
+      normalized['scheduleTime'] = scheduleTime;
+    } else {
+      normalized.remove('scheduleTime');
     }
 
     return normalized;
