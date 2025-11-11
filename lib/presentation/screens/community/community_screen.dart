@@ -815,7 +815,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             .map((segment) => segment.trim())
             .where((segment) => segment.isNotEmpty),
       );
-    }
+    } 
 
     final seen = <String>{};
     final deduped = <String>[];

@@ -200,7 +200,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 (post['nickname'] ?? '익명 사용자').toString(),
                 radius: 25,
                 fontSize: 18,
-              ),
+              ), 
               const SizedBox(width: 12),
               // 닉네임과 시간
               Expanded(
