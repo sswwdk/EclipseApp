@@ -212,7 +212,9 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
               overflow: TextOverflow.ellipsis,
             ),
             if (post.schedulePlaces.isNotEmpty ||
-                post.scheduleTitle != null) ...[
+                post.scheduleTitle != null ||
+                (post.scheduleDate != null && post.scheduleDate!.isNotEmpty) ||
+                (post.scheduleTime != null && post.scheduleTime!.isNotEmpty)) ...[
               const SizedBox(height: 8),
               _buildScheduleFlow(post),
             ],
@@ -253,6 +255,8 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
     final hasTitle =
         post.scheduleTitle != null && post.scheduleTitle!.trim().isNotEmpty;
     final hasPlaces = post.schedulePlaces.isNotEmpty;
+    final hasDate = post.scheduleDate != null && post.scheduleDate!.isNotEmpty;
+    final hasTime = post.scheduleTime != null && post.scheduleTime!.isNotEmpty;
 
     const textStyle = TextStyle(
       fontSize: 13,
@@ -305,6 +309,38 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
             ),
             if (routeWidgets.isNotEmpty) const SizedBox(height: 6),
           ],
+          if (hasDate || hasTime) ...[
+            Row(
+              children: [
+                if (hasDate) ...[
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 14,
+                    color: Color(0xFFFF8126),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    post.scheduleDate!,
+                    style: textStyle,
+                  ),
+                  if (hasTime) const SizedBox(width: 12),
+                ],
+                if (hasTime) ...[
+                  const Icon(
+                    Icons.schedule,
+                    size: 14,
+                    color: Color(0xFFFF8126),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    post.scheduleTime!,
+                    style: textStyle,
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 6),
+          ],
           if (routeWidgets.isNotEmpty)
             Wrap(
               spacing: 2,
@@ -337,6 +373,8 @@ class MyPostItem {
   final Map<String, dynamic>? raw;
   final String? scheduleTitle;
   final List<String> schedulePlaces;
+  final String? scheduleDate;
+  final String? scheduleTime;
 
   const MyPostItem({
     required this.id,
@@ -349,6 +387,8 @@ class MyPostItem {
     required this.raw,
     required this.scheduleTitle,
     required this.schedulePlaces,
+    required this.scheduleDate,
+    required this.scheduleTime,
   });
 
   static List<MyPostItem> parseList(dynamic response) {
@@ -367,32 +407,44 @@ class MyPostItem {
     }
 
     return items.whereType<Map<String, dynamic>>().map((m) {
-      final String id = (m['id'] ?? m['post_id'] ?? '').toString();
-      final String title = (m['title'] ?? m['content'] ?? '').toString();
-      final String content = (m['content'] ?? m['text'] ?? '').toString();
+      final Map<String, dynamic> raw = Map<String, dynamic>.from(m);
+
+      final String id = (raw['id'] ?? raw['post_id'] ?? '').toString();
+      final String title = (raw['title'] ?? raw['content'] ?? '').toString();
+      final String content = (raw['content'] ?? raw['text'] ?? '').toString();
 
       final dynamic commentValue =
-          m['comment_count'] ?? m['commentCount'] ?? m['comments'] ?? 0;
+          raw['comment_count'] ?? raw['commentCount'] ?? raw['comments'] ?? 0;
       final int commentCount = commentValue is int
           ? commentValue
           : int.tryParse(commentValue.toString()) ?? 0;
 
       final String date =
-          (m['created_at'] ?? m['createdAt'] ?? m['date'] ?? '').toString();
+          (raw['created_at'] ?? raw['createdAt'] ?? raw['date'] ?? '').toString();
 
-      final nickname = (m['nickname'] ??
-              m['user_nickname'] ??
-              m['userName'] ??
-              m['writerName'] ??
-              m['memberName'])
+      final nickname = (raw['nickname'] ??
+              raw['user_nickname'] ??
+              raw['userName'] ??
+              raw['writerName'] ??
+              raw['memberName'])
           ?.toString() ??
           '익명 사용자';
 
-      final profileImageUrl = (m['profileImageUrl'] ??
-              m['profile_image_url'] ??
-              m['profileImage'] ??
-              (m['user'] is Map ? (m['user']['profileImageUrl'] ?? m['user']['profileImage']) : null))
+      final profileImageUrl = (raw['profileImageUrl'] ??
+              raw['profile_image_url'] ??
+              raw['profileImage'] ??
+              (raw['user'] is Map
+                  ? (raw['user']['profileImageUrl'] ?? raw['user']['profileImage'])
+                  : null))
           ?.toString();
+
+      final mergeHistory = _firstNonEmptyString([
+        raw['merge_history_name'],
+        raw['mergeHistoryName'],
+      ]);
+      final schedule = raw['schedule'] is Map<String, dynamic>
+          ? Map<String, dynamic>.from(raw['schedule'] as Map)
+          : raw['schedule'];
 
       return MyPostItem(
         id: id.isEmpty ? DateTime.now().microsecondsSinceEpoch.toString() : id,
@@ -402,9 +454,11 @@ class MyPostItem {
         dateText: _formatDate(date),
         nickname: nickname,
         profileImageUrl: profileImageUrl,
-        raw: m,
-        scheduleTitle: _extractScheduleTitle(m),
-        schedulePlaces: _extractSchedulePlaces(m),
+        raw: raw,
+        scheduleTitle: _extractScheduleTitle(raw, schedule),
+        schedulePlaces: _extractSchedulePlaces(raw, schedule, mergeHistory),
+        scheduleDate: _extractScheduleDate(raw, schedule),
+        scheduleTime: _extractScheduleTime(raw, schedule),
       );
     }).toList();
   }
@@ -435,14 +489,16 @@ class MyPostItem {
     }
   }
 
-  static String? _extractScheduleTitle(Map<String, dynamic> raw) {
+  static String? _extractScheduleTitle(
+    Map<String, dynamic> raw,
+    dynamic schedule,
+  ) {
     if (raw.containsKey('schedule_title')) {
       final value = raw['schedule_title']?.toString().trim();
       if (value != null && value.isNotEmpty) {
         return value;
       }
     }
-    final schedule = raw['schedule'];
     if (schedule is Map<String, dynamic>) {
       final candidates = [
         schedule['title'],
@@ -460,13 +516,12 @@ class MyPostItem {
     return null;
   }
 
-  static List<String> _extractSchedulePlaces(Map<String, dynamic> raw) {
-    final schedule = raw['schedule'];
-    if (schedule == null) {
-      return const [];
-    }
-
-    List<String> places = [];
+  static List<String> _extractSchedulePlaces(
+    Map<String, dynamic> raw,
+    dynamic schedule,
+    String? mergeHistory,
+  ) {
+    final List<String> places = [];
 
     void extract(dynamic node) {
       if (node == null) return;
@@ -506,6 +561,15 @@ class MyPostItem {
 
     extract(schedule);
 
+    if (mergeHistory != null && mergeHistory.contains('→')) {
+      places.addAll(
+        mergeHistory
+            .split('→')
+            .map((segment) => segment.trim())
+            .where((segment) => segment.isNotEmpty),
+      );
+    }
+
     // 중복 제거
     final seen = <String>{};
     final deduped = <String>[];
@@ -515,6 +579,126 @@ class MyPostItem {
       }
     }
     return deduped;
+  }
+
+  static String? _extractScheduleDate(
+    Map<String, dynamic> raw,
+    dynamic schedule,
+  ) {
+    final candidates = [
+      raw['schedule_date'],
+      raw['scheduleDate'],
+      raw['merge_history_date'],
+      raw['mergeHistoryDate'],
+      raw['merge_history_created_at'],
+      raw['mergeHistoryCreatedAt'],
+      raw['merge_history_uploaded_at'],
+      if (raw['merge_history'] is Map<String, dynamic>) ...[
+        (raw['merge_history'] as Map<String, dynamic>)['date'],
+        (raw['merge_history'] as Map<String, dynamic>)['created_at'],
+        (raw['merge_history'] as Map<String, dynamic>)['createdAt'],
+      ],
+      if (schedule is Map<String, dynamic>) ...[
+        schedule['date'],
+        schedule['scheduleDate'],
+        schedule['schedule_date'],
+        schedule['visited_at'],
+        schedule['visitedAt'],
+      ],
+    ];
+    for (final candidate in candidates) {
+      if (candidate == null) continue;
+      final text = candidate.toString().trim();
+      if (text.isEmpty) continue;
+      final formatted = _formatScheduleDate(text);
+      if (formatted != null) {
+        return formatted;
+      }
+    }
+    return null;
+  }
+
+  static String? _extractScheduleTime(
+    Map<String, dynamic> raw,
+    dynamic schedule,
+  ) {
+    final candidates = [
+      raw['schedule_time'],
+      raw['scheduleTime'],
+      raw['time'],
+      raw['merge_history_time'],
+      if (raw['merge_history'] is Map<String, dynamic>)
+        (raw['merge_history'] as Map<String, dynamic>)['time'],
+      if (schedule is Map<String, dynamic>) ...[
+        schedule['time'],
+        schedule['startTime'],
+        schedule['start_time'],
+        schedule['scheduleTime'],
+      ],
+    ];
+    for (final candidate in candidates) {
+      if (candidate == null) continue;
+      final text = candidate.toString().trim();
+      if (text.isEmpty) continue;
+      final formatted = _formatScheduleTime(text);
+      if (formatted != null) {
+        return formatted;
+      }
+    }
+    return null;
+  }
+
+  static String? _formatScheduleDate(String input) {
+    try {
+      if (input.contains('T')) {
+        final date = DateTime.parse(input);
+        return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      }
+      if (input.contains('-') || input.contains('/')) {
+        final sanitized = input.replaceAll('/', '-');
+        final date = DateTime.tryParse(sanitized);
+        if (date != null) {
+          return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        }
+      }
+      if (input.length == 8 && int.tryParse(input) != null) {
+        final year = input.substring(0, 4);
+        final month = input.substring(4, 6);
+        final day = input.substring(6, 8);
+        return '$year-$month-$day';
+      }
+      return input;
+    } catch (_) {
+      return input;
+    }
+  }
+
+  static String? _formatScheduleTime(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.contains(':')) {
+      final parts = trimmed.split(':');
+      final hour = parts[0].padLeft(2, '0');
+      final minute = parts.length > 1 ? parts[1].padLeft(2, '0') : '00';
+      return '$hour:$minute';
+    }
+    if (trimmed.length == 4 && int.tryParse(trimmed) != null) {
+      final hour = trimmed.substring(0, 2);
+      final minute = trimmed.substring(2, 4);
+      return '$hour:$minute';
+    }
+    return trimmed;
+  }
+
+  static String? _firstNonEmptyString(List<dynamic> values) {
+    for (final value in values) {
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+    return null;
   }
 }
 
