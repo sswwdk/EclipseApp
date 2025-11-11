@@ -4,7 +4,7 @@ import '../../../data/models/restaurant.dart';
 import '../../../data/models/review.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/review_service.dart';
-
+import '../../widgets/user_avatar.dart';
 class RestaurantDetailReviewScreen extends StatefulWidget {
   final Restaurant restaurant;
 
@@ -592,14 +592,10 @@ class _RestaurantDetailReviewScreenState
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            color: Colors.grey,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.person, color: Colors.white, size: 20),
+        UserAvatar(
+          imageUrl: null,
+          displayName: nickname,
+          radius: 20,
         ),
         const SizedBox(width: 12),
         Expanded(
