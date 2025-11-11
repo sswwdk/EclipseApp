@@ -5,7 +5,7 @@ import '../../../data/services/route_service.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../shared/helpers/history_parser.dart';
-import '../main/restaurant_detail_screen.dart';
+import '../main/restaurant_detail_review_screen.dart';
 
 class ScheduleHistoryTemplate2DetailScreen extends StatefulWidget {
   final String historyId;
@@ -209,14 +209,6 @@ class _ScheduleHistoryTemplate2DetailScreenState
     return HistoryParser.parseRouteInfo(category, defaultDuration);
   }
 
-  String? _stringFromDynamic(dynamic value) {
-    return HistoryParser.stringFromDynamic(value);
-  }
-
-  double? _doubleFromDynamic(dynamic value) {
-    return HistoryParser.doubleFromDynamic(value);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -315,14 +307,6 @@ class _ScheduleHistoryTemplate2DetailScreenState
   }
 
   Widget _buildHomeSection() {
-    String displayAddress = '집';
-    if (_originAddress != null && _originAddress!.isNotEmpty) {
-      displayAddress = _originAddress!;
-      if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty) {
-        displayAddress += '\n$_originDetailAddress';
-      }
-    }
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -857,7 +841,9 @@ class _PlannerItemCard extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
+          builder: (context) => RestaurantDetailReviewScreen(
+            restaurant: restaurant,
+          ),
         ),
       );
     } catch (e) {

@@ -5,7 +5,7 @@ import '../../../data/services/route_service.dart';
 import '../../../data/services/api_service.dart'; // 🔥 Restaurant 모델 사용
 import '../../../data/models/restaurant.dart';
 import '../../../shared/helpers/history_parser.dart';
-import '../main/restaurant_detail_screen.dart'; // 🔥 상세 화면 import
+import '../main/restaurant_detail_review_screen.dart'; // 🔥 상세 화면 import
 import '../../widgets/common_dialogs.dart';
 
 /// 일정표 히스토리 상세 화면
@@ -508,7 +508,9 @@ class _TimelineRow extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
+          builder: (context) => RestaurantDetailReviewScreen(
+            restaurant: restaurant,
+          ),
         ),
       );
     } catch (e) {

@@ -4,7 +4,7 @@ import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../shared/helpers/history_parser.dart';
-import '../main/restaurant_detail_screen.dart';
+import '../main/restaurant_detail_review_screen.dart';
 
 class ScheduleHistoryTemplate3DetailScreen extends StatefulWidget {
   final String historyId;
@@ -507,7 +507,9 @@ class _ScheduleHistoryTemplate3DetailScreenState
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => RestaurantDetailScreen(restaurant: restaurant),
+        builder: (_) => RestaurantDetailReviewScreen(
+          restaurant: restaurant,
+        ),
       ),
     );
   }
