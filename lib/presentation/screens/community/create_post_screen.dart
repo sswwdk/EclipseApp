@@ -353,11 +353,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
-    CommonDialogs.showMessage(
-      context: context,
-      message: '게시글을 등록하는 중입니다...',
-    );
-
     try {
       await CommunityService.createPost(title, content, mergeHistoryId);
       if (!mounted) return;
