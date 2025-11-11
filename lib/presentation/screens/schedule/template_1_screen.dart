@@ -208,7 +208,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.isReadOnly ? '일정표 상세' : '일정표 만들기',
+          widget.isReadOnly ? '일정표 상세' : '템플릿 1',
           style: const TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -623,23 +623,11 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
   List<_ScheduleItem> _buildScheduleItems(Map<String, List<String>> selected) {
     final List<_ScheduleItem> items = [];
 
-    // 출발지(집)
-    String originTitle = '집';
-    String originSubtitle = '출발지';
-
-    if (_originAddress != null && _originAddress!.isNotEmpty) {
-      if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty) {
-        originTitle = '$_originAddress $_originDetailAddress';
-      } else {
-        originTitle = _originAddress!;
-      }
-      originSubtitle = '출발지';
-    }
-
     items.add(
       _ScheduleItem(
-        title: originTitle,
-        subtitle: originSubtitle,
+        title: '출발지',
+        subtitle: '',
+        address: null,
         icon: Icons.home_outlined,
         color: Colors.grey[700]!,
         type: _ItemType.origin,
@@ -972,28 +960,30 @@ class _TimelineRow extends StatelessWidget {
                               color: Colors.black,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          // 🔥 카테고리 정보 표시
-                          if (item.subtitle.isNotEmpty) ...[
+                          if (item.type != _ItemType.origin) ...[
+                            const SizedBox(height: 4),
+                            // 🔥 카테고리 정보 표시
+                            if (item.subtitle.isNotEmpty) ...[
+                              Text(
+                                item.subtitle,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                            ],
+                            // 🔥 주소 정보 표시
                             Text(
-                              item.subtitle,
+                              item.address ?? '주소 정보 없음',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: item.address != null
+                                    ? Colors.grey[600]
+                                    : Colors.grey[400],
                               ),
                             ),
-                            const SizedBox(height: 2),
                           ],
-                          // 🔥 주소 정보 표시
-                          Text(
-                            item.address ?? '주소 정보 없음',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: item.address != null
-                                  ? Colors.grey[600]
-                                  : Colors.grey[400],
-                            ),
-                          ),
                         ],
                       ),
                     ),

@@ -56,7 +56,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          '일정표 만들기',
+          '경로 확정하기',
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -370,7 +370,7 @@ for (final item in _items) {
                 minimumSize: const Size(double.infinity, 52),
               ),
               child: const Text(
-                '경로 확정하기',
+                '순서 확정하기',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
@@ -427,16 +427,13 @@ for (final item in _items) {
   List<_ScheduleItem> _buildScheduleItems(Map<String, List<dynamic>> selected) {
     final List<_ScheduleItem> items = [];
     // 출발지(집)
-    String originTitle = '현재 위치';
-    String originSubtitle = '출발지';
+    String originTitle = '출발지';
+    String originSubtitle = '현재 위치';
 
-    if (_originAddress != null && _originAddress!.isNotEmpty) {
-      if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty) {
-        originTitle = '$_originAddress $_originDetailAddress';
-      } else {
-        originTitle = _originAddress!;
-      }
-      originSubtitle = '출발지';
+    if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty) {
+      originSubtitle = _originDetailAddress!;
+    } else if (_originAddress != null && _originAddress!.isNotEmpty) {
+      originSubtitle = '';
     }
 
     items.add(
@@ -622,7 +619,8 @@ class _TimelineRow extends StatelessWidget {
                               color: Colors.black,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          if (item.subtitle.isNotEmpty)
+                            const SizedBox(height: 4),
                           // 출발지 항목이 아닐 때만 주황색 태그로 표시
                           if (item.type != _ItemType.origin)
                             Container(
@@ -645,13 +643,14 @@ class _TimelineRow extends StatelessWidget {
                             )
                           else
                             // 출발지 항목은 회색 텍스트로 표시
-                            Text(
-                              item.subtitle,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
+                            if (item.subtitle.isNotEmpty)
+                              Text(
+                                item.subtitle,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
                               ),
-                            ),
                         ],
                       ),
                     ),

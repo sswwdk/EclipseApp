@@ -59,30 +59,30 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
         childAspectRatio: 0.72,
         children: [
           _TemplateTile(
-            name: '기본 템플릿',
-            description: '빠르게 이동하며 더 많은 장소 방문',
+            name: '템플릿 1',
+            description: '심플하게 볼 수 있는 일정표 템플릿 입니다.',
             emoji: '🚀',
-            checked: _selectedName == '기본 템플릿',
+            checked: _selectedName == '템플릿 1',
             onToggle: () {
               setState(() {
-                _selectedName = _selectedName == '기본 템플릿' ? null : '기본 템플릿';
+                _selectedName = _selectedName == '템플릿 1' ? null : '템플릿 1';
               });
             },
           ),
           _TemplateTile(
-            name: '플로우 템플릿',
-            description: '충분한 휴식을 포함한 느긋한 동선',
+            name: '템플릿 2',
+            description: '설훈님의 디자인적 감각이 들어간 템플릿 입니다.',
             emoji: '🌿',
-            checked: _selectedName == '플로우 템플릿',
+            checked: _selectedName == '템플릿 2',
             onToggle: () {
               setState(() {
-                _selectedName = _selectedName == '플로우 템플릿' ? null : '플로우 템플릿';
+                _selectedName = _selectedName == '템플릿 2' ? null : '템플릿 2';
               });
             },
           ),
           _TemplateTile(
             name: '템플릿 3',
-            description: '새로운 스타일의 맞춤 일정',
+            description: '핑크핑크한 귀여운 템플릿 입니다.\n선택한 매장을 좌우로 스크롤하면서 볼 수 있습니다.',
             emoji: '✨',
             checked: _selectedName == '템플릿 3',
             onToggle: () {
@@ -129,9 +129,9 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
       return;
     }
 
-    if (_selectedName == '기본 템플릿') {
+    if (_selectedName == '템플릿 1') {
       _goTemplate1(first: 50, other: 25);
-    } else if (_selectedName == '플로우 템플릿') {
+    } else if (_selectedName == '템플릿 2') {
       _goTemplate2(first: 50, other: 25); // 🔥 템플릿 2로 이동
     } else if (_selectedName == '템플릿 3') {
       _goTemplate3(first: 50, other: 25);

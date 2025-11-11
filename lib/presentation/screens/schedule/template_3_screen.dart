@@ -431,7 +431,6 @@ class _Template3ScreenState extends State<Template3Screen> {
                   trackColor,
                   accentColor,
                   textTheme,
-                  160.0,
                 ),
                 if (i < _stops.length - 1)
                   _buildConnectorLine(trackColor),
@@ -468,98 +467,99 @@ class _Template3ScreenState extends State<Template3Screen> {
     Color trackColor,
     Color accentColor,
     TextTheme textTheme,
-    double width,
   ) {
     final bool isClickable =
         stop.placeId != null && stop.placeId!.isNotEmpty;
 
-    return SizedBox(
-      width: width,
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: isClickable ? () => _handleStopTap(stop) : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 카테고리 영역 (고정 높이 30px + 마진 12px = 42px)
-            SizedBox(
-              height: 42,
-              child: stop.category != null && stop.category!.trim().isNotEmpty
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: accentColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        stop.category!,
-                        style: textTheme.labelMedium?.copyWith(
-                          color: accentColor,
-                          fontWeight: FontWeight.bold,
+    return IntrinsicWidth(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 140, maxWidth: 240),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: isClickable ? () => _handleStopTap(stop) : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 카테고리 영역 (고정 높이 30px + 마진 12px = 42px)
+              SizedBox(
+                height: 42,
+                child: stop.category != null && stop.category!.trim().isNotEmpty
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: accentColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-            Container(
-              width: 68,
-              height: 68,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: accentColor, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: accentColor.withOpacity(0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                        child: Text(
+                          stop.category!,
+                          style: textTheme.labelMedium?.copyWith(
+                            color: accentColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
-              child: Icon(
-                stop.icon,
-                size: 30,
-                color: accentColor,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF0F4),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: accentColor.withOpacity(0.15),
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: accentColor, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withOpacity(0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  stop.icon,
+                  size: 30,
+                  color: accentColor,
                 ),
               ),
-              child: Column(
-                children: [
-                  Text(
-                    stop.title,
-                    style: textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF4E4A4A),
-                    ),
-                    textAlign: TextAlign.center,
+              const SizedBox(height: 18),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0F4),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: accentColor.withOpacity(0.15),
                   ),
-                  if (stop.subtitle != null && stop.subtitle!.trim().isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        stop.subtitle!,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                          height: 1.3,
-                        ),
-                        textAlign: TextAlign.center,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      stop.title,
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF4E4A4A),
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                ],
+                    if (stop.subtitle != null && stop.subtitle!.trim().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          stop.subtitle!,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                            height: 1.3,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1204,23 +1204,21 @@ class _Template3ScreenState extends State<Template3Screen> {
     }
 
     final originAddress = widget.originAddress?.trim();
+    final displayOriginAddress = (originAddress != null &&
+            originAddress.isNotEmpty &&
+            !originAddress.contains('위도:'))
+        ? originAddress
+        : null;
     final originDetail = widget.originDetailAddress?.trim();
     final hasOriginInfo = (originAddress != null && originAddress.isNotEmpty) ||
         (originDetail != null && originDetail.isNotEmpty);
 
     if (hasOriginInfo && !stops.any((stop) => stop.category == '출발지')) {
-      final subtitleParts = <String>[
-        if (originAddress != null && originAddress.isNotEmpty) originAddress,
-        if (originDetail != null && originDetail.isNotEmpty) originDetail,
-      ];
-      final subtitle =
-          subtitleParts.isNotEmpty ? subtitleParts.join('\n') : '출발';
-
       stops.insert(
         0,
         _TimelineStop(
           title: '출발지',
-          subtitle: subtitle,
+          subtitle: displayOriginAddress,
           category: '출발지',
           icon: Icons.home_outlined,
         ),
