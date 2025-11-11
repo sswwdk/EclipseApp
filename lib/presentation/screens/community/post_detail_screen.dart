@@ -160,6 +160,32 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     Map<String, dynamic> post,
     int? commentCount,
   ) {
+    final rawData = post['raw'];
+    Map<String, dynamic>? rawMap;
+    if (rawData is Map<String, dynamic>) {
+      rawMap = rawData;
+    } else if (rawData is Map) {
+      rawMap = rawData.cast<String, dynamic>();
+    }
+
+    final userData = rawMap?['user'];
+    Map<String, dynamic>? rawUser;
+    if (userData is Map<String, dynamic>) {
+      rawUser = userData;
+    } else if (userData is Map) {
+      rawUser = userData.cast<String, dynamic>();
+    }
+
+    final otherUserId = _firstNonEmptyString([
+      post['userId'],
+      post['user_id'],
+      rawMap?['userId'],
+      rawMap?['user_id'],
+      rawUser?['id'],
+      rawUser?['userId'],
+      rawUser?['user_id'],
+    ]);
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(16),
@@ -215,6 +241,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           'content': post['content'],
                           'schedule': post['schedule'],
                         },
+                        otherUserId: otherUserId,
                       ),
                     ),
                   );
