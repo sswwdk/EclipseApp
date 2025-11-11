@@ -65,7 +65,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           _isDeleting = false;
         });
         return;
-      }
+      } 
 
       await UserService.deleteUser(
         _withdrawalReasons[_selectedReason],
