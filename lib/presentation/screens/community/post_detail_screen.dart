@@ -220,16 +220,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       ..._extractSchedulePlaces(schedule, mergeHistory),
     }.toList();
 
-    final scheduleDate = _firstNonEmptyString([
-          post['scheduleDate'],
-          post['schedule_date'],
-        ]) ??
-        _extractScheduleDate(
-          rawMap ?? Map<String, dynamic>.from(post),
-          schedule,
-          post['createdAt'],
-        );
-
     final scheduleTime = _firstNonEmptyString([
           post['scheduleTime'],
           post['schedule_time'],
@@ -242,7 +232,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final shouldShowSchedule = schedule != null ||
         scheduleTitle != null ||
         schedulePlaces.isNotEmpty ||
-        scheduleDate != null ||
         scheduleTime != null;
 
     return Container(
@@ -340,7 +329,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             _buildSchedulePreview(
               title: scheduleTitle,
               places: schedulePlaces,
-              dateText: scheduleDate,
               timeText: scheduleTime,
             ),
             const SizedBox(height: 16),
@@ -384,7 +372,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Widget _buildSchedulePreview({
     String? title,
     List<String>? places,
-    String? dateText,
     String? timeText,
   }) {
     const accentColor = Color(0xFFFF8126);
@@ -433,28 +420,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 ),
               ],
             ),
-            if (routeWidgets.isNotEmpty || dateText != null || timeText != null)
+          if (routeWidgets.isNotEmpty || timeText != null)
               const SizedBox(height: 6),
           ],
-          if (dateText != null || timeText != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  if (dateText != null) ...[
-                    const Icon(Icons.calendar_today,
-                        size: 14, color: accentColor),
-                    const SizedBox(width: 4),
-                    Text(dateText, style: textStyle),
-                    if (timeText != null) const SizedBox(width: 12),
-                  ],
-                  if (timeText != null) ...[
-                    const Icon(Icons.schedule, size: 14, color: accentColor),
-                    const SizedBox(width: 4),
-                    Text(timeText, style: textStyle),
-                  ],
-                ],
-              ),
+          if (timeText != null)
+            Row(
+              children: [
+                const Icon(Icons.schedule, size: 14, color: accentColor),
+                const SizedBox(width: 4),
+                Text(timeText, style: textStyle),
+              ],
             ),
           if (routeWidgets.isNotEmpty)
             Wrap(
@@ -540,44 +515,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     return deduped;
   }
 
-  String? _extractScheduleDate(
-    Map<String, dynamic> raw,
-    Map<String, dynamic>? schedule,
-    dynamic fallback,
-  ) {
-    final candidates = [
-      raw['schedule_date'],
-      raw['scheduleDate'],
-      raw['merge_history_date'],
-      raw['mergeHistoryDate'],
-      raw['merge_history_created_at'],
-      raw['mergeHistoryCreatedAt'],
-      raw['merge_history_uploaded_at'],
-      raw['date'],
-      if (raw['merge_history'] is Map<String, dynamic>) ...[
-        (raw['merge_history'] as Map<String, dynamic>)['date'],
-        (raw['merge_history'] as Map<String, dynamic>)['created_at'],
-        (raw['merge_history'] as Map<String, dynamic>)['createdAt'],
-      ],
-      schedule?['date'],
-      schedule?['scheduleDate'],
-      schedule?['schedule_date'],
-      schedule?['visited_at'],
-      schedule?['visitedAt'],
-      fallback,
-    ];
-    for (final candidate in candidates) {
-      if (candidate == null) continue;
-      final text = candidate.toString().trim();
-      if (text.isEmpty) continue;
-      final formatted = _formatDateText(text);
-      if (formatted != null) {
-        return formatted;
-      }
-    }
-    return null;
-  }
-
   String? _extractScheduleTime(
     Map<String, dynamic> raw,
     Map<String, dynamic>? schedule,
@@ -608,26 +545,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       }
     }
     return null;
-  }
-
-  String? _formatDateText(String input) {
-    try {
-      if (input.contains('T') || input.contains('-')) {
-        final date = DateTime.tryParse(input.replaceAll('/', '-'));
-        if (date != null) {
-          return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        }
-      }
-      if (input.length == 8 && int.tryParse(input) != null) {
-        final year = input.substring(0, 4);
-        final month = input.substring(4, 6);
-        final day = input.substring(6, 8);
-        return '$year-$month-$day';
-      }
-      return input;
-    } catch (_) {
-      return input;
-    }
   }
 
   String? _formatTimeText(String input) {
@@ -1147,19 +1064,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       normalized['schedulePlaces'] = schedulePlaces;
     } else {
       normalized.remove('schedulePlaces');
-    }
-
-    final scheduleDate = _extractScheduleDate(raw, schedule, createdAt) ??
-        _firstNonEmptyString([
-          raw['schedule_date'],
-          raw['scheduleDate'],
-          fallback['scheduleDate'],
-          fallback['schedule_date'],
-        ]);
-    if (scheduleDate != null) {
-      normalized['scheduleDate'] = scheduleDate;
-    } else {
-      normalized.remove('scheduleDate');
     }
 
     final scheduleTime = _extractScheduleTime(raw, schedule) ??
