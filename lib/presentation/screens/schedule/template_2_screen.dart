@@ -423,30 +423,16 @@ Widget _buildHeader() {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFD97941), width: 2),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: const Row(
         children: [
-          const Row(
-            children: [
-              Text('🏠', style: TextStyle(fontSize: 20)),
-              SizedBox(width: 8),
-              Text(
-                '출발지',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFD97941),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          Text('🏠', style: TextStyle(fontSize: 20)),
+          SizedBox(width: 8),
           Text(
-            displayAddress,
-            style: const TextStyle(
-              fontSize: 15,
-              color: Color(0xFF555555),
-              height: 1.6,
+            '출발지',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFD97941),
             ),
           ),
         ],
