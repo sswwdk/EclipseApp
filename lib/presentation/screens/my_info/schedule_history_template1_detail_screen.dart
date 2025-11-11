@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../data/services/history_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
@@ -28,8 +27,6 @@ class _ScheduleHistoryDetailScreenState
 
   // 파싱된 데이터
   late List<_ScheduleItem> _items = [];
-  String? _originAddress;
-  String? _originDetailAddress;
   Map<int, int> _transportTypes = {};
   Map<int, RouteResult> _routeResults = {};
 
@@ -84,10 +81,6 @@ class _ScheduleHistoryDetailScreenState
     final data = detailResponse['data'] ?? detailResponse;
     final categories = data['categories'] as List<dynamic>? ?? [];
 
-    // 출발지 정보
-    _originAddress = (data['origin_address'] as String?)?.trim();
-    _originDetailAddress = (data['origin_detail_address'] as String?)?.trim();
-
     print('🔍 서버에서 받은 categories: $categories');
 
     // seq 필드로 정렬
@@ -102,18 +95,10 @@ class _ScheduleHistoryDetailScreenState
 
     // 출발지 추가
     List<_ScheduleItem> items = [];
-    String originTitle = '집';
-    if (_originAddress != null && _originAddress!.isNotEmpty) {
-      originTitle =
-          _originDetailAddress != null && _originDetailAddress!.isNotEmpty
-          ? '$_originAddress $_originDetailAddress'
-          : _originAddress!;
-    }
-
     items.add(
       _ScheduleItem(
-        title: originTitle,
-        subtitle: '출발지',
+        title: '출발지',
+        subtitle: '',
         address: null,
         icon: Icons.home_outlined,
         color: Colors.grey[700]!,
@@ -217,14 +202,6 @@ class _ScheduleHistoryDetailScreenState
     int defaultDuration,
   ) {
     return HistoryParser.parseRouteInfo(category, defaultDuration);
-  }
-
-  String? _stringFromDynamic(dynamic value) {
-    return HistoryParser.stringFromDynamic(value);
-  }
-
-  double? _doubleFromDynamic(dynamic value) {
-    return HistoryParser.doubleFromDynamic(value);
   }
 
   @override
@@ -435,26 +412,28 @@ class _TimelineRow extends StatelessWidget {
                               color: Colors.black,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          if (item.subtitle.isNotEmpty) ...[
+                          if (item.type != _ItemType.origin) ...[
+                            const SizedBox(height: 4),
+                            if (item.subtitle.isNotEmpty) ...[
+                              Text(
+                                item.subtitle,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                            ],
                             Text(
-                              item.subtitle,
+                              item.address ?? '주소 정보 없음',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: item.address != null
+                                    ? Colors.grey[600]
+                                    : Colors.grey[400],
                               ),
                             ),
-                            const SizedBox(height: 2),
                           ],
-                          Text(
-                            item.address ?? '주소 정보 없음',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: item.address != null
-                                  ? Colors.grey[600]
-                                  : Colors.grey[400],
-                            ),
-                          ),
                         ],
                       ),
                     ),

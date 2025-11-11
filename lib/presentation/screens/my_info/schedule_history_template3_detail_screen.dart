@@ -92,22 +92,37 @@ class _ScheduleHistoryTemplate3DetailScreenState
     List<_TimelineStop> stops = [];
 
     // 출발지 추가
-    final originSubtitleParts = <String>[
-      if (_originAddress != null && _originAddress!.isNotEmpty) _originAddress!,
-      if (_originDetailAddress != null && _originDetailAddress!.isNotEmpty)
-        _originDetailAddress!,
-    ];
-    final originSubtitle = originSubtitleParts.join('\n');
+    final originAddress = _originAddress?.trim();
+    final displayOriginAddress = (originAddress != null &&
+            originAddress.isNotEmpty &&
+            !_containsCoordinate(originAddress))
+        ? originAddress
+        : null;
+    final originDetail = _originDetailAddress?.trim();
+    final hasOriginInfo = (originAddress != null && originAddress.isNotEmpty) ||
+        (originDetail != null && originDetail.isNotEmpty);
 
-    stops.add(
-      _TimelineStop(
-        title: '출발지',
-        subtitle: originSubtitle.isNotEmpty ? originSubtitle : '출발',
-        category: '출발지',
-        icon: Icons.home_outlined,
-        durationMinutes: null,
-      ),
-    );
+    if (hasOriginInfo) {
+      stops.add(
+        _TimelineStop(
+          title: '출발지',
+          subtitle: displayOriginAddress,
+          category: '출발지',
+          icon: Icons.home_outlined,
+          durationMinutes: null,
+        ),
+      );
+    } else {
+      stops.add(
+        _TimelineStop(
+          title: '출발지',
+          subtitle: null,
+          category: '출발지',
+          icon: Icons.home_outlined,
+          durationMinutes: null,
+        ),
+      );
+    }
 
     for (int i = 0; i < sortedCategories.length; i++) {
       final category = sortedCategories[i];
@@ -209,6 +224,10 @@ class _ScheduleHistoryTemplate3DetailScreenState
     int defaultDuration,
   ) {
     return HistoryParser.parseRouteInfo(category, defaultDuration);
+  }
+
+  bool _containsCoordinate(String value) {
+    return value.contains('위도:') || value.contains('경도:');
   }
 
   String? _stringFromDynamic(dynamic value) {
