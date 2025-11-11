@@ -766,7 +766,6 @@ class _MessageScreenState extends State<MessageScreen> {
                     'nickname': nickname,
                     'profileImageUrl': message['profileImageUrl'],
                   },
-                  post: post,
                   otherUserId: message['otherUserId']?.toString(),
                   conversationId: message['threadId']?.toString(),
                 ),

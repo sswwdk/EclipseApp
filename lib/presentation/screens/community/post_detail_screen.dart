@@ -236,11 +236,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             'nickname': post['nickname'],
                             'profileImage': post['profileImage'],
                           },
-                          post: {
-                            'title': post['title'],
-                            'content': post['content'],
-                            'schedule': post['schedule'],
-                          },
                           otherUserId: otherUserId,
                         ),
                       ),
