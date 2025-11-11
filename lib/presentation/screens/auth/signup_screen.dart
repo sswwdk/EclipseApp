@@ -215,7 +215,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             // 비밀번호 입력 필드 (필수)
             _buildInputField(
               '비밀번호',
-              '비밀번호를 입력하세요',
+              '비밀번호를 입력하세요 (8자리 이상)',
               _passwordController,
               isPassword: true,
               isRequired: true,
