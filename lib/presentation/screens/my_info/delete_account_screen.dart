@@ -67,7 +67,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         return;
       }
 
-      await UserService.deleteUser(userId, _passwordController.text);
+      await UserService.deleteUser(
+        _withdrawalReasons[_selectedReason],
+        _passwordController.text,
+      );
       
       if (!mounted) return;
       

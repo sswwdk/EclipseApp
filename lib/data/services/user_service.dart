@@ -142,18 +142,22 @@ class UserService {
   }
 
   // 회원 탈퇴
-  static Future<Map<String, dynamic>> deleteUser(String userId, String password) async {
+  static Future<Map<String, dynamic>> deleteUser(String because, String password) async {
     try {
       final response = await HttpInterceptor.delete(
         '/api/users/me',
         body: json.encode({
-          'user_id': userId,
+          'because': because,
           'password': password,
         }),
       );
 
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
+      } else if (response.statusCode == 401) {
+        throw Exception('비밀번호가 일치하지 않습니다.');
+      } else if (response.statusCode == 404) {
+        throw Exception('사용자를 찾을 수 없습니다.');
       } else {
         throw Exception('회원 탈퇴 실패: ${response.statusCode}');
       }
