@@ -3,12 +3,15 @@ import '../../shared/helpers/http_interceptor.dart';
 import '../../core/config/server_config.dart';
 
 class ChatService {
-  static String get baseUrl => ServerConfig.baseUrl;
+  static String get communityUrl => ServerConfig.communityUrl;
 
   // 채팅 보기
-  static Future<Map<String, dynamic>> getChat(String userId, String otherId) async {
+  static Future<Map<String, dynamic>> getChat(String userId) async {
     try {
-      final response = await HttpInterceptor.get('/api/chat/$userId/$otherId');
+      final response = await HttpInterceptor.get(
+        '/api/message/$userId',
+        baseUrlOverride: communityUrl,
+      );
 
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
@@ -22,12 +25,22 @@ class ChatService {
   }
 
   // 채팅 목록
-  static Future<Map<String, dynamic>> getChatList(String userId) async {
+  static Future<Map<String, dynamic>> getChatList() async {
     try {
-      final response = await HttpInterceptor.get('/api/chat/$userId');
+      final response = await HttpInterceptor.get(
+        '/api/message/',
+        baseUrlOverride: communityUrl,
+      );
 
       if (response.statusCode == 200) {
-        return json.decode(utf8.decode(response.bodyBytes));
+        final decoded = json.decode(utf8.decode(response.bodyBytes));
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+        if (decoded is List) {
+          return {'data': decoded};
+        }
+        return {'data': decoded};
       } else {
         throw Exception('채팅 목록 조회 실패: ${response.statusCode}');
       }
@@ -38,15 +51,15 @@ class ChatService {
   }
 
   // 채팅 보내기
-  static Future<Map<String, dynamic>> sendChat(String senderId, String receiverId, String message) async {
+  static Future<String> sendChat(String receiverId, String message) async {
     try {
       final response = await HttpInterceptor.post(
-        '/api/chat',
+        '/api/message/',
         body: json.encode({
-          'sender_id': senderId,
           'receiver_id': receiverId,
           'message': message,
         }),
+        baseUrlOverride: communityUrl,
       );
 
       if (response.statusCode == 200) {

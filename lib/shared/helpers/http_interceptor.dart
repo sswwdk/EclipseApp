@@ -12,14 +12,23 @@ class HttpInterceptor {
     String endpoint, {
     Map<String, String>? headers,
     bool retryOn401 = true,
+    String? baseUrlOverride,
   }) async {
+    final resolvedBaseUrl = baseUrlOverride ?? baseUrl;
     final response = await http.get(
-      Uri.parse('$baseUrl$endpoint'),
+      Uri.parse('$resolvedBaseUrl$endpoint'),
       headers: _buildHeaders(headers),
     );
 
     if (response.statusCode == 401 && retryOn401) {
-      return await _retryWithRefresh(() => get(endpoint, headers: headers, retryOn401: false));
+      return await _retryWithRefresh(
+        () => get(
+          endpoint,
+          headers: headers,
+          retryOn401: false,
+          baseUrlOverride: baseUrlOverride,
+        ),
+      );
     }
 
     return response;
@@ -31,16 +40,26 @@ class HttpInterceptor {
     Map<String, String>? headers,
     Object? body,
     bool retryOn401 = true,
+    String? baseUrlOverride,
   }) async {
     final Object? finalBody = _attachDtoHeadersIfNeeded(body);
+    final resolvedBaseUrl = baseUrlOverride ?? baseUrl;
     final response = await http.post(
-      Uri.parse('$baseUrl$endpoint'),
+      Uri.parse('$resolvedBaseUrl$endpoint'),
       headers: _buildHeaders(headers),
       body: finalBody,
     );
 
     if (response.statusCode == 401 && retryOn401) {
-      return await _retryWithRefresh(() => post(endpoint, headers: headers, body: body, retryOn401: false));
+      return await _retryWithRefresh(
+        () => post(
+          endpoint,
+          headers: headers,
+          body: body,
+          retryOn401: false,
+          baseUrlOverride: baseUrlOverride,
+        ),
+      );
     }
 
     return response;
@@ -52,16 +71,26 @@ class HttpInterceptor {
     Map<String, String>? headers,
     Object? body,
     bool retryOn401 = true,
+    String? baseUrlOverride,
   }) async {
     final Object? finalBody = _attachDtoHeadersIfNeeded(body);
+    final resolvedBaseUrl = baseUrlOverride ?? baseUrl;
     final response = await http.put(
-      Uri.parse('$baseUrl$endpoint'),
+      Uri.parse('$resolvedBaseUrl$endpoint'),
       headers: _buildHeaders(headers),
       body: finalBody,
     );
 
     if (response.statusCode == 401 && retryOn401) {
-      return await _retryWithRefresh(() => put(endpoint, headers: headers, body: body, retryOn401: false));
+      return await _retryWithRefresh(
+        () => put(
+          endpoint,
+          headers: headers,
+          body: body,
+          retryOn401: false,
+          baseUrlOverride: baseUrlOverride,
+        ),
+      );
     }
 
     return response;
@@ -73,16 +102,26 @@ class HttpInterceptor {
     Map<String, String>? headers,
     Object? body,
     bool retryOn401 = true,
+    String? baseUrlOverride,
   }) async {
     final Object? finalBody = _attachDtoHeadersIfNeeded(body);
+    final resolvedBaseUrl = baseUrlOverride ?? baseUrl;
     final response = await http.delete(
-      Uri.parse('$baseUrl$endpoint'),
+      Uri.parse('$resolvedBaseUrl$endpoint'),
       headers: _buildHeaders(headers),
       body: finalBody,
     );
 
     if (response.statusCode == 401 && retryOn401) {
-      return await _retryWithRefresh(() => delete(endpoint, headers: headers, body: body, retryOn401: false));
+      return await _retryWithRefresh(
+        () => delete(
+          endpoint,
+          headers: headers,
+          body: body,
+          retryOn401: false,
+          baseUrlOverride: baseUrlOverride,
+        ),
+      );
     }
 
     return response;
