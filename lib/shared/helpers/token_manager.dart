@@ -14,7 +14,9 @@ class TokenManager {
   static void setTokens(String accessToken, String refreshToken) {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
-    print('토큰 저장 완료 - Access: ${accessToken.substring(0, 10)}..., Refresh: ${refreshToken.substring(0, 10)}...');
+    print(
+      '토큰 저장 완료 - Access: ${accessToken.substring(0, 10)}..., Refresh: ${refreshToken.substring(0, 10)}...',
+    );
   }
 
   /// 액세스 토큰 가져오기
@@ -83,31 +85,29 @@ class TokenManager {
 
     try {
       print('토큰 갱신 시도 중...');
-      
-      // 서버가 요구한 DTO 포맷으로 요청
-      final envelope = {
-          'token': _refreshToken,
-          'id': userId
-      };
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/users/refresh'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(envelope),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw Exception('토큰 갱신 시간 초과');
-        },
-      );
+      // 서버가 요구한 DTO 포맷으로 요청
+      final envelope = {'token': _refreshToken, 'id': userId};
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(envelope),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception('토큰 갱신 시간 초과');
+            },
+          );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final data =
+            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
 
         final String? newAccessToken = data['token'] as String?;
-        
+
         if (newAccessToken != null) {
           _accessToken = newAccessToken;
           print('액세스 토큰 갱신 완료: ${newAccessToken.substring(0, 10)}...');
