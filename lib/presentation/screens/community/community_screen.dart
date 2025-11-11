@@ -409,8 +409,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Material(
       color: Colors.white,
       child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
+        onTap: () async {
+          final result = await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => PostDetailScreen(
                 post: {
@@ -427,6 +427,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ),
             ),
           );
+          if (!mounted) return;
+          if (result == true) {
+            await _refreshPosts();
+          }
         },
         child: Container(
           padding: const EdgeInsets.all(16),
