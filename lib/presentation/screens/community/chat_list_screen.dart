@@ -321,7 +321,7 @@ class _MessageScreenState extends State<MessageScreen> {
         'lastMessage': lastMessage,
         'updatedAt': updatedAt,
         'timeLabel': _formatTimeAgo(updatedAt),
-        'unreadCount': direction == 'received' ? 1 : 0,
+        'unreadCount': 0,
         'post': null,
         'profileImageUrl': _firstNonEmptyString([
           message['profileImageUrl'],
@@ -329,6 +329,7 @@ class _MessageScreenState extends State<MessageScreen> {
           message['avatarUrl'],
         ]),
         'raw': message,
+        'direction': direction,
       };
     }
 
@@ -396,21 +397,6 @@ class _MessageScreenState extends State<MessageScreen> {
 
     final updatedAt = _parseDateTime(updatedAtRaw);
 
-    final unreadCount = _firstNonEmptyInt([
-          raw['unreadCount'],
-          raw['unread_count'],
-          raw['unreadMessages'],
-          raw['unread_messages'],
-          raw['newMessages'],
-          raw['new_messages'],
-          raw['unread'],
-          raw['badgeCount'],
-          raw['badge_count'],
-          raw['hasUnread'] == true ? 1 : null,
-          raw['isRead'] is bool ? (raw['isRead'] as bool ? 0 : 1) : null,
-        ]) ??
-        0;
-
     final postData = _resolvePostData(raw);
 
     return {
@@ -428,10 +414,11 @@ class _MessageScreenState extends State<MessageScreen> {
       'lastMessage': lastMessage,
       'updatedAt': updatedAt,
       'timeLabel': _formatTimeAgo(updatedAt),
-      'unreadCount': unreadCount,
+      'unreadCount': 0,
       'post': postData,
       'profileImageUrl': profileImageUrl,
       'raw': raw,
+      'direction': senderId == currentUserId ? 'sent' : 'received',
     };
   }
 
@@ -608,21 +595,6 @@ class _MessageScreenState extends State<MessageScreen> {
     return value.toString();
   }
 
-  int? _firstNonEmptyInt(List<dynamic> values) {
-    for (final value in values) {
-      if (value == null) continue;
-
-      if (value is int) return value;
-      if (value is num) return value.toInt();
-
-      final parsed = int.tryParse(value.toString());
-      if (parsed != null) {
-        return parsed;
-      }
-    }
-    return null;
-  }
-
   String? _firstNonEmptyString(List<dynamic> values) {
     for (final value in values) {
       if (value == null) continue;
@@ -771,12 +743,11 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   Widget _buildMessageCard(Map<String, dynamic> message) {
-    final unreadCount = message['unreadCount'] as int? ?? 0;
-    final isRead = unreadCount == 0;
     final nickname = message['nickname']?.toString() ?? '익명 사용자';
     final lastMessage = message['lastMessage']?.toString() ?? '';
     final timeLabel = message['timeLabel']?.toString() ?? '';
     final post = message['post'] as Map<String, dynamic>?;
+    final isSent = message['direction'] == 'sent';
 
     return Container(
       color: Colors.white,
@@ -802,6 +773,14 @@ class _MessageScreenState extends State<MessageScreen> {
           },
           child: Container(
             padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFEDEDED),
+                width: 1,
+              ),
+            ),
             child: Row(
               children: [
                 // 프로필 이미지
@@ -831,35 +810,23 @@ class _MessageScreenState extends State<MessageScreen> {
                             nickname,
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight:
-                                  isRead ? FontWeight.w500 : FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          if (!isRead)
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFFF8126),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        lastMessage,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          fontWeight:
-                              isRead ? FontWeight.normal : FontWeight.w500,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+  Text(
+    lastMessage,
+    style: TextStyle(
+      fontSize: 14,
+      color: Colors.grey[700],
+                          fontWeight: isSent ? FontWeight.w500 : FontWeight.w500,
+    ),
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+  ),
                       const SizedBox(height: 6),
                       // 게시물 정보
                       if (post != null) ...[
