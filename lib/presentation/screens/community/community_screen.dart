@@ -356,6 +356,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
       ],
     ]);
 
+    Map<String, dynamic>? schedule;
+    final scheduleData = raw['schedule'];
+    if (scheduleData is Map<String, dynamic>) {
+      schedule = Map<String, dynamic>.from(scheduleData);
+    }
+    final mergeHistory = _firstNonEmptyString([
+      raw['merge_history_name'],
+      raw['merge_history'],
+    ]);
+    final scheduleTitle = _extractScheduleTitle(schedule);
+    final schedulePlaces = _extractSchedulePlaces(schedule, mergeHistory);
+
     return {
       'postId': _firstNonEmptyString([
         raw['id']?.toString(),
@@ -367,7 +379,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
       'timeAgo': timeDisplay,
       'title': title,
       'content': content,
-      'schedule': raw['schedule'],
+      'schedule': schedule,
+      'scheduleTitle': scheduleTitle,
+      'schedulePlaces': schedulePlaces,
       'profileImageUrl': _firstNonEmptyString([
         raw['profileImageUrl'],
         raw['profile_image_url'],
@@ -532,7 +546,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
       schedule = scheduleData;
     }
     final profileImageUrl = post['profileImageUrl'] as String?;
-    final scheduleTitle = schedule?['title']?.toString();
+    final scheduleTitle = post['scheduleTitle'] as String?;
+    final schedulePlaces = (post['schedulePlaces'] as List?)?.cast<String>() ?? const [];
 
     return Material(
       color: Colors.white,
@@ -619,47 +634,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 12),
-          
-          // 일정표 정보 (있는 경우에만 표시)
-          if (schedule != null) ...[
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColorWithOpacity10,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppTheme.primaryColorWithOpacity20,
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    color: AppTheme.primaryColor,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      scheduleTitle ?? '일정',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
-                      softWrap: true,
-                      overflow: TextOverflow.visible,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          if (scheduleTitle != null || schedulePlaces.isNotEmpty) ...[
             const SizedBox(height: 12),
-          ],
-          
+            _buildSchedulePreview(scheduleTitle, schedulePlaces),
+            const SizedBox(height: 12),
+          ] else
+            const SizedBox(height: 12),
+
           // 댓글 버튼
           Row(
             children: [
@@ -713,6 +694,139 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
+  Widget _buildSchedulePreview(String? title, List<String> places) {
+    const textStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFFFF8126),
+    );
+
+    final routeWidgets = <Widget>[];
+    for (var i = 0; i < places.length; i++) {
+      routeWidgets.add(Text(places[i], style: textStyle));
+      if (i < places.length - 1) {
+        routeWidgets.add(const Text(' → ', style: textStyle));
+      }
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFFFA86C).withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null && title.trim().isNotEmpty) ...[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.article,
+                  size: 16,
+                  color: Color(0xFFFF8126),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: textStyle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            if (routeWidgets.isNotEmpty) const SizedBox(height: 6),
+          ],
+          if (routeWidgets.isNotEmpty)
+            Wrap(
+              spacing: 2,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: routeWidgets,
+            )
+          else if (title == null || title.trim().isEmpty)
+            const Text(
+              '일정 정보가 없습니다.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFFFF8126),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _extractSchedulePlaces(
+    Map<String, dynamic>? schedule,
+    String? mergeHistory,
+  ) {
+    final results = <String>[];
+
+    void extract(dynamic node) {
+      if (node == null) return;
+      if (node is List) {
+        for (final item in node) {
+          extract(item);
+        }
+      } else if (node is Map) {
+        final map = Map<String, dynamic>.from(node);
+        final place = map['place'] ?? map['placeName'] ?? map['name'];
+        if (place != null) {
+          final text = place.toString().trim();
+          if (text.isNotEmpty) {
+            results.add(text);
+          }
+        }
+        extract(map['places']);
+        extract(map['schedule']);
+        extract(map['routes']);
+        extract(map['steps']);
+        extract(map['items']);
+        extract(map['children']);
+      } else if (node is String) {
+        final trimmed = node.trim();
+        if (trimmed.contains('→')) {
+          results.addAll(
+            trimmed
+                .split('→')
+                .map((segment) => segment.trim())
+                .where((segment) => segment.isNotEmpty),
+          );
+        } else if (trimmed.isNotEmpty) {
+          results.add(trimmed);
+        }
+      }
+    }
+
+    extract(schedule);
+
+    if (mergeHistory != null && mergeHistory.contains('→')) {
+      results.addAll(
+        mergeHistory
+            .split('→')
+            .map((segment) => segment.trim())
+            .where((segment) => segment.isNotEmpty),
+      );
+    }
+
+    final seen = <String>{};
+    final deduped = <String>[];
+    for (final place in results) {
+      if (seen.add(place)) {
+        deduped.add(place);
+      }
+    }
+    return deduped;
+  }
+
   Widget _buildDivider() {
     return Container(
       height: 1,
@@ -727,6 +841,24 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final rune = initial.runes.first;
     final index = rune.abs() % _avatarColorPalettes.length;
     return _avatarColorPalettes[index];
+  }
+
+  String? _extractScheduleTitle(Map<String, dynamic>? schedule) {
+    if (schedule == null) return null;
+    final candidates = [
+      schedule['title'],
+      schedule['name'],
+      schedule['label'],
+      schedule['scheduleTitle'],
+    ];
+    for (final candidate in candidates) {
+      if (candidate == null) continue;
+      final text = candidate.toString().trim();
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+    return null;
   }
 
   @override

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/services/community_service.dart';
+import '../../../shared/helpers/token_manager.dart';
 import '../community/post_detail_screen.dart';
 
 class MyPostsScreen extends StatefulWidget {
@@ -12,7 +14,7 @@ class MyPostsScreen extends StatefulWidget {
 class _MyPostsScreenState extends State<MyPostsScreen> {
   bool _loading = true;
   String? _errorMessage;
-  List<MyPostItem> _posts = const [];
+  List<MyPostItem> _posts = [];
 
   @override
   void initState() {
@@ -26,22 +28,31 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
       _errorMessage = null;
     });
 
-    // 하드코딩된 샘플 데이터
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    if (!mounted) return;
-    setState(() {
-      _posts = [
-        MyPostItem(
-          id: '1',
-          title: '고기 맛있겠다',
-          content: '고기 먹으러 가고싶은데 친구가 없어요. 같이 가실 분 구합니다. 평일 저녁이나 주말 오후에 같이 맛있는 고기를 먹으러 가실 분 있으면 좋겠어요. 특히 삼겹살이나 갈비를 좋아하는데 같이 가서 맛있게 먹고 싶습니다.',
-          commentCount: 6,
-          dateText: '04/22',
-        ),
-      ];
-      _loading = false;
-    });
+    final userId = TokenManager.userId ?? '';
+    if (userId.isEmpty) {
+      setState(() {
+        _loading = false;
+        _errorMessage = '로그인이 필요합니다.';
+        _posts = [];
+      });
+      return;
+    }
+
+    try {
+      final response = await CommunityService.getMyPosts(userId);
+      final parsed = MyPostItem.parseList(response);
+      if (!mounted) return;
+      setState(() {
+        _posts = parsed;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString();
+        _loading = false;
+      });
+    }
   }
 
   @override
@@ -150,7 +161,12 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
                 'title': post.title,
                 'content': post.content,
                 'comment_count': post.commentCount,
-                'created_at': post.dateText,
+                'created_at': post.raw?['created_at'] ??
+                    post.raw?['createdAt'] ??
+                    post.dateText,
+                'nickname': post.nickname,
+                'profileImageUrl': post.profileImageUrl,
+                'raw': post.raw,
               },
             ),
           ),
@@ -195,6 +211,11 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            if (post.schedulePlaces.isNotEmpty ||
+                post.scheduleTitle != null) ...[
+              const SizedBox(height: 8),
+              _buildScheduleFlow(post),
+            ],
             const SizedBox(height: 8),
             // 메타데이터 (댓글 수, 날짜)
             Row(
@@ -227,6 +248,82 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
       ),
     );
   }
+
+  Widget _buildScheduleFlow(MyPostItem post) {
+    final hasTitle =
+        post.scheduleTitle != null && post.scheduleTitle!.trim().isNotEmpty;
+    final hasPlaces = post.schedulePlaces.isNotEmpty;
+
+    const textStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFFFF8126),
+    );
+
+    final routeWidgets = <Widget>[];
+    if (hasPlaces) {
+      for (var i = 0; i < post.schedulePlaces.length; i++) {
+        routeWidgets.add(Text(post.schedulePlaces[i], style: textStyle));
+        if (i < post.schedulePlaces.length - 1) {
+          routeWidgets.add(const Text(' → ', style: textStyle));
+        }
+      }
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFFFA86C).withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasTitle) ...[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.article,
+                  size: 16,
+                  color: Color(0xFFFF8126),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    post.scheduleTitle!,
+                    style: textStyle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            if (routeWidgets.isNotEmpty) const SizedBox(height: 6),
+          ],
+          if (routeWidgets.isNotEmpty)
+            Wrap(
+              spacing: 2,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: routeWidgets,
+            )
+          else if (!hasTitle)
+            const Text(
+              '일정 정보가 없습니다.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFFFF8126),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class MyPostItem {
@@ -235,6 +332,11 @@ class MyPostItem {
   final String content;
   final int commentCount;
   final String dateText;
+  final String nickname;
+  final String? profileImageUrl;
+  final Map<String, dynamic>? raw;
+  final String? scheduleTitle;
+  final List<String> schedulePlaces;
 
   const MyPostItem({
     required this.id,
@@ -242,6 +344,11 @@ class MyPostItem {
     required this.content,
     required this.commentCount,
     required this.dateText,
+    required this.nickname,
+    required this.profileImageUrl,
+    required this.raw,
+    required this.scheduleTitle,
+    required this.schedulePlaces,
   });
 
   static List<MyPostItem> parseList(dynamic response) {
@@ -263,8 +370,29 @@ class MyPostItem {
       final String id = (m['id'] ?? m['post_id'] ?? '').toString();
       final String title = (m['title'] ?? m['content'] ?? '').toString();
       final String content = (m['content'] ?? m['text'] ?? '').toString();
-      final int commentCount = (m['comment_count'] ?? m['commentCount'] ?? m['comments'] ?? 0) as int;
-      final String date = (m['created_at'] ?? m['createdAt'] ?? m['date'] ?? '').toString();
+
+      final dynamic commentValue =
+          m['comment_count'] ?? m['commentCount'] ?? m['comments'] ?? 0;
+      final int commentCount = commentValue is int
+          ? commentValue
+          : int.tryParse(commentValue.toString()) ?? 0;
+
+      final String date =
+          (m['created_at'] ?? m['createdAt'] ?? m['date'] ?? '').toString();
+
+      final nickname = (m['nickname'] ??
+              m['user_nickname'] ??
+              m['userName'] ??
+              m['writerName'] ??
+              m['memberName'])
+          ?.toString() ??
+          '익명 사용자';
+
+      final profileImageUrl = (m['profileImageUrl'] ??
+              m['profile_image_url'] ??
+              m['profileImage'] ??
+              (m['user'] is Map ? (m['user']['profileImageUrl'] ?? m['user']['profileImage']) : null))
+          ?.toString();
 
       return MyPostItem(
         id: id.isEmpty ? DateTime.now().microsecondsSinceEpoch.toString() : id,
@@ -272,6 +400,11 @@ class MyPostItem {
         content: content,
         commentCount: commentCount,
         dateText: _formatDate(date),
+        nickname: nickname,
+        profileImageUrl: profileImageUrl,
+        raw: m,
+        scheduleTitle: _extractScheduleTitle(m),
+        schedulePlaces: _extractSchedulePlaces(m),
       );
     }).toList();
   }
@@ -300,6 +433,88 @@ class MyPostItem {
       // 파싱 실패 시 원본 문자열 반환 (이미 포맷된 경우)
       return dateString.length > 10 ? dateString.substring(0, 10) : dateString;
     }
+  }
+
+  static String? _extractScheduleTitle(Map<String, dynamic> raw) {
+    if (raw.containsKey('schedule_title')) {
+      final value = raw['schedule_title']?.toString().trim();
+      if (value != null && value.isNotEmpty) {
+        return value;
+      }
+    }
+    final schedule = raw['schedule'];
+    if (schedule is Map<String, dynamic>) {
+      final candidates = [
+        schedule['title'],
+        schedule['name'],
+        schedule['label'],
+      ];
+      for (final candidate in candidates) {
+        if (candidate == null) continue;
+        final text = candidate.toString().trim();
+        if (text.isNotEmpty) {
+          return text;
+        }
+      }
+    }
+    return null;
+  }
+
+  static List<String> _extractSchedulePlaces(Map<String, dynamic> raw) {
+    final schedule = raw['schedule'];
+    if (schedule == null) {
+      return const [];
+    }
+
+    List<String> places = [];
+
+    void extract(dynamic node) {
+      if (node == null) return;
+      if (node is List) {
+        for (final item in node) {
+          extract(item);
+        }
+      } else if (node is Map) {
+        final map = Map<String, dynamic>.from(node);
+        final place = map['place'] ?? map['placeName'] ?? map['name'];
+        if (place != null) {
+          final text = place.toString().trim();
+          if (text.isNotEmpty) {
+            places.add(text);
+          }
+        }
+        extract(map['places']);
+        extract(map['schedule']);
+        extract(map['routes']);
+        extract(map['steps']);
+        extract(map['items']);
+        extract(map['children']);
+      } else if (node is String) {
+        final trimmed = node.trim();
+        if (trimmed.contains('→')) {
+          places.addAll(
+            trimmed
+                .split('→')
+                .map((segment) => segment.trim())
+                .where((segment) => segment.isNotEmpty),
+          );
+        } else if (trimmed.isNotEmpty) {
+          places.add(trimmed);
+        }
+      }
+    }
+
+    extract(schedule);
+
+    // 중복 제거
+    final seen = <String>{};
+    final deduped = <String>[];
+    for (final place in places) {
+      if (seen.add(place)) {
+        deduped.add(place);
+      }
+    }
+    return deduped;
   }
 }
 
