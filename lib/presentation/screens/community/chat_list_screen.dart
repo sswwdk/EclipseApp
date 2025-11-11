@@ -100,7 +100,10 @@ class _MessageScreenState extends State<MessageScreen> {
     final normalized = rawThreads
         .map((raw) => _normalizeThread(raw, userId))
         .whereType<Map<String, dynamic>>()
-        .toList();
+        .toList()
+        ..removeWhere(
+          (thread) => thread['otherUserId']?.toString() == userId,
+        );
 
     final merged = <String, Map<String, dynamic>>{};
     for (final thread in normalized) {
