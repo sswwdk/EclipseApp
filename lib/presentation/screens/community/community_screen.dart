@@ -16,12 +16,19 @@ class CommunityScreen extends StatefulWidget {
 
 class _CommunityScreenState extends State<CommunityScreen> {
   int _selectedIndex = 2; // 커뮤니티 버튼이 활성화되도록 설정
-  late Future<List<Map<String, dynamic>>> _postsFuture;
+  final ScrollController _scrollController = ScrollController();
+  final List<Map<String, dynamic>> _posts = [];
+  bool _isInitialLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  int _currentPage = 1;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _postsFuture = _loadPosts();
+    _scrollController.addListener(_onScroll);
+    _loadInitialPosts();
   }
 
   @override
@@ -70,38 +77,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ),
         ),
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _postsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return _buildLoadingState();
-          }
-
-          if (snapshot.hasError) {
-            return _buildErrorState(snapshot.error.toString());
-          }
-
-          final posts = snapshot.data ?? [];
-
-          if (posts.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          return RefreshIndicator(
-            onRefresh: _refreshPosts,
-            child: ListView.separated(
-              padding: const EdgeInsets.only(bottom: 120),
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: posts.length,
-              separatorBuilder: (context, index) => _buildDivider(),
-              itemBuilder: (context, index) {
-                final post = posts[index];
-                return _buildPostCard(post);
-              },
-            ),
-          );
-        },
-      ),
+      body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.of(context).push(
@@ -123,18 +99,159 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  Future<List<Map<String, dynamic>>> _loadPosts() async {
-    final response = await CommunityService.getAllPosts();
-    final rawPosts = _extractPosts(response);
-    return rawPosts.map(_normalizePost).toList();
+  Widget _buildBody() {
+    if (_isInitialLoading) {
+      return _buildLoadingState();
+    }
+
+    if (_errorMessage != null && _posts.isEmpty) {
+      return _buildErrorState(_errorMessage!);
+    }
+
+    if (_posts.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refreshPosts,
+      child: ListView.separated(
+        controller: _scrollController,
+        padding: const EdgeInsets.only(bottom: 120),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _posts.length + (_hasMore ? 1 : 0),
+        separatorBuilder: (context, index) {
+          if (_hasMore && index == _posts.length) {
+            return const SizedBox.shrink();
+          }
+          return _buildDivider();
+        },
+        itemBuilder: (context, index) {
+          if (_hasMore && index == _posts.length) {
+            return _buildLoadMoreIndicator();
+          }
+          final post = _posts[index];
+          return _buildPostCard(post);
+        },
+      ),
+    );
   }
 
   Future<void> _refreshPosts() async {
-    final future = _loadPosts();
+    _currentPage = 1;
+    _hasMore = true;
+    _errorMessage = null;
+    await _fetchPosts(page: 1, replace: true);
+  }
+
+  Future<void> _loadInitialPosts() async {
     setState(() {
-      _postsFuture = future;
+      _isInitialLoading = true;
+      _errorMessage = null;
+      _currentPage = 1;
+      _hasMore = true;
+      _posts.clear();
     });
-    await future;
+    await _fetchPosts(page: 1, replace: true);
+    setState(() {
+      _isInitialLoading = false;
+    });
+  }
+
+  void _onScroll() {
+    if (!_hasMore || _isLoadingMore) return;
+    if (!_scrollController.hasClients) return;
+    final threshold = _scrollController.position.maxScrollExtent - 200;
+    if (_scrollController.position.pixels >= threshold) {
+      _loadMorePosts();
+    }
+  }
+
+  Future<void> _loadMorePosts() async {
+    if (_isLoadingMore || !_hasMore) return;
+    final nextPage = _currentPage + 1;
+    await _fetchPosts(page: nextPage);
+  }
+
+  Future<void> _fetchPosts({required int page, bool replace = false}) async {
+    if (_isLoadingMore) return;
+    setState(() {
+      if (!replace) {
+        _isLoadingMore = true;
+      }
+    });
+
+    try {
+      final response = await CommunityService.getAllPosts(page: page);
+      final rawPosts = _extractPosts(response);
+      final normalized = rawPosts.map(_normalizePost).toList();
+
+      setState(() {
+        if (replace) {
+          _posts
+            ..clear()
+            ..addAll(normalized);
+        } else {
+          _mergePosts(normalized);
+        }
+        _currentPage = page;
+        _hasMore = normalized.isNotEmpty;
+        _errorMessage = null;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _hasMore = false;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitialLoading = false;
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
+  void _mergePosts(List<Map<String, dynamic>> incoming) {
+    final existingIds = _posts
+        .map((post) => post['postId']?.toString())
+        .whereType<String>()
+        .toSet();
+
+    for (final post in incoming) {
+      final key = post['postId']?.toString();
+      if (key != null) {
+        if (!existingIds.contains(key)) {
+          _posts.add(post);
+          existingIds.add(key);
+        } else {
+          final index = _posts.indexWhere(
+            (existing) => existing['postId']?.toString() == key,
+          );
+          if (index != -1) {
+            _posts[index] = post;
+          }
+        }
+      } else {
+        _posts.add(post);
+      }
+    }
+  }
+
+  Widget _buildLoadMoreIndicator() {
+    if (_isLoadingMore) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              AppTheme.primaryColor,
+            ),
+          ),
+        ),
+      );
+    }
+    return const SizedBox(height: 24);
   }
 
   List<Map<String, dynamic>> _extractPosts(dynamic response) {
@@ -360,11 +477,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () {
-                setState(() {
-                  _postsFuture = _loadPosts();
-                });
-              },
+              onPressed: () => _loadInitialPosts(),
               child: const Text('다시 시도'),
             ),
           ],
@@ -614,6 +727,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final rune = initial.runes.first;
     final index = rune.abs() % _avatarColorPalettes.length;
     return _avatarColorPalettes[index];
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
   }
 }
 
