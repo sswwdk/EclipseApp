@@ -93,7 +93,7 @@ class CommunityService {
   // 내글 조회
   static Future<Map<String, dynamic>> getMyPosts(String userId) async {
     try {
-      final response = await HttpInterceptor.get(
+      final response = await HttpInterceptor.post(
         '/api/community/post/me',
         baseUrlOverride: communityUrl,
       );
