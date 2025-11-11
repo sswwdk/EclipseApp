@@ -226,35 +226,35 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ],
                 ),
               ),
-              // 종이비행기 아이콘
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        user: {
-                          'nickname': post['nickname'],
-                          'profileImage': post['profileImage'],
-                        },
-                        post: {
-                          'title': post['title'],
-                          'content': post['content'],
-                          'schedule': post['schedule'],
-                        },
-                        otherUserId: otherUserId,
+              if (!_isMyPost())
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(
+                          user: {
+                            'nickname': post['nickname'],
+                            'profileImage': post['profileImage'],
+                          },
+                          post: {
+                            'title': post['title'],
+                            'content': post['content'],
+                            'schedule': post['schedule'],
+                          },
+                          otherUserId: otherUserId,
+                        ),
                       ),
+                    );
+                  },
+                  child: Transform.rotate(
+                    angle: -0.5, // 오른쪽 위를 가리키도록 회전
+                    child: Icon(
+                      Icons.send,
+                      color: Colors.grey[600],
+                      size: 20,
                     ),
-                  );
-                },
-                child: Transform.rotate(
-                  angle: -0.5, // 오른쪽 위를 가리키도록 회전
-                  child: Icon(
-                    Icons.send,
-                    color: Colors.grey[600],
-                    size: 20,
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
