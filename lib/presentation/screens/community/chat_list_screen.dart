@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:characters/characters.dart';
 import 'chat_screen.dart';
 import '../../../data/services/chat_service.dart';
 import '../../../shared/helpers/token_manager.dart';
@@ -784,18 +785,10 @@ class _MessageScreenState extends State<MessageScreen> {
             child: Row(
               children: [
                 // 프로필 이미지
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.grey[600],
-                    size: 24,
-                  ),
+                _buildProfileAvatar(
+                  message['profileImageUrl']?.toString(),
+                  nickname,
+                  radius: 25,
                 ),
                 const SizedBox(width: 12),
                 
@@ -890,3 +883,65 @@ class _MessageScreenState extends State<MessageScreen> {
     );
   }
 }
+
+Widget _buildProfileAvatar(
+  String? profileImageUrl,
+  String nickname, {
+  double radius = 20,
+}) {
+  if (profileImageUrl != null &&
+      profileImageUrl.isNotEmpty &&
+      profileImageUrl != 'null') {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: const Color(0xFFE0E0E0),
+      backgroundImage: NetworkImage(profileImageUrl),
+      onBackgroundImageError: (_, __) {},
+    );
+  }
+
+  final trimmed = nickname.trim();
+  final initial =
+      trimmed.isNotEmpty ? trimmed.characters.first.toUpperCase() : '?';
+  final colors = _avatarColorsFor(initial);
+
+  return CircleAvatar(
+    radius: radius,
+    backgroundColor: colors.background,
+    child: Text(
+      initial,
+      style: TextStyle(
+        color: colors.foreground,
+        fontWeight: FontWeight.bold,
+        fontSize: radius,
+      ),
+    ),
+  );
+}
+
+_AvatarColors _avatarColorsFor(String initial) {
+  if (initial.isEmpty) {
+    return _avatarColorPalettes.first;
+  }
+  final rune = initial.runes.first;
+  final index = rune.abs() % _avatarColorPalettes.length;
+  return _avatarColorPalettes[index];
+}
+
+class _AvatarColors {
+  final Color background;
+  final Color foreground;
+
+  const _AvatarColors(this.background, this.foreground);
+}
+
+const List<_AvatarColors> _avatarColorPalettes = [
+  _AvatarColors(Color(0xFFFFE5E0), Color(0xFFFF6B57)),
+  _AvatarColors(Color(0xFFE3F2FD), Color(0xFF1565C0)),
+  _AvatarColors(Color(0xFFF1F8E9), Color(0xFF2E7D32)),
+  _AvatarColors(Color(0xFFEDE7F6), Color(0xFF5E35B1)),
+  _AvatarColors(Color(0xFFFFF3E0), Color(0xFFEF6C00)),
+  _AvatarColors(Color(0xFFE0F2F1), Color(0xFF00897B)),
+  _AvatarColors(Color(0xFFFFEBEE), Color(0xFFD81B60)),
+  _AvatarColors(Color(0xFFF3E5F5), Color(0xFF8E24AA)),
+];

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:characters/characters.dart';
 import '../../widgets/common_dialogs.dart';
 import '../../../data/services/chat_service.dart';
 import '../../../shared/helpers/token_manager.dart';
@@ -70,14 +71,10 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           title: Row(
             children: [
-              Container(
-                width: 35,
-                height: 35,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.person, color: Colors.grey[600], size: 20),
+              _buildProfileAvatar(
+                widget.user['profileImageUrl']?.toString(),
+                displayName,
+                radius: 18,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -286,14 +283,10 @@ class _ChatScreenState extends State<ChatScreen> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.person, color: Colors.grey[600], size: 16),
+            _buildProfileAvatar(
+              widget.user['profileImageUrl']?.toString(),
+              widget.user['nickname']?.toString() ?? '익명 사용자',
+              radius: 16,
             ),
             const SizedBox(width: 8),
           ],
@@ -335,14 +328,10 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           if (isMe) ...[
             const SizedBox(width: 8),
-            Container(
-              width: 30,
-              height: 30,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF8126),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.person, color: Colors.white, size: 16),
+            _buildProfileAvatar(
+              null,
+              TokenManager.userName ?? '나',
+              radius: 16,
             ),
           ],
         ],
@@ -774,4 +763,66 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!mounted) return;
     setState(() {});
   }
+
+  Widget _buildProfileAvatar(
+    String? profileImageUrl,
+    String nickname, {
+    double radius = 20,
+  }) {
+    if (profileImageUrl != null &&
+        profileImageUrl.isNotEmpty &&
+        profileImageUrl != 'null') {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: const Color(0xFFE0E0E0),
+        backgroundImage: NetworkImage(profileImageUrl),
+        onBackgroundImageError: (_, __) {},
+      );
+    }
+
+    final trimmed = nickname.trim();
+    final initial =
+        trimmed.isNotEmpty ? trimmed.characters.first.toUpperCase() : '?';
+    final colors = _avatarColorsFor(initial);
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: colors.background,
+      child: Text(
+        initial,
+        style: TextStyle(
+          color: colors.foreground,
+          fontWeight: FontWeight.bold,
+          fontSize: radius,
+        ),
+      ),
+    );
+  }
+
+  _AvatarColors _avatarColorsFor(String initial) {
+    if (initial.isEmpty) {
+      return _avatarColorPalettes.first;
+    }
+    final rune = initial.runes.first;
+    final index = rune.abs() % _avatarColorPalettes.length;
+    return _avatarColorPalettes[index];
+  }
 }
+
+class _AvatarColors {
+  final Color background;
+  final Color foreground;
+
+  const _AvatarColors(this.background, this.foreground);
+}
+
+const List<_AvatarColors> _avatarColorPalettes = [
+  _AvatarColors(Color(0xFFFFE5E0), Color(0xFFFF6B57)),
+  _AvatarColors(Color(0xFFE3F2FD), Color(0xFF1565C0)),
+  _AvatarColors(Color(0xFFF1F8E9), Color(0xFF2E7D32)),
+  _AvatarColors(Color(0xFFEDE7F6), Color(0xFF5E35B1)),
+  _AvatarColors(Color(0xFFFFF3E0), Color(0xFFEF6C00)),
+  _AvatarColors(Color(0xFFE0F2F1), Color(0xFF00897B)),
+  _AvatarColors(Color(0xFFFFEBEE), Color(0xFFD81B60)),
+  _AvatarColors(Color(0xFFF3E5F5), Color(0xFF8E24AA)),
+];
