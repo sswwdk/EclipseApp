@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../data/services/service_api.dart'; // 통합된 서비스 import (OpenAIService 포함)
-import 'recommendation_screen.dart';
 import '../../widgets/common_dialogs.dart';
+import 'loading_screan.dart';
 import 'schedule_screen.dart';
 
 /// 카테고리 아이콘 매핑 헬퍼 함수
@@ -74,6 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
   
   // 로딩 상태
   bool _isLoading = false;
+  bool _isFinalLoading = false;
   
   // 현재 대화 단계 (입력창 제어를 위해)
   String _currentStage = "collecting_details";
@@ -81,6 +84,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // 후보지 출력 완료 상태
   bool _showRecommendationButton = false;
   Map<String, dynamic>? _recommendations;
+  Completer<Map<String, dynamic>>? _recommendationCompleter;
   List<String> _activeTags = [];
   String? _activeCategory;
 
@@ -228,6 +232,7 @@ class _ChatScreenState extends State<ChatScreen> {
         timestamp: DateTime.now(),
       ));
       _isLoading = false;
+      _isFinalLoading = false;
     });
     _scrollToBottom();
   }
@@ -281,11 +286,14 @@ class _ChatScreenState extends State<ChatScreen> {
               child: ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount: _messages.length + (_isLoading ? 1 : 0),
+                itemCount:
+                    _messages.length + (_isLoading && !_isFinalLoading ? 1 : 0),
                 itemBuilder: (context, index) {
                   // 로딩 인디케이터 표시
-                  if (index == _messages.length && _isLoading) {
-                    return const _LoadingIndicator();
+                  if (index == _messages.length &&
+                    _isLoading &&
+                    !_isFinalLoading) {
+                    return const LoadingScreanIndicator();
                   }
                   
                   final message = _messages[index];
@@ -325,8 +333,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => RecommendationResultScreen(
-                              recommendations: _recommendations!,
+                            builder: (context) => LoadingScrean(
+                              loadingTask: Future.value(_recommendations!),
                               selectedCategories: widget.selectedCategories,
                             ),
                           ),
@@ -337,7 +345,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       backgroundColor: const Color(0xFFFF7A21),
                       foregroundColor: Colors.white,
                       elevation: 3,
-                      shadowColor: const Color(0xFFFF7A21).withValues(alpha: 0.4),
+                      shadowColor: const Color(0xFFFF7A21).withOpacity(0.4),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -531,7 +539,25 @@ class _ChatScreenState extends State<ChatScreen> {
     if (userInputMessage != null) {
       _messageController.clear();
     }
-    
+    final bool expectsFinalTransition =
+        isResultConfirmation && (isYes || response == "후보지 출력");
+
+    if (expectsFinalTransition) {
+      if (_recommendationCompleter == null ||
+          (_recommendationCompleter?.isCompleted ?? false)) {
+        _recommendationCompleter = Completer<Map<String, dynamic>>();
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LoadingScrean(
+            loadingTask: _recommendationCompleter!.future,
+            selectedCategories: widget.selectedCategories,
+          ),
+        ),
+      );
+    }
+
     setState(() {
       _deactivatePreviousButtons();
       // 현재 메시지에 선택된 버튼 표시
@@ -549,6 +575,7 @@ class _ChatScreenState extends State<ChatScreen> {
         timestamp: DateTime.now(),
       ));
       _isLoading = true;
+      _isFinalLoading = expectsFinalTransition;
     });
     
     _scrollToBottom();
@@ -577,6 +604,12 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       _addErrorMessage('죄송합니다. 응답을 가져오는 중 오류가 발생했습니다.\n오류: $e');
+      if (_recommendationCompleter != null &&
+          !(_recommendationCompleter?.isCompleted ?? true)) {
+        _recommendationCompleter?.completeError(e);
+      }
+      _recommendationCompleter = null;
+      _isFinalLoading = false;
       _maintainFocus();
     }
   }
@@ -636,12 +669,13 @@ class _ChatScreenState extends State<ChatScreen> {
         recommendations != null &&
         recommendations.isNotEmpty) {
       setState(() {
-        if (stage != null) {
-          _currentStage = stage;
-        }
-        _activeCategory = nextCategory;
-        _activeTags = nextTags;
-        _isLoading = false;
+      if (stage != null) {
+        _currentStage = stage;
+      }
+      _activeCategory = nextCategory;
+      _activeTags = nextTags;
+      _isLoading = false;
+      _isFinalLoading = false;
         _showRecommendationButton = true;
         _recommendations = recommendations;
       });
@@ -652,6 +686,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (navigateOnComplete && stage == 'completed') {
       if (recommendations != null && recommendations.isNotEmpty) {
+        if (_recommendationCompleter != null &&
+            !(_recommendationCompleter?.isCompleted ?? true)) {
+          _recommendationCompleter?.complete(recommendations);
+        }
+        _recommendationCompleter = null;
         setState(() {
           if (stage != null) {
             _currentStage = stage;
@@ -659,18 +698,10 @@ class _ChatScreenState extends State<ChatScreen> {
           _activeCategory = nextCategory;
           _activeTags = nextTags;
           _isLoading = false;
+          _isFinalLoading = false;
           _showRecommendationButton = false;
           _recommendations = recommendations;
         });
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RecommendationResultScreen(
-              recommendations: recommendations,
-              selectedCategories: widget.selectedCategories,
-            ),
-          ),
-        );
         return;
       } else if (requestRecommendationsOnEmpty) {
         setState(() {
@@ -680,11 +711,18 @@ class _ChatScreenState extends State<ChatScreen> {
           _activeCategory = nextCategory;
           _activeTags = nextTags;
           _isLoading = false;
+          _isFinalLoading = false;
           _showRecommendationButton = false;
         });
         _requestRecommendations();
         return;
       } else {
+        if (_recommendationCompleter != null &&
+            !(_recommendationCompleter?.isCompleted ?? true)) {
+          _recommendationCompleter
+              ?.completeError(Exception('추천 결과가 없습니다.'));
+        }
+        _recommendationCompleter = null;
         setState(() {
           if (stage != null) {
             _currentStage = stage;
@@ -692,6 +730,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _activeCategory = nextCategory;
           _activeTags = nextTags;
           _isLoading = false;
+          _isFinalLoading = false;
         });
         return;
       }
@@ -736,6 +775,7 @@ class _ChatScreenState extends State<ChatScreen> {
         availableCategories: availableCategories?.cast<String>(),
       ));
       _isLoading = false;
+      _isFinalLoading = false;
     });
 
     _scrollToBottom();
@@ -804,12 +844,30 @@ class _ChatScreenState extends State<ChatScreen> {
         final recommendations = aiResponse['recommendations'] as Map<String, dynamic>?;
         
         if (stage == 'completed' && recommendations != null && recommendations.isNotEmpty) {
-          setState(() {
-            _isLoading = false;
-            _showRecommendationButton = true;
-            _recommendations = recommendations;
-          });
+          if (_recommendationCompleter != null &&
+              !(_recommendationCompleter?.isCompleted ?? true)) {
+            _recommendationCompleter?.complete(recommendations);
+            _recommendationCompleter = null;
+            setState(() {
+              _isLoading = false;
+              _isFinalLoading = false;
+              _showRecommendationButton = false;
+              _recommendations = recommendations;
+            });
+          } else {
+            setState(() {
+              _isLoading = false;
+              _showRecommendationButton = true;
+              _recommendations = recommendations;
+            });
+          }
         } else {
+          if (_recommendationCompleter != null &&
+              !(_recommendationCompleter?.isCompleted ?? true)) {
+            _recommendationCompleter
+                ?.completeError(Exception('추천 결과를 생성할 수 없습니다.'));
+            _recommendationCompleter = null;
+          }
           setState(() {
             _messages.add(ChatMessage(
               text: '추천 결과를 생성할 수 없습니다. 다시 시도해주세요.',
@@ -817,6 +875,7 @@ class _ChatScreenState extends State<ChatScreen> {
               timestamp: DateTime.now(),
             ));
             _isLoading = false;
+            _isFinalLoading = false;
           });
         }
         
@@ -824,6 +883,11 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       _addErrorMessage('추천 결과 생성 중 오류가 발생했습니다.\n오류: $e');
+      if (_recommendationCompleter != null &&
+          !(_recommendationCompleter?.isCompleted ?? true)) {
+        _recommendationCompleter?.completeError(e);
+        _recommendationCompleter = null;
+      }
     }
   }
 }
@@ -867,49 +931,6 @@ class _ChatHeader extends StatelessWidget {
                   '하루와 할 일 찾기',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 로딩 인디케이터 위젯
-class _LoadingIndicator extends StatelessWidget {
-  const _LoadingIndicator();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A21)),
-                ),
-              ),
-              SizedBox(width: 10),
-              Text(
-                '생각 중...',
-                style: TextStyle(color: Color(0xFFFF7A21), fontWeight: FontWeight.w700),
               ),
             ],
           ),
