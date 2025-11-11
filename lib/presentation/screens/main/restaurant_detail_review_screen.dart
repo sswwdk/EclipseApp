@@ -401,6 +401,7 @@ class _RestaurantDetailReviewScreenState
                       ),
                     ],
                   ),
+              const SizedBox(height: 30),
                   if (_reviews.isEmpty)
                     Text(
                       '아직 작성된 리뷰가 없습니다.',
@@ -579,23 +580,34 @@ class _RestaurantDetailReviewScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    nickname,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildStarRating(rating),
-                  const Spacer(),
-                  if (createdAt != null)
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      _formatReviewDate(createdAt),
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      nickname,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.black,
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    _buildStarRating(rating),
+                  ],
+                ),
+              ),
+              if (createdAt != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    _formatReviewDate(createdAt),
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
                 ],
               ),
               const SizedBox(height: 4),
