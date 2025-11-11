@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../data/models/review.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/review_service.dart';
 
 class RestaurantDetailReviewScreen extends StatefulWidget {
   final Restaurant restaurant;
@@ -121,7 +122,7 @@ class _RestaurantDetailReviewScreenState
     );
   }
 
-  Future<void> _submitReview(BuildContext sheetContext) async {
+   Future<void> _submitReview(BuildContext sheetContext) async {
     final content = _reviewController.text.trim();
     if (content.isEmpty) {
       ScaffoldMessenger.of(
@@ -135,27 +136,20 @@ class _RestaurantDetailReviewScreenState
     });
 
     try {
-      FocusScope.of(context).unfocus();
-      // TODO: ReviewService.setMyReview(...) 연동
-      await Future<void>.delayed(const Duration(milliseconds: 300));
+       FocusScope.of(context).unfocus();
 
+      await ReviewService.setMyReview(
+         categoryId: widget.restaurant.id,
+         stars: _newRating,
+        comment: content,
+       );
+      await _fetchDetail();
       if (!mounted) return;
-      setState(() {
-        _reviews = [
-          Review(
-            nickname: '나',
-            rating: _newRating.toDouble(),
-            content: content,
-          ),
-          ..._reviews,
-        ];
-      });
       _resetReviewForm();
       Navigator.of(sheetContext).pop();
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('리뷰가 임시로 추가되었습니다.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('리뷰가 작성되었습니다.')),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -418,6 +412,7 @@ class _RestaurantDetailReviewScreenState
                         nickname: _reviews[i].nickname,
                         rating: _reviews[i].rating,
                         content: _reviews[i].content,
+                        createdAt: _reviews[i].createdAt,
                       ),
                       if (i != _reviews.length - 1) ...[
                         const SizedBox(height: 12),
@@ -564,6 +559,7 @@ class _RestaurantDetailReviewScreenState
     required String nickname,
     required double rating,
     required String content,
+    DateTime? createdAt,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,6 +590,15 @@ class _RestaurantDetailReviewScreenState
                   ),
                   const SizedBox(width: 8),
                   _buildStarRating(rating),
+                  const Spacer(),
+                  if (createdAt != null)
+                    Text(
+                      _formatReviewDate(createdAt),
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 12,
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -651,5 +656,14 @@ class _RestaurantDetailReviewScreenState
         }
       }),
     );
+  }
+
+  String _formatReviewDate(DateTime createdAt) {
+    final local = createdAt.toLocal();
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    final date =
+        '${local.year}.${twoDigits(local.month)}.${twoDigits(local.day)}';
+    final time = '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
+    return '$date $time';
   }
 }
