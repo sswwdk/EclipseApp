@@ -509,13 +509,42 @@ class _TodoListScreenState extends State<TodoListScreen> {
 
   String _formatDate(String raw) {
     if (raw.isEmpty) return '';
-    String datePart = raw;
-    if (raw.contains('T')) {
-      datePart = raw.split('T').first;
-    } else if (raw.contains(' ')) {
-      datePart = raw.split(' ').first;
+
+    final parsed = DateTime.tryParse(raw)?.toLocal();
+    if (parsed != null) {
+      final hasTimeInfo = _hasTimeComponent(raw);
+      final date = '${parsed.year}-${_padTwo(parsed.month)}-${_padTwo(parsed.day)}';
+      if (!hasTimeInfo) {
+        return date;
+      }
+      final time = '${_padTwo(parsed.hour)}:${_padTwo(parsed.minute)}';
+      return '$date $time';
     }
-    return datePart;
+
+    if (raw.contains(' ')) {
+      return raw.substring(0, raw.indexOf(' '));
+    }
+    if (raw.contains('T')) {
+      return raw.split('T').first;
+    }
+    return raw;
+  }
+
+  bool _hasTimeComponent(String raw) {
+    if (raw.contains('T')) {
+      final timePart = raw.split('T').last;
+      return timePart.contains(':');
+    }
+    if (raw.contains(' ')) {
+      final timePart = raw.split(' ').last;
+      return timePart.contains(':');
+    }
+    return false;
+  }
+
+  String _padTwo(int value) {
+    if (value >= 10) return value.toString();
+    return '0$value';
   }
 
   List<String> _sortCategories(Set<String> categories) {
