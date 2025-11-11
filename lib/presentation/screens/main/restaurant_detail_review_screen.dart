@@ -122,7 +122,7 @@ class _RestaurantDetailReviewScreenState
     );
   }
 
-   Future<void> _submitReview(BuildContext sheetContext) async {
+  Future<void> _submitReview(BuildContext sheetContext) async {
     final content = _reviewController.text.trim();
     if (content.isEmpty) {
       ScaffoldMessenger.of(
@@ -136,20 +136,20 @@ class _RestaurantDetailReviewScreenState
     });
 
     try {
-       FocusScope.of(context).unfocus();
+      FocusScope.of(context).unfocus();
 
       await ReviewService.setMyReview(
-         categoryId: widget.restaurant.id,
-         stars: _newRating,
-        comment: content,
-       );
+        categoryId: widget.restaurant.id,
+        stars: _newRating,
+        comments: content,
+      );
       await _fetchDetail();
       if (!mounted) return;
       _resetReviewForm();
       Navigator.of(sheetContext).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('리뷰가 작성되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('리뷰가 작성되었습니다.')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -594,10 +594,7 @@ class _RestaurantDetailReviewScreenState
                   if (createdAt != null)
                     Text(
                       _formatReviewDate(createdAt),
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     ),
                 ],
               ),

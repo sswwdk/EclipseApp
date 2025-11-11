@@ -32,7 +32,7 @@ class ReviewService {
   static Future<void> setMyReview({
     required String categoryId,
     required int stars,
-    required String comment,
+    required String comments,
   }) async {
     try {
       final response = await http.post(
@@ -41,13 +41,11 @@ class ReviewService {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
-        body: json.encode(
-          {
-            'category_id': categoryId,
-            'stars': stars,
-            'comment': comment,
-          },
-        ),
+        body: json.encode({
+          'category_id': categoryId,
+          'stars': stars,
+          'comments': comments,
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -61,4 +59,3 @@ class ReviewService {
     }
   }
 }
-
