@@ -6,10 +6,8 @@ import '../../../data/services/api_service.dart';
 class RestaurantDetailReviewScreen extends StatefulWidget {
   final Restaurant restaurant;
 
-  const RestaurantDetailReviewScreen({
-    Key? key,
-    required this.restaurant,
-  }) : super(key: key);
+  const RestaurantDetailReviewScreen({Key? key, required this.restaurant})
+    : super(key: key);
 
   @override
   State<RestaurantDetailReviewScreen> createState() =>
@@ -49,9 +47,9 @@ class _RestaurantDetailReviewScreenState
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('상세 정보를 불러오지 못했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('상세 정보를 불러오지 못했습니다: $e')));
     }
   }
 
@@ -79,34 +77,42 @@ class _RestaurantDetailReviewScreenState
             clipBehavior: Clip.antiAlias,
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+              child: StatefulBuilder(
+                // 👈 이 부분 추가
+                builder: (BuildContext context, StateSetter setModalState) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '리뷰 작성',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          const Text(
+                            '리뷰 작성',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: _isSubmitting
+                                ? null
+                                : () {
+                                    _resetReviewForm();
+                                    Navigator.of(sheetContext).pop();
+                                  },
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: _isSubmitting
-                            ? null
-                            : () {
-                                _resetReviewForm();
-                                Navigator.of(sheetContext).pop();
-                              },
-                      ),
+                      const SizedBox(height: 16),
+                      _buildReviewForm(
+                        sheetContext,
+                        setModalState,
+                      ), // 👈 setModalState 전달
                     ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildReviewForm(sheetContext),
-                ],
+                  );
+                },
               ),
             ),
           ),
@@ -118,9 +124,9 @@ class _RestaurantDetailReviewScreenState
   Future<void> _submitReview(BuildContext sheetContext) async {
     final content = _reviewController.text.trim();
     if (content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('리뷰 내용을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('리뷰 내용을 입력해주세요.')));
       return;
     }
 
@@ -147,14 +153,14 @@ class _RestaurantDetailReviewScreenState
       _resetReviewForm();
       Navigator.of(sheetContext).pop();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('리뷰가 임시로 추가되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('리뷰가 임시로 추가되었습니다.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('리뷰 작성에 실패했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('리뷰 작성에 실패했습니다: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -209,7 +215,8 @@ class _RestaurantDetailReviewScreenState
               height: 250,
               width: double.infinity,
               child: ClipRRect(
-                child: (restaurant.imageUrl != null &&
+                child:
+                    (restaurant.imageUrl != null &&
                         restaurant.imageUrl!.isNotEmpty)
                     ? Image.network(
                         restaurant.imageUrl!,
@@ -228,8 +235,9 @@ class _RestaurantDetailReviewScreenState
                             color: Colors.grey[200],
                             child: const Center(
                               child: CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation(Color(0xFFFF8126)),
+                                valueColor: AlwaysStoppedAnimation(
+                                  Color(0xFFFF8126),
+                                ),
                               ),
                             ),
                           );
@@ -315,10 +323,7 @@ class _RestaurantDetailReviewScreenState
                       const SizedBox(width: 8),
                       Text(
                         '평점: ${(restaurant.rating ?? 0.0).toStringAsFixed(1)}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
                   ),
@@ -391,10 +396,7 @@ class _RestaurantDetailReviewScreenState
                         onPressed: _isSubmitting
                             ? null
                             : () => _openReviewSheet(context),
-                        icon: const Icon(
-                          Icons.edit,
-                          color: Color(0xFFFF8126),
-                        ),
+                        icon: const Icon(Icons.edit, color: Color(0xFFFF8126)),
                         label: const Text(
                           '리뷰 작성',
                           style: TextStyle(
@@ -408,10 +410,7 @@ class _RestaurantDetailReviewScreenState
                   if (_reviews.isEmpty)
                     Text(
                       '아직 작성된 리뷰가 없습니다.',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     )
                   else ...[
                     for (int i = 0; i < _reviews.length; i++) ...[
@@ -449,10 +448,7 @@ class _RestaurantDetailReviewScreenState
               ),
               child: const Text(
                 '리뷰 작성',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -479,7 +475,10 @@ class _RestaurantDetailReviewScreenState
     );
   }
 
-  Widget _buildReviewForm(BuildContext sheetContext) {
+  Widget _buildReviewForm(
+    BuildContext sheetContext,
+    StateSetter setModalState,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -487,13 +486,10 @@ class _RestaurantDetailReviewScreenState
           children: [
             const Text(
               '별점',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(width: 12),
-            _buildSelectableStars(),
+            _buildSelectableStars(setModalState), // 👈 setModalState 전달
             const SizedBox(width: 8),
             Text(
               '$_newRating점',
@@ -511,9 +507,7 @@ class _RestaurantDetailReviewScreenState
           enabled: !_isSubmitting,
           decoration: InputDecoration(
             hintText: '리뷰 내용을 입력해주세요.',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFFF8126)),
@@ -581,11 +575,7 @@ class _RestaurantDetailReviewScreenState
             color: Colors.grey,
             shape: BoxShape.circle,
           ),
-          child: const Icon(
-            Icons.person,
-            color: Colors.white,
-            size: 20,
-          ),
+          child: const Icon(Icons.person, color: Colors.white, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -609,10 +599,7 @@ class _RestaurantDetailReviewScreenState
               const SizedBox(height: 4),
               Text(
                 content,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
             ],
           ),
@@ -621,7 +608,8 @@ class _RestaurantDetailReviewScreenState
     );
   }
 
-  Widget _buildSelectableStars() {
+  Widget _buildSelectableStars(StateSetter setModalState) {
+    // 👈 파라미터 추가
     return Row(
       children: List.generate(5, (index) {
         final isFilled = index < _newRating;
@@ -629,7 +617,8 @@ class _RestaurantDetailReviewScreenState
           onTap: _isSubmitting
               ? null
               : () {
-                  setState(() {
+                  setModalState(() {
+                    // 👈 setState 대신 setModalState 사용
                     _newRating = index + 1;
                   });
                 },
@@ -650,11 +639,7 @@ class _RestaurantDetailReviewScreenState
     return Row(
       children: List.generate(5, (index) {
         if (index < rating.floor()) {
-          return const Icon(
-            Icons.star,
-            color: Color(0xFFFF8126),
-            size: 14,
-          );
+          return const Icon(Icons.star, color: Color(0xFFFF8126), size: 14);
         } else if (index < rating) {
           return const Icon(
             Icons.star_half,
@@ -662,15 +647,9 @@ class _RestaurantDetailReviewScreenState
             size: 14,
           );
         } else {
-          return Icon(
-            Icons.star_border,
-            color: Colors.grey[400],
-            size: 14,
-          );
+          return Icon(Icons.star_border, color: Colors.grey[400], size: 14);
         }
       }),
     );
   }
 }
-
-
