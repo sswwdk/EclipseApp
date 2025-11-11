@@ -28,34 +28,30 @@ class ReviewService {
     }
   }
 
-  // 리뷰 작성 (POST /api/service/set-my-review)
-  static Future<Map<String, dynamic>> setMyReview({
-    required String userId,
-    required String historyId,
+  // 리뷰 작성 (POST /api/users/me/reviews)
+  static Future<void> setMyReview({
+    required String categoryId,
     required int stars,
     required String comment,
-    required DateTime visitedAt,
-    required DateTime createdAt,
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/service/set-my-review'),
+        Uri.parse('$baseUrl/api/users/me/reviews'),
         headers: {
           'Content-Type': 'application/json',
           ...TokenManager.jwtHeader,
         },
-        body: json.encode({
-          'user_id': userId,
-          'history_id': historyId,
-          'stars': stars,
-          'comment': comment,
-          'visited_at': visitedAt.toIso8601String(),
-          'created_at': createdAt.toIso8601String(),
-        }),
+        body: json.encode(
+          {
+            'category_id': categoryId,
+            'stars': stars,
+            'comment': comment,
+          },
+        ),
       );
 
       if (response.statusCode == 200) {
-        return json.decode(utf8.decode(response.bodyBytes));
+        return;
       } else {
         throw Exception('리뷰 작성 실패: ${response.statusCode}');
       }
