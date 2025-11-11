@@ -77,11 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   color: Colors.grey[300],
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.person,
-                  color: Colors.grey[600],
-                  size: 20,
-                ),
+                child: Icon(Icons.person, color: Colors.grey[600], size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -110,10 +106,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
-            child: Container(
-              height: 1,
-              color: const Color(0xFFFF8126),
-            ),
+            child: Container(height: 1, color: const Color(0xFFFF8126)),
           ),
         ),
         body: Column(
@@ -153,7 +146,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildPostInfo() {
     final post = widget.post!;
-    final title = _firstNonEmptyString([
+    final title =
+        _firstNonEmptyString([
           post['title'],
           post['postTitle'],
           post['subject'],
@@ -174,11 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.article,
-            color: const Color(0xFFFF8126),
-            size: 20,
-          ),
+          Icon(Icons.article, color: const Color(0xFFFF8126), size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -204,11 +194,7 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.grey[500],
-              size: 48,
-            ),
+            Icon(Icons.error_outline, color: Colors.grey[500], size: 48),
             const SizedBox(height: 12),
             const Text(
               '채팅을 불러오지 못했습니다.',
@@ -222,10 +208,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -246,11 +229,7 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             const Text(
               '아직 대화가 없습니다.',
@@ -263,10 +242,7 @@ class _ChatScreenState extends State<ChatScreen> {
             const SizedBox(height: 8),
             Text(
               '첫 메시지를 보내 대화를 시작해보세요.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -290,10 +266,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             child: Text(
               message['text']?.toString() ?? '',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ),
         ),
@@ -307,7 +280,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
@@ -318,11 +293,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 color: Colors.grey[300],
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.person,
-                color: Colors.grey[600],
-                size: 16,
-              ),
+              child: Icon(Icons.person, color: Colors.grey[600], size: 16),
             ),
             const SizedBox(width: 8),
           ],
@@ -371,11 +342,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 color: Color(0xFFFF8126),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 16,
-              ),
+              child: const Icon(Icons.person, color: Colors.white, size: 16),
             ),
           ],
         ],
@@ -391,9 +358,7 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Colors.grey, width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -409,8 +374,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 decoration: InputDecoration(
                   hintText: canSend ? '메시지를 입력하세요...' : '대상을 선택할 수 없습니다.',
                   border: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
                 maxLines: null,
                 textInputAction: TextInputAction.send,
@@ -438,11 +405,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   color: Color(0xFFFF8126),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.send,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.send, color: Colors.white, size: 20),
               ),
             ),
           ),
@@ -579,6 +542,28 @@ class _ChatScreenState extends State<ChatScreen> {
       return null;
     }
 
+    // send_receive 필드 확인 (백엔드 DTO 기준)
+    bool isMe;
+    if (raw.containsKey('send_receive')) {
+      isMe = raw['send_receive'] == true;
+    } else if (raw.containsKey('sendReceive')) {
+      isMe = raw['sendReceive'] == true;
+    } else {
+      // fallback: sender_id 기반 판단
+      final senderId = _firstNonEmptyString([
+        raw['sender_id'],
+        raw['senderId'],
+        raw['fromUserId'],
+        raw['from_id'],
+        raw['user_id'],
+        raw['userId'],
+      ]);
+      isMe =
+          currentUserId != null &&
+          senderId != null &&
+          senderId == currentUserId;
+    }
+
     final senderId = _firstNonEmptyString([
       raw['sender_id'],
       raw['senderId'],
@@ -588,9 +573,11 @@ class _ChatScreenState extends State<ChatScreen> {
       raw['userId'],
     ]);
 
-    final timestamp = _parseDateTime(
+    final timestamp =
+        _parseDateTime(
           raw['createdAt'] ??
               raw['created_at'] ??
+              raw['create_at'] ?? // DTO에서 사용하는 필드명 추가
               raw['timestamp'] ??
               raw['sentAt'] ??
               raw['sent_at'] ??
@@ -599,14 +586,16 @@ class _ChatScreenState extends State<ChatScreen> {
         ) ??
         DateTime.now();
 
-    final isSystem = raw['isSystem'] == true ||
+    final isSystem =
+        raw['isSystem'] == true ||
         (raw['type'] is String &&
             raw['type'].toString().toLowerCase() == 'system') ||
         (raw['messageType'] is String &&
             raw['messageType'].toString().toLowerCase() == 'system');
 
     return {
-      'id': _firstNonEmptyString([
+      'id':
+          _firstNonEmptyString([
             raw['id'],
             raw['messageId'],
             raw['message_id'],
@@ -614,7 +603,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ]) ??
           '${timestamp.millisecondsSinceEpoch}-${senderId ?? 'unknown'}',
       'text': text,
-      'isMe': currentUserId != null && senderId != null && senderId == currentUserId,
+      'isMe': isMe,
       'timestamp': timestamp,
       'isSystemMessage': isSystem,
     };
@@ -769,10 +758,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _showSnackBar(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
