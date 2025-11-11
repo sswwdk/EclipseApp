@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../../data/services/chat_service.dart';
+import '../../../shared/helpers/token_manager.dart';
 
 class ChatScreen extends StatefulWidget {
   final Map<String, dynamic> user;
   final Map<String, dynamic>? post;
+  final String? otherUserId;
+  final String? conversationId;
 
   const ChatScreen({
     super.key,
     required this.user,
     this.post,
+    this.otherUserId,
+    this.conversationId,
   });
 
   @override
@@ -19,137 +25,142 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  // 샘플 채팅 데이터
-  List<Map<String, dynamic>> _messages = [
-    {
-      'id': '1',
-      'text': '안녕하세요! 게시글 잘 봤어요',
-      'isMe': true,
-      'time': '14:30',
-    },
-    {
-      'id': '2',
-      'text': '안녕하세요! 관심 가져주셔서 감사해요',
-      'isMe': false,
-      'time': '14:32',
-    },
-    {
-      'id': '3',
-      'text': '같이 가고 싶은데 언제 가시나요?',
-      'isMe': true,
-      'time': '14:33',
-    },
-    {
-      'id': '4',
-      'text': '이번 주말에 가려고 해요! 같이 가실래요?',
-      'isMe': false,
-      'time': '14:35',
-    },
-  ];
+  List<Map<String, dynamic>> _messages = [];
+  bool _isLoading = true;
+  bool _isSending = false;
+  String? _errorMessage;
+  bool _hasUpdates = false;
 
   @override
   void initState() {
     super.initState();
-    // 게시글 정보가 있으면 첫 메시지로 추가
-    if (widget.post != null) {
-      _messages.insert(0, {
-        'id': '0',
-        'text': '${widget.post!['title']} 게시글에 대해 문의드려요',
-        'isMe': true,
-        'time': '14:25',
-        'isSystemMessage': true,
-      });
+    _messageController.addListener(_handleMessageChanged);
+    _initializeChat();
+  }
+
+  void _initializeChat() {
+    final otherUserId = widget.otherUserId;
+
+    if (otherUserId == null || otherUserId.isEmpty) {
+      _isLoading = false;
+      _errorMessage = '대상 사용자를 찾을 수 없습니다.';
+      return;
     }
+
+    _reloadMessages(showLoader: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Row(
-          children: [
-            // 프로필 이미지
-            Container(
-              width: 35,
-              height: 35,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                shape: BoxShape.circle,
+    final displayName = widget.user['nickname']?.toString() ?? '익명 사용자';
+
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop(_hasUpdates);
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            onPressed: () => Navigator.of(context).pop(_hasUpdates),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 35,
+                height: 35,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.person,
+                  color: Colors.grey[600],
+                  size: 20,
+                ),
               ),
-              child: Icon(
-                Icons.person,
-                color: Colors.grey[600],
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            // 사용자 정보
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.user['nickname'],
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.more_vert, color: Colors.black87),
+              onPressed: _showChatMenu,
             ),
           ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
-            onPressed: () {
-              _showChatMenu();
-            },
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: const Color(0xFFFF8126),
-          ),
-        ),
-      ),
-      body: Column(
-        children: [
-          // 게시글 정보 (있는 경우)
-          if (widget.post != null) _buildPostInfo(),
-          
-          // 채팅 메시지들
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _buildMessageBubble(message);
-              },
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(
+              height: 1,
+              color: const Color(0xFFFF8126),
             ),
           ),
-          
-          // 메시지 입력창
-          _buildMessageInput(),
-        ],
+        ),
+        body: Column(
+          children: [
+            if (widget.post != null) _buildPostInfo(),
+            Expanded(child: _buildMessagesView()),
+            _buildMessageInput(),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _buildMessagesView() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return _buildErrorView(_errorMessage!);
+    }
+
+    if (_messages.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(16),
+      itemCount: _messages.length,
+      itemBuilder: (context, index) {
+        final message = _messages[index];
+        return _buildMessageBubble(message);
+      },
+    );
+  }
+
   Widget _buildPostInfo() {
+    final post = widget.post!;
+    final title = _firstNonEmptyString([
+          post['title'],
+          post['postTitle'],
+          post['subject'],
+          post['headline'],
+        ]) ??
+        '게시글 정보';
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(12),
@@ -171,7 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              widget.post!['title'],
+              title,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -186,8 +197,85 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Widget _buildErrorView(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: Colors.grey[500],
+              size: 48,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '채팅을 불러오지 못했습니다.',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _reloadMessages(showLoader: true),
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '아직 대화가 없습니다.',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '첫 메시지를 보내 대화를 시작해보세요.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessageBubble(Map<String, dynamic> message) {
-    final isMe = message['isMe'] as bool;
+    final isMe = message['isMe'] as bool? ?? false;
     final isSystemMessage = message['isSystemMessage'] as bool? ?? false;
 
     if (isSystemMessage) {
@@ -201,7 +289,7 @@ class _ChatScreenState extends State<ChatScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              message['text'],
+              message['text']?.toString() ?? '',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -211,6 +299,10 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       );
     }
+
+    final timestamp = message['timestamp'] as DateTime?;
+    final timeLabel =
+        message['time']?.toString() ?? _formatTime(timestamp ?? DateTime.now());
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -242,7 +334,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 2,
                     offset: const Offset(0, 1),
                   ),
@@ -252,7 +344,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    message['text'],
+                    message['text']?.toString() ?? '',
                     style: TextStyle(
                       color: isMe ? Colors.white : Colors.black87,
                       fontSize: 14,
@@ -260,7 +352,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    message['time'],
+                    timeLabel,
                     style: TextStyle(
                       color: isMe ? Colors.white70 : Colors.grey[500],
                       fontSize: 11,
@@ -275,8 +367,8 @@ class _ChatScreenState extends State<ChatScreen> {
             Container(
               width: 30,
               height: 30,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF8126),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFF8126),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -292,6 +384,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageInput() {
+    final canSend = !_isSending && widget.otherUserId != null;
+    final hasText = _messageController.text.trim().isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -310,39 +405,44 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               child: TextField(
                 controller: _messageController,
-                decoration: const InputDecoration(
-                  hintText: '메시지를 입력하세요...',
+                enabled: canSend,
+                decoration: InputDecoration(
+                  hintText: canSend ? '메시지를 입력하세요...' : '대상을 선택할 수 없습니다.',
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 maxLines: null,
                 textInputAction: TextInputAction.send,
-                onSubmitted: (text) {
-                  if (text.trim().isNotEmpty) {
-                    _sendMessage(text.trim());
-                  }
-                },
+                onSubmitted: canSend
+                    ? (text) {
+                        if (text.trim().isNotEmpty) {
+                          _sendMessage(text.trim());
+                        }
+                      }
+                    : null,
               ),
             ),
           ),
           const SizedBox(width: 8),
           GestureDetector(
-            onTap: () {
-              if (_messageController.text.trim().isNotEmpty) {
-                _sendMessage(_messageController.text.trim());
-              }
-            },
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF8126),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.send,
-                color: Colors.white,
-                size: 20,
+            onTap: canSend && hasText
+                ? () => _sendMessage(_messageController.text.trim())
+                : null,
+            child: Opacity(
+              opacity: canSend && hasText ? 1 : 0.4,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF8126),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.send,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -351,34 +451,261 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _sendMessage(String text) {
-    if (text.isEmpty) return;
+  Future<void> _sendMessage(String text) async {
+    if (!_canAttemptSend(text)) {
+      return;
+    }
+
+    final otherUserId = widget.otherUserId!;
+    final messageText = text.trim();
 
     setState(() {
-      _messages.add({
-        'id': DateTime.now().millisecondsSinceEpoch.toString(),
-        'text': text,
-        'isMe': true,
-        'time': _formatTime(DateTime.now()),
-      });
+      _isSending = true;
     });
 
-    _messageController.clear();
-    
-    // 스크롤을 맨 아래로
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+    try {
+      await ChatService.sendChat(otherUserId, messageText);
+      _messageController.clear();
+      _hasUpdates = true;
+      await _reloadMessages();
+    } catch (e) {
+      _showSnackBar('메시지 전송에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
       }
-    });
+    }
   }
 
-  String _formatTime(DateTime dateTime) {
-    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  bool _canAttemptSend(String text) {
+    return !_isSending &&
+        widget.otherUserId != null &&
+        widget.otherUserId!.isNotEmpty &&
+        text.trim().isNotEmpty;
+  }
+
+  Future<void> _reloadMessages({bool showLoader = false}) async {
+    final currentUserId = TokenManager.userId;
+    final otherUserId = widget.otherUserId;
+
+    if (otherUserId == null || otherUserId.isEmpty) {
+      return;
+    }
+
+    if (showLoader && mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
+    try {
+      final response = await ChatService.getChat(otherUserId);
+      final rawMessages = _extractMessageList(response);
+      final normalized = rawMessages
+          .map((raw) => _normalizeMessage(raw, currentUserId))
+          .whereType<Map<String, dynamic>>()
+          .toList();
+
+      normalized.sort((a, b) {
+        final aTime = a['timestamp'] as DateTime?;
+        final bTime = b['timestamp'] as DateTime?;
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return -1;
+        if (bTime == null) return 1;
+        return aTime.compareTo(bTime);
+      });
+
+      if (!mounted) return;
+
+      setState(() {
+        _messages = normalized;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '채팅을 불러오지 못했습니다.';
+      });
+
+      _showSnackBar('채팅을 불러오는 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  List<Map<String, dynamic>> _extractMessageList(dynamic payload) {
+    if (payload is List) {
+      return payload.whereType<Map<String, dynamic>>().toList();
+    }
+
+    if (payload is Map<String, dynamic>) {
+      final keys = [
+        'messages',
+        'data',
+        'results',
+        'items',
+        'content',
+        'rows',
+        'list',
+        'chat',
+        'conversation',
+      ];
+
+      for (final key in keys) {
+        if (!payload.containsKey(key)) continue;
+        final value = payload[key];
+        final extracted = _extractMessageList(value);
+        if (extracted.isNotEmpty) {
+          return extracted;
+        }
+      }
+    }
+
+    return [];
+  }
+
+  Map<String, dynamic>? _normalizeMessage(
+    Map<String, dynamic> raw,
+    String? currentUserId,
+  ) {
+    final text = _extractMessageText(raw);
+    if (text == null) {
+      return null;
+    }
+
+    final senderId = _firstNonEmptyString([
+      raw['sender_id'],
+      raw['senderId'],
+      raw['fromUserId'],
+      raw['from_id'],
+      raw['user_id'],
+      raw['userId'],
+    ]);
+
+    final timestamp = _parseDateTime(
+          raw['createdAt'] ??
+              raw['created_at'] ??
+              raw['timestamp'] ??
+              raw['sentAt'] ??
+              raw['sent_at'] ??
+              raw['time'] ??
+              raw['date'],
+        ) ??
+        DateTime.now();
+
+    final isSystem = raw['isSystem'] == true ||
+        (raw['type'] is String &&
+            raw['type'].toString().toLowerCase() == 'system') ||
+        (raw['messageType'] is String &&
+            raw['messageType'].toString().toLowerCase() == 'system');
+
+    return {
+      'id': _firstNonEmptyString([
+            raw['id'],
+            raw['messageId'],
+            raw['message_id'],
+            raw['uuid'],
+          ]) ??
+          '${timestamp.millisecondsSinceEpoch}-${senderId ?? 'unknown'}',
+      'text': text,
+      'isMe': currentUserId != null && senderId != null && senderId == currentUserId,
+      'timestamp': timestamp,
+      'isSystemMessage': isSystem,
+    };
+  }
+
+  String? _extractMessageText(Map<String, dynamic> raw) {
+    final candidates = [
+      raw['message'],
+      raw['content'],
+      raw['text'],
+      raw['body'],
+      raw['comment'],
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate == null) continue;
+      if (candidate is String) {
+        final trimmed = candidate.trim();
+        if (trimmed.isNotEmpty) {
+          return trimmed;
+        }
+      } else if (candidate is Map<String, dynamic>) {
+        final nested = _extractMessageText(candidate);
+        if (nested != null) {
+          return nested;
+        }
+      } else {
+        final asString = candidate.toString().trim();
+        if (asString.isNotEmpty) {
+          return asString;
+        }
+      }
+    }
+    return null;
+  }
+
+  DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+
+    if (value is DateTime) return value;
+
+    if (value is int) {
+      final text = value.toString();
+      if (text.length == 13) {
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      }
+      return DateTime.fromMillisecondsSinceEpoch(value * 1000);
+    }
+
+    if (value is String) {
+      if (value.isEmpty) return null;
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) return parsed;
+      if (value.contains(' ')) {
+        final sanitized = value.replaceAll(' ', 'T');
+        final secondParsed = DateTime.tryParse(sanitized);
+        if (secondParsed != null) {
+          return secondParsed;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  String? _firstNonEmptyString(List<dynamic> values) {
+    for (final value in values) {
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+    return null;
+  }
+
+  String _formatTime(DateTime date) {
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   void _showChatMenu() {
@@ -439,10 +766,26 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _messageController.removeListener(_handleMessageChanged);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _handleMessageChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 }

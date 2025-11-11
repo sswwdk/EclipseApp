@@ -225,6 +225,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ]) ??
         _formatTimeAgo(createdAt);
 
+    final userId = _firstNonEmptyString([
+      raw['user_id'],
+      raw['userId'],
+      raw['author_id'],
+      raw['authorId'],
+      raw['writer_id'],
+      raw['writerId'],
+      if (userData is Map<String, dynamic>) ...[
+        userData['id'],
+        userData['userId'],
+        userData['user_id'],
+      ],
+    ]);
+
     return {
       'postId': _firstNonEmptyString([
         raw['id']?.toString(),
@@ -243,6 +257,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         raw['profileImage'],
         raw['avatarUrl'],
       ]),
+      'userId': userId,
       'raw': raw,
     };
   }
@@ -422,6 +437,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   'title': title,
                   'content': content,
                   'schedule': schedule,
+                  'userId': post['userId'],
                   'raw': post['raw'],
                 },
               ),

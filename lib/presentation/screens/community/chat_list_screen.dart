@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'chat_screen.dart';
+import '../../../data/services/chat_service.dart';
+import '../../../shared/helpers/token_manager.dart';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -9,64 +11,13 @@ class MessageScreen extends StatefulWidget {
 }
 
 class _MessageScreenState extends State<MessageScreen> {
-  // 샘플 쪽지 데이터
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'id': '1',
-      'sender': '근면한 떡볶이',
-      'content': '안녕하세요! 같이 가고 싶어요',
-      'timeAgo': '1시간 전',
-      'isRead': false,
-      'post': {
-        'title': '메가커피 노량진점 → 카츠진 → 영등포 CGV',
-        'content': '노량진 메가커피에서 시작해서 카츠진에서 저녁 먹고 영등포 CGV에서 영화 보기',
-      },
-    },
-    {
-      'id': '2',
-      'sender': '꼼꼼한 연어',
-      'content': '카츠진 정말 맛있어요. 추천합니다!',
-      'timeAgo': '2시간 전',
-      'isRead': true,
-      'post': {
-        'title': '홍대 맛집 투어',
-        'content': '홍대 근처 맛집들을 돌아다니며 맛있는 음식들을 즐겨보세요',
-      },
-    },
-    {
-      'id': '3',
-      'sender': '활발한 칼국수',
-      'content': '언제 가시나요?',
-      'timeAgo': '3시간 전',
-      'isRead': false,
-      'post': {
-        'title': '강남 카페 투어',
-        'content': '강남의 인기 카페들을 순회하며 좋은 시간을 보내요',
-      },
-    },
-    {
-      'id': '4',
-      'sender': '케밥데몬헌터',
-      'content': '서울 근교 여행지 추천해주세요',
-      'timeAgo': '1일 전',
-      'isRead': true,
-      'post': {
-        'title': '서울 근교 당일치기 여행',
-        'content': '서울에서 가까운 근교 여행지들을 추천해드려요',
-      },
-    },
-    {
-      'id': '5',
-      'sender': '달콤한 파스타',
-      'content': '홍대 근처에서 혼자 가서 책 읽기 좋은 조용한 카페 있나요?',
-      'timeAgo': '2일 전',
-      'isRead': true,
-      'post': {
-        'title': '홍대 조용한 카페 추천',
-        'content': '홍대에서 혼자 시간을 보내기 좋은 조용한 카페들을 소개해요',
-      },
-    },
-  ];
+  late Future<List<Map<String, dynamic>>> _messagesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _messagesFuture = _loadMessages();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,15 +55,510 @@ class _MessageScreenState extends State<MessageScreen> {
           ),
         ),
       ),
-      body: _messages.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              itemCount: _messages.length,
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _messagesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return _buildErrorState(snapshot.error.toString());
+          }
+
+          final messages = snapshot.data ?? [];
+
+          if (messages.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return RefreshIndicator(
+            onRefresh: _refreshMessages,
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: messages.length,
               itemBuilder: (context, index) {
-                final message = _messages[index];
+                final message = messages[index];
                 return _buildMessageCard(message);
               },
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _loadMessages() async {
+    final userId = TokenManager.userId;
+    if (userId == null || userId.isEmpty) {
+      throw Exception('로그인이 필요합니다.');
+    }
+
+    final response = await ChatService.getChatList();
+    final rawThreads = _extractThreadList(response);
+    final normalized = rawThreads
+        .map((raw) => _normalizeThread(raw, userId))
+        .whereType<Map<String, dynamic>>()
+        .toList();
+
+    normalized.sort((a, b) {
+      final aTime = a['updatedAt'] as DateTime?;
+      final bTime = b['updatedAt'] as DateTime?;
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      return bTime.compareTo(aTime);
+    });
+
+    return normalized;
+  }
+
+  Future<void> _refreshMessages() async {
+    final future = _loadMessages();
+    setState(() {
+      _messagesFuture = future;
+    });
+    await future;
+  }
+
+  List<Map<String, dynamic>> _extractThreadList(dynamic payload) {
+    if (payload is List) {
+      return payload.whereType<Map<String, dynamic>>().toList();
+    }
+
+    if (payload is Map<String, dynamic>) {
+      final keys = [
+        'threads',
+        'chats',
+        'chatList',
+        'data',
+        'results',
+        'items',
+        'content',
+        'rows',
+        'list',
+      ];
+
+      for (final key in keys) {
+        if (!payload.containsKey(key)) continue;
+        final value = payload[key];
+        final extracted = _extractThreadList(value);
+        if (extracted.isNotEmpty) {
+          return extracted;
+        }
+      }
+    }
+
+    return [];
+  }
+
+  Map<String, dynamic>? _normalizeThread(
+    Map<String, dynamic> raw,
+    String currentUserId,
+  ) {
+    final senderId = _firstNonEmptyString([
+      raw['sender_id'],
+      raw['senderId'],
+      raw['fromUserId'],
+    ]);
+    final receiverId = _firstNonEmptyString([
+      raw['receiver_id'],
+      raw['receiverId'],
+      raw['toUserId'],
+    ]);
+
+    final otherUserId = _resolveOtherUserId(raw, currentUserId) ??
+        (senderId != currentUserId ? senderId : null) ??
+        (receiverId != currentUserId ? receiverId : null);
+
+    if (otherUserId == null) {
+      return null;
+    }
+
+    final otherUser = _resolveOtherUser(raw, currentUserId);
+    final nickname = _firstNonEmptyString([
+          otherUser?['nickname'],
+          otherUser?['nickName'],
+          otherUser?['userName'],
+          otherUser?['name'],
+          raw['otherUserName'],
+          raw['partnerName'],
+          raw['receiverName'],
+          raw['senderName'],
+          raw['nickname'],
+        ]) ??
+        '익명 사용자';
+
+    final profileImageUrl = _firstNonEmptyString([
+      otherUser?['profileImageUrl'],
+      otherUser?['profile_image_url'],
+      otherUser?['avatarUrl'],
+      raw['profileImageUrl'],
+      raw['profile_image_url'],
+    ]);
+
+    final lastMessageRaw =
+        raw['lastMessage'] ?? raw['recentMessage'] ?? raw['message'];
+
+    final lastMessage = _extractMessageText(lastMessageRaw) ??
+        _firstNonEmptyString([
+          raw['lastMessageText'],
+          raw['lastMessageContent'],
+          raw['lastMessageBody'],
+          raw['content'],
+          raw['text'],
+        ]) ??
+        '';
+
+    final updatedAtRaw = raw['updatedAt'] ??
+        raw['updated_at'] ??
+        raw['lastMessageAt'] ??
+        raw['last_message_at'] ??
+        (lastMessageRaw is Map<String, dynamic>
+            ? lastMessageRaw['createdAt'] ?? lastMessageRaw['timestamp']
+            : null);
+
+    final updatedAt = _parseDateTime(updatedAtRaw);
+
+    final unreadCount = _firstNonEmptyInt([
+          raw['unreadCount'],
+          raw['unread_count'],
+          raw['unreadMessages'],
+          raw['unread_messages'],
+          raw['newMessages'],
+          raw['new_messages'],
+          raw['unread'],
+          raw['badgeCount'],
+          raw['badge_count'],
+          raw['hasUnread'] == true ? 1 : null,
+          raw['isRead'] is bool ? (raw['isRead'] as bool ? 0 : 1) : null,
+        ]) ??
+        0;
+
+    final postData = _resolvePostData(raw);
+
+    return {
+      'threadId': _firstNonEmptyString([
+        raw['threadId'],
+        raw['thread_id'],
+        raw['chatId'],
+        raw['chat_id'],
+        raw['conversationId'],
+        raw['conversation_id'],
+        raw['id'],
+      ]),
+      'otherUserId': otherUserId,
+      'nickname': nickname,
+      'lastMessage': lastMessage,
+      'updatedAt': updatedAt,
+      'timeLabel': _formatTimeAgo(updatedAt),
+      'unreadCount': unreadCount,
+      'post': postData,
+      'profileImageUrl': profileImageUrl,
+      'raw': raw,
+    };
+  }
+
+  Map<String, dynamic>? _resolveOtherUser(
+    Map<String, dynamic> raw,
+    String currentUserId,
+  ) {
+    final candidateKeys = [
+      'otherUser',
+      'partner',
+      'opponent',
+      'recipient',
+      'receiver',
+      'sender',
+      'targetUser',
+      'user',
+      'member',
+      'participant',
+      'friend',
+    ];
+
+    for (final key in candidateKeys) {
+      final value = raw[key];
+      if (value is Map<String, dynamic>) {
+        final userId = _firstNonEmptyString([
+          value['id'],
+          value['userId'],
+          value['user_id'],
+        ]);
+        if (userId == null) continue;
+        if (userId == currentUserId && key == 'sender') {
+          continue;
+        }
+        if (userId != currentUserId) {
+          return value;
+        }
+      } else if (value is List) {
+        for (final item in value.whereType<Map<String, dynamic>>()) {
+          final userId = _firstNonEmptyString([
+            item['id'],
+            item['userId'],
+            item['user_id'],
+          ]);
+          if (userId != null && userId != currentUserId) {
+            return item;
+          }
+        }
+      }
+    }
+
+    final participants = raw['participants'];
+    if (participants is List) {
+      for (final item in participants.whereType<Map<String, dynamic>>()) {
+        final userId = _firstNonEmptyString([
+          item['id'],
+          item['userId'],
+          item['user_id'],
+        ]);
+        if (userId != null && userId != currentUserId) {
+          return item;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  String? _resolveOtherUserId(Map<String, dynamic> raw, String currentUserId) {
+    final candidates = [
+      raw['otherUserId'],
+      raw['other_user_id'],
+      raw['partnerId'],
+      raw['partner_id'],
+      raw['participantId'],
+      raw['participant_id'],
+      raw['receiver_id'],
+      raw['receiverId'],
+      raw['sender_id'],
+      raw['senderId'],
+      raw['user_id'],
+      raw['userId'],
+    ];
+
+    for (final candidate in candidates) {
+      final id = _firstNonEmptyString([candidate]);
+      if (id != null && id != currentUserId) {
+        return id;
+      }
+    }
+
+    final otherUser = _resolveOtherUser(raw, currentUserId);
+    if (otherUser != null) {
+      final id = _firstNonEmptyString([
+        otherUser['id'],
+        otherUser['userId'],
+        otherUser['user_id'],
+      ]);
+      if (id != null && id != currentUserId) {
+        return id;
+      }
+    }
+
+    return null;
+  }
+
+  Map<String, dynamic>? _resolvePostData(Map<String, dynamic> raw) {
+    final candidate = raw['post'] ??
+        raw['postInfo'] ??
+        raw['post_data'] ??
+        raw['relatedPost'] ??
+        raw['postDetail'];
+
+    if (candidate is Map<String, dynamic>) {
+      final title = _firstNonEmptyString([
+        candidate['title'],
+        candidate['postTitle'],
+        candidate['subject'],
+        candidate['headline'],
+      ]);
+      final content = _firstNonEmptyString([
+        candidate['content'],
+        candidate['body'],
+        candidate['description'],
+      ]);
+      final postId = _firstNonEmptyString([
+        candidate['postId'],
+        candidate['post_id'],
+        candidate['id'],
+      ]);
+
+      final result = <String, dynamic>{};
+      if (postId != null) result['postId'] = postId;
+      if (title != null) result['title'] = title;
+      if (content != null) result['content'] = content;
+
+      return result.isEmpty ? null : result;
+    }
+
+    final title = _firstNonEmptyString([
+      raw['postTitle'],
+      raw['title'],
+    ]);
+    final content = _firstNonEmptyString([
+      raw['postContent'],
+      raw['postDescription'],
+    ]);
+
+    if (title == null && content == null) {
+      return null;
+    }
+
+    final result = <String, dynamic>{};
+    if (title != null) result['title'] = title;
+    if (content != null) result['content'] = content;
+    return result;
+  }
+
+  String? _extractMessageText(dynamic value) {
+    if (value == null) return null;
+    if (value is String) {
+      final trimmed = value.trim();
+      return trimmed.isEmpty ? null : trimmed;
+    }
+
+    if (value is Map<String, dynamic>) {
+      return _firstNonEmptyString([
+        value['message'],
+        value['content'],
+        value['text'],
+        value['body'],
+      ]);
+    }
+
+    return value.toString();
+  }
+
+  int? _firstNonEmptyInt(List<dynamic> values) {
+    for (final value in values) {
+      if (value == null) continue;
+
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+
+      final parsed = int.tryParse(value.toString());
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+    return null;
+  }
+
+  String? _firstNonEmptyString(List<dynamic> values) {
+    for (final value in values) {
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+    return null;
+  }
+
+  DateTime? _parseDateTime(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is DateTime) {
+      return value;
+    }
+
+    if (value is int) {
+      if (value.toString().length == 13) {
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      }
+      return DateTime.fromMillisecondsSinceEpoch(value * 1000);
+    }
+
+    if (value is String) {
+      if (value.isEmpty) return null;
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) {
+        return parsed;
+      }
+      if (value.contains(' ')) {
+        final sanitized = value.replaceAll(' ', 'T');
+        final secondParsed = DateTime.tryParse(sanitized);
+        if (secondParsed != null) {
+          return secondParsed;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  String _formatTimeAgo(DateTime? dateTime) {
+    if (dateTime == null) {
+      return '방금 전';
+    }
+
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+
+    if (diff.inMinutes < 1) {
+      return '방금 전';
+    }
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}분 전';
+    }
+    if (diff.inHours < 24) {
+      return '${diff.inHours}시간 전';
+    }
+    if (diff.inDays < 7) {
+      return '${diff.inDays}일 전';
+    }
+    if (diff.inDays < 30) {
+      return '${(diff.inDays / 7).floor()}주 전';
+    }
+    if (diff.inDays < 365) {
+      return '${(diff.inDays / 30).floor()}개월 전';
+    }
+    return '${(diff.inDays / 365).floor()}년 전';
+  }
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: Colors.grey[500],
+              size: 48,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '쪽지를 불러오지 못했습니다.',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _refreshMessages(),
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -149,28 +595,34 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   Widget _buildMessageCard(Map<String, dynamic> message) {
-    final isRead = message['isRead'] as bool;
-    
+    final unreadCount = message['unreadCount'] as int? ?? 0;
+    final isRead = unreadCount == 0;
+    final nickname = message['nickname']?.toString() ?? '익명 사용자';
+    final lastMessage = message['lastMessage']?.toString() ?? '';
+    final timeLabel = message['timeLabel']?.toString() ?? '';
+    final post = message['post'] as Map<String, dynamic>?;
+
     return Container(
       color: Colors.white,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            Navigator.of(context).push(
+          onTap: () async {
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => ChatScreen(
                   user: {
-                    'nickname': message['sender'],
-                    'profileImage': Icons.person,
+                    'nickname': nickname,
+                    'profileImageUrl': message['profileImageUrl'],
                   },
-                  post: message['post'] != null ? {
-                    'title': message['post']['title'],
-                    'content': message['post']['content'],
-                  } : null,
+                  post: post,
+                  otherUserId: message['otherUserId']?.toString(),
+                  conversationId: message['threadId']?.toString(),
                 ),
               ),
             );
+            if (!mounted) return;
+            await _refreshMessages();
           },
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -200,10 +652,11 @@ class _MessageScreenState extends State<MessageScreen> {
                       Row(
                         children: [
                           Text(
-                            message['sender'],
+                            nickname,
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
+                              fontWeight:
+                                  isRead ? FontWeight.w500 : FontWeight.bold,
                               color: Colors.black87,
                             ),
                           ),
@@ -221,18 +674,19 @@ class _MessageScreenState extends State<MessageScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        message['content'],
+                        lastMessage,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[700],
-                          fontWeight: isRead ? FontWeight.normal : FontWeight.w500,
+                          fontWeight:
+                              isRead ? FontWeight.normal : FontWeight.w500,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       // 게시물 정보
-                      if (message['post'] != null) ...[
+                      if (post != null) ...[
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
@@ -269,7 +723,7 @@ class _MessageScreenState extends State<MessageScreen> {
                         const SizedBox(height: 4),
                       ],
                       Text(
-                        message['timeAgo'],
+                        timeLabel,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[500],
