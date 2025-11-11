@@ -13,12 +13,15 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _passwordConfirmController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   
+  bool _isPasswordObscured = true;
+  bool _isPasswordConfirmObscured = true;
   DateTime? _selectedDate;
   String? _selectedGender;
   bool _isLoading = false;
@@ -27,6 +30,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void dispose() {
     _idController.dispose();
     _passwordController.dispose();
+    _passwordConfirmController.dispose();
     _nameController.dispose();
     _nicknameController.dispose();
     _emailController.dispose();
@@ -39,6 +43,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     // 필수 항목 검증
     final String id = _idController.text.trim();
     final String password = _passwordController.text.trim();
+    final String confirmPassword = _passwordConfirmController.text.trim();
     final String nickname = _nicknameController.text.trim();
     final String email = _emailController.text.trim();
     final String name = _nameController.text.trim();
@@ -53,6 +58,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
     
+    if (confirmPassword.isEmpty) {
+      _showSnackBar('비밀번호 확인을 입력하세요.');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showSnackBar('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+      return;
+    }
+
     if (nickname.isEmpty) {
       _showSnackBar('닉네임을 입력하세요.');
       return;
@@ -198,7 +213,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
             const SizedBox(height: 20),
             
             // 비밀번호 입력 필드 (필수)
-            _buildInputField('비밀번호', '비밀번호를 입력하세요', _passwordController, isPassword: true, isRequired: true),
+            _buildInputField(
+              '비밀번호',
+              '비밀번호를 입력하세요',
+              _passwordController,
+              isPassword: true,
+              isRequired: true,
+              obscureText: _isPasswordObscured,
+              onToggleVisibility: () {
+                setState(() {
+                  _isPasswordObscured = !_isPasswordObscured;
+                });
+              },
+            ),
+            const SizedBox(height: 20),
+
+            // 비밀번호 확인 입력 필드 (필수)
+            _buildInputField(
+              '비밀번호 확인',
+              '비밀번호를 다시 입력하세요',
+              _passwordConfirmController,
+              isPassword: true,
+              isRequired: true,
+              obscureText: _isPasswordConfirmObscured,
+              onToggleVisibility: () {
+                setState(() {
+                  _isPasswordConfirmObscured = !_isPasswordConfirmObscured;
+                });
+              },
+            ),
             const SizedBox(height: 20),
             
             // 닉네임 입력 필드 (필수)
@@ -269,7 +312,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildInputField(String label, String hint, TextEditingController controller, {bool isPassword = false, bool isRequired = false, bool isOptional = false}) {
+  Widget _buildInputField(
+    String label,
+    String hint,
+    TextEditingController controller, {
+    bool isPassword = false,
+    bool isRequired = false,
+    bool isOptional = false,
+    bool obscureText = false,
+    VoidCallback? onToggleVisibility,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -310,7 +362,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          obscureText: isPassword,
+          obscureText: isPassword ? obscureText : false,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.grey[400]),
@@ -332,6 +384,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
               horizontal: 16,
               vertical: 16,
             ),
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey[500],
+                    ),
+                    onPressed: onToggleVisibility,
+                  )
+                : null,
           ),
         ),
       ],
