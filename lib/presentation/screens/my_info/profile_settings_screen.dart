@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:characters/characters.dart';
 import 'delete_account_screen.dart';
 import 'change/change_nickname_screen.dart';
 import 'change/change_password_screen.dart';
@@ -65,6 +66,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   Widget _buildProfileSection() {
+    final nickname = (TokenManager.userName ?? '닉네임').trim();
+    final email = TokenManager.userEmail ?? 'example@gmail.com';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -83,13 +87,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
+            _buildProfileAvatar(nickname),
+            const SizedBox(width: 16),
             // 닉네임과 이메일
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    TokenManager.userName ?? '닉네임',
+                    nickname,
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
@@ -108,7 +114,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       );
 
                       return Text(
-                        TokenManager.userEmail ?? 'example@gmail.com',
+                        email,
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.grey,
@@ -315,4 +321,52 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       color: Colors.grey[200],
     );
   }
+
+  Widget _buildProfileAvatar(String name) {
+    final trimmed = name.trim();
+    final initial = trimmed.isNotEmpty
+        ? trimmed.characters.first.toUpperCase()
+        : '?';
+    final colors = _avatarColorsFor(initial);
+
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: colors.background,
+      child: Text(
+        initial,
+        style: TextStyle(
+          color: colors.foreground,
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+        ),
+      ),
+    );
+  }
+
+  _AvatarColors _avatarColorsFor(String initial) {
+    if (initial.isEmpty) {
+      return _avatarColorPalettes.first;
+    }
+    final rune = initial.runes.first;
+    final index = rune.abs() % _avatarColorPalettes.length;
+    return _avatarColorPalettes[index];
+  }
 }
+
+class _AvatarColors {
+  final Color background;
+  final Color foreground;
+
+  const _AvatarColors(this.background, this.foreground);
+}
+
+const List<_AvatarColors> _avatarColorPalettes = [
+  _AvatarColors(Color(0xFFFFE5E0), Color(0xFFFF6B57)),
+  _AvatarColors(Color(0xFFE3F2FD), Color(0xFF1565C0)),
+  _AvatarColors(Color(0xFFF1F8E9), Color(0xFF2E7D32)),
+  _AvatarColors(Color(0xFFEDE7F6), Color(0xFF5E35B1)),
+  _AvatarColors(Color(0xFFFFF3E0), Color(0xFFEF6C00)),
+  _AvatarColors(Color(0xFFE0F2F1), Color(0xFF00897B)),
+  _AvatarColors(Color(0xFFFFEBEE), Color(0xFFD81B60)),
+  _AvatarColors(Color(0xFFF3E5F5), Color(0xFF8E24AA)),
+];
