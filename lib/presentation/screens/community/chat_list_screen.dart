@@ -96,7 +96,10 @@ class _MessageScreenState extends State<MessageScreen> {
     }
 
     final response = await ChatService.getChatList();
-    final rawThreads = _extractThreadList(response);
+    final rawThreads = _extractThreadList(
+      response,
+      currentUserId: userId,
+    );
     final normalized = rawThreads
         .map((raw) => _normalizeThread(raw, userId))
         .whereType<Map<String, dynamic>>()
@@ -146,7 +149,10 @@ class _MessageScreenState extends State<MessageScreen> {
     await future;
   }
 
-  List<Map<String, dynamic>> _extractThreadList(dynamic payload) {
+  List<Map<String, dynamic>> _extractThreadList(
+    dynamic payload, {
+    String? currentUserId,
+  }) {
     if (payload == null) return [];
 
     if (payload is List) {
@@ -155,13 +161,40 @@ class _MessageScreenState extends State<MessageScreen> {
         if (item is Map<String, dynamic>) {
           result.add(item);
         } else {
-          result.addAll(_extractThreadList(item));
+          result.addAll(
+            _extractThreadList(
+              item,
+              currentUserId: currentUserId,
+            ),
+          );
         }
       }
       return result;
     }
 
     if (payload is Map<String, dynamic>) {
+      final chatRooms = payload['chat_rooms'];
+      if (chatRooms is List) {
+        final result = <Map<String, dynamic>>[];
+        for (final room in chatRooms) {
+          Map<String, dynamic>? message;
+          if (room is Map<String, dynamic>) {
+            message = Map<String, dynamic>.from(room);
+          } else if (room is Map) {
+            message = Map<String, dynamic>.from(room);
+          }
+          if (message == null) continue;
+          result.add({
+            '__type': 'simple_message',
+            '__direction': _inferDirection(message, currentUserId),
+            '__payload': message,
+          });
+        }
+        if (result.isNotEmpty) {
+          return result;
+        }
+      }
+
       if (payload.containsKey('received_messages') ||
           payload.containsKey('send_messages')) {
         final result = <Map<String, dynamic>>[];
@@ -201,7 +234,12 @@ class _MessageScreenState extends State<MessageScreen> {
 
       final aggregated = <Map<String, dynamic>>[];
       for (final entry in payload.entries) {
-        aggregated.addAll(_extractThreadList(entry.value));
+        aggregated.addAll(
+          _extractThreadList(
+            entry.value,
+            currentUserId: currentUserId,
+          ),
+        );
       }
 
       if (aggregated.isNotEmpty) {
@@ -315,7 +353,10 @@ class _MessageScreenState extends State<MessageScreen> {
           ) ??
           DateTime.now();
 
-      final lastMessage = _extractMessageText(message) ??
+      final lastMessage = _firstNonEmptyString([
+            message['last_message'],
+          ]) ??
+          _extractMessageText(message) ??
           (direction == 'sent' ? '보낸 쪽지' : '받은 쪽지');
 
       return {
@@ -589,6 +630,7 @@ class _MessageScreenState extends State<MessageScreen> {
 
     if (value is Map<String, dynamic>) {
       return _firstNonEmptyString([
+        value['last_message'],
         value['message'],
         value['content'],
         value['text'],
@@ -608,6 +650,29 @@ class _MessageScreenState extends State<MessageScreen> {
       }
     }
     return null;
+  }
+
+  String _inferDirection(
+    Map<String, dynamic> raw,
+    String? currentUserId,
+  ) {
+    if (currentUserId == null || currentUserId.isEmpty) {
+      return 'received';
+    }
+
+    final senderId = _firstNonEmptyString([
+      raw['sender_id'],
+      raw['senderId'],
+      raw['sender'],
+      raw['fromUserId'],
+      raw['from'],
+    ]);
+
+    if (senderId != null && senderId == currentUserId) {
+      return 'sent';
+    }
+
+    return 'received';
   }
 
   DateTime? _parseDateTime(dynamic value) {
@@ -766,7 +831,6 @@ class _MessageScreenState extends State<MessageScreen> {
                     'nickname': nickname,
                     'profileImageUrl': message['profileImageUrl'],
                   },
-                  post: post,
                   otherUserId: message['otherUserId']?.toString(),
                   conversationId: message['threadId']?.toString(),
                 ),
