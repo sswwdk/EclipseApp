@@ -6,14 +6,12 @@ import '../../../shared/helpers/token_manager.dart';
 
 class ChatScreen extends StatefulWidget {
   final Map<String, dynamic> user;
-  final Map<String, dynamic>? post;
   final String? otherUserId;
   final String? conversationId;
 
   const ChatScreen({
     super.key,
     required this.user,
-    this.post,
     this.otherUserId,
     this.conversationId,
   });
@@ -108,7 +106,6 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         body: Column(
           children: [
-            if (widget.post != null) _buildPostInfo(),
             Expanded(child: _buildMessagesView()),
             _buildMessageInput(),
           ],
@@ -138,49 +135,6 @@ class _ChatScreenState extends State<ChatScreen> {
         final message = _messages[index];
         return _buildMessageBubble(message);
       },
-    );
-  }
-
-  Widget _buildPostInfo() {
-    final post = widget.post!;
-    final title =
-        _firstNonEmptyString([
-          post['title'],
-          post['postTitle'],
-          post['subject'],
-          post['headline'],
-        ]) ??
-        '게시글 정보';
-
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFF8126).withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: const Color(0xFFFF8126).withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.article, color: const Color(0xFFFF8126), size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFFF8126),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
