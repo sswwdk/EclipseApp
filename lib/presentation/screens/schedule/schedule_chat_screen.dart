@@ -18,6 +18,11 @@ IconData _getCategoryIcon(String category) {
   }
 }
 
+const String TAG_ACTION_PREFIX = "__TAG_ACTION__";
+const String TAG_ACTION_SEPARATOR = "::";
+const String TAG_ACTION_REMOVE = "remove";
+const String TAG_ACTION_CLEAR = "clear";
+
 /// 채팅 메시지 데이터 모델
 class ChatMessage {
   final String text;
@@ -76,6 +81,8 @@ class _ChatScreenState extends State<ChatScreen> {
   // 후보지 출력 완료 상태
   bool _showRecommendationButton = false;
   Map<String, dynamic>? _recommendations;
+  List<String> _activeTags = [];
+  String? _activeCategory;
 
   @override
   void initState() {
@@ -136,6 +143,14 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  void _deactivatePreviousButtons() {
+    for (var message in _messages) {
+      if (message.showYesNoButtons) {
+        message.isButtonActive = false;
+      }
+    }
+  }
+
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
     
@@ -152,13 +167,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     
     setState(() {
-      // 모든 이전 메시지의 버튼 비활성화
-      for (var message in _messages) {
-        if (message.showYesNoButtons) {
-          message.isButtonActive = false;
-        }
-      }
-      
+      _deactivatePreviousButtons();
       _messages.add(ChatMessage(
         text: userMessage,
         isUser: true,
@@ -176,54 +185,11 @@ class _ChatScreenState extends State<ChatScreen> {
       final response = await _openAIService.sendMessage(userMessage);
       
       if (mounted) {
-        // 응답 데이터 파싱
-        final message = response['message'] as String? ?? '';
-        final stage = response['stage'] as String?;
-        final recommendations = response['recommendations'] as Map<String, dynamic>?;
-        final showYesNoButtons = response['showYesNoButtons'] as bool? ?? false;
-        final yesNoQuestion = response['yesNoQuestion'] as String?;
-        final availableCategories = response['availableCategories'] as List<dynamic>?;
-        
-        // 현재 stage 업데이트
-        if (stage != null) {
-          _currentStage = stage;
-        }
-        
-        // "네"를 입력했고 completed 단계이며 추천 결과가 있으면 후보지 고르러 가기 버튼 표시
-        if (userMessage == "네" && stage == 'completed' && recommendations != null && recommendations.isNotEmpty) {
-          setState(() {
-            _isLoading = false;
-            _showRecommendationButton = true;
-            _recommendations = recommendations;
-          });
-        } else if (userMessage == "추가하기" && availableCategories != null && availableCategories.isNotEmpty) {
-          // "추가하기"를 입력했을 때 추가 활동 선택 UI 표시
-          setState(() {
-            _messages.add(ChatMessage(
-              text: message,
-              isUser: false,
-              timestamp: DateTime.now(),
-              selectedCategories: availableCategories.cast<String>(),
-            ));
-            _isLoading = false;
-          });
-        } else {
-          // 일반 메시지 표시 (Yes/No 버튼 포함)
-          setState(() {
-            _messages.add(ChatMessage(
-              text: message,
-              isUser: false,
-              timestamp: DateTime.now(),
-              showYesNoButtons: showYesNoButtons,
-              yesNoQuestion: yesNoQuestion,
-              availableCategories: availableCategories?.cast<String>(),
-            ));
-            _isLoading = false;
-          });
-        }
-        
-        _scrollToBottom();
-        _maintainFocus();
+        _processServerResponse(
+          response,
+          originalUserMessage: userMessage,
+          navigateOnComplete: false,
+        );
       }
     } catch (e) {
       _addErrorMessage('죄송합니다. 응답을 가져오는 중 오류가 발생했습니다.\n오류: $e');
@@ -332,6 +298,20 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
 
             // 하단 입력창 또는 후보지 고르러 가기 버튼
+            if (_activeTags.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: _ActiveTagPanel(
+                  tags: _activeTags,
+                  isLoading: _isLoading,
+                  onTagRemove: (_activeCategory != null)
+                      ? (tag) => _handleTagRemove(_activeCategory!, tag)
+                      : null,
+                  onClearAll: (_activeCategory != null)
+                      ? () => _handleTagClear(_activeCategory!)
+                      : null,
+                ),
+              ),
             if (_showRecommendationButton)
               // 후보지 고르러 가기 버튼
               Padding(
@@ -553,16 +533,14 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     
     setState(() {
-      // 모든 이전 메시지의 버튼 비활성화 및 선택된 버튼 표시
-      for (var message in _messages) {
-        if (message.showYesNoButtons) {
-          message.isButtonActive = false;
-        }
-      }
-      
+      _deactivatePreviousButtons();
       // 현재 메시지에 선택된 버튼 표시
       if (lastMessage != null && lastMessage.showYesNoButtons) {
         lastMessage.selectedButton = isYes ? 'yes' : 'no';
+      }
+      if (isYes && !isResultConfirmation) {
+        _activeTags = [];
+        _activeCategory = null;
       }
       
       _messages.add(ChatMessage(
@@ -589,76 +567,230 @@ class _ChatScreenState extends State<ChatScreen> {
       final aiResponse = await _openAIService.sendMessage(serverMessage);
       
       if (mounted) {
-        final stage = aiResponse['stage'] as String?;
-        final message = aiResponse['message'] as String? ?? '';
-        final recommendations = aiResponse['recommendations'] as Map<String, dynamic>?;
-        final showYesNoButtons = aiResponse['showYesNoButtons'] as bool? ?? false;
-        final yesNoQuestion = aiResponse['yesNoQuestion'] as String?;
-        final availableCategories = aiResponse['availableCategories'] as List<dynamic>?;
-        
-        // 현재 stage 업데이트
-        if (stage != null) {
-          _currentStage = stage;
-        }
-        
-        // "네" 또는 "후보지 출력" 후 바로 추천 화면으로 이동 (completed 단계)
-        if ((isYes || response == "후보지 출력") && stage == 'completed') {
-          if (recommendations != null && recommendations.isNotEmpty) {
-            setState(() {
-              _isLoading = false;
-              _showRecommendationButton = false; // 버튼 사용 안 함
-              _recommendations = recommendations;
-            });
-            // 추천 화면으로 즉시 이동
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RecommendationResultScreen(
-                  recommendations: recommendations,
-                  selectedCategories: widget.selectedCategories,
-                ),
-              ),
-            );
-          } else {
-            // 추천 결과가 없으면 서버에 다시 요청
-            setState(() {
-              _isLoading = false;
-              _showRecommendationButton = false;
-            });
-            _requestRecommendations();
-            return; // 함수 종료
-          }
-        } else if (!isYes && availableCategories != null && availableCategories.isNotEmpty) {
-          // "아니오"를 눌렀을 때 추가 활동 선택 UI 표시
-          setState(() {
-            _messages.add(ChatMessage(
-              text: message,
-              isUser: false,
-              timestamp: DateTime.now(),
-              selectedCategories: availableCategories.cast<String>(),
-            ));
-            _isLoading = false;
-          });
-        } else {
-          // 일반 메시지 표시 (Yes/No 버튼 포함)
-          setState(() {
-            _messages.add(ChatMessage(
-              text: message,
-              isUser: false,
-              timestamp: DateTime.now(),
-              showYesNoButtons: showYesNoButtons,
-              yesNoQuestion: yesNoQuestion,
-              availableCategories: availableCategories?.cast<String>(),
-            ));
-            _isLoading = false;
-          });
-        }
-        
-        _scrollToBottom();
+        final navigateOnComplete = isYes || response == "후보지 출력";
+        _processServerResponse(
+          aiResponse,
+          originalUserMessage: response,
+          navigateOnComplete: navigateOnComplete,
+          requestRecommendationsOnEmpty: navigateOnComplete,
+        );
       }
     } catch (e) {
       _addErrorMessage('죄송합니다. 응답을 가져오는 중 오류가 발생했습니다.\n오류: $e');
       _maintainFocus();
+    }
+  }
+
+  void _processServerResponse(
+    Map<String, dynamic> response, {
+    String? originalUserMessage,
+    bool navigateOnComplete = false,
+    bool requestRecommendationsOnEmpty = false,
+  }) {
+    if (!mounted) return;
+
+    final message = response['message'] as String? ?? '';
+    final stage = response['stage'] as String?;
+    final recommendations = response['recommendations'] as Map<String, dynamic>?;
+    final showYesNoButtons = response['showYesNoButtons'] as bool? ?? false;
+    final yesNoQuestion = response['yesNoQuestion'] as String?;
+    final availableCategories = response['availableCategories'] as List<dynamic>?;
+    final rawTags = response['tags'] as List<dynamic>?;
+    final tags = rawTags
+            ?.map((tag) => tag.toString())
+            .where((tag) => tag.trim().isNotEmpty)
+            .toList() ??
+        <String>[];
+    final currentCategory = response['currentCategory'] as String?;
+
+    if (stage != null) {
+      _currentStage = stage;
+    }
+
+    final bool isTagAction = originalUserMessage?.startsWith(TAG_ACTION_PREFIX) ?? false;
+
+    String? nextCategory = _activeCategory;
+    List<String> nextTags = _activeTags;
+
+    if (stage != 'collecting_details') {
+      nextTags = [];
+      if (currentCategory != null) {
+        nextCategory = currentCategory;
+      }
+    } else {
+      if (currentCategory != null) {
+        if (nextCategory != currentCategory) {
+          nextCategory = currentCategory;
+          nextTags = List.from(tags);
+        } else if (isTagAction || tags.isNotEmpty) {
+          nextTags = List.from(tags);
+        }
+      } else if (isTagAction || tags.isNotEmpty) {
+        nextTags = List.from(tags);
+      }
+    }
+
+    if (!navigateOnComplete &&
+        originalUserMessage == "네" &&
+        stage == 'completed' &&
+        recommendations != null &&
+        recommendations.isNotEmpty) {
+      setState(() {
+        if (stage != null) {
+          _currentStage = stage;
+        }
+        _activeCategory = nextCategory;
+        _activeTags = nextTags;
+        _isLoading = false;
+        _showRecommendationButton = true;
+        _recommendations = recommendations;
+      });
+      _scrollToBottom();
+      _maintainFocus();
+      return;
+    }
+
+    if (navigateOnComplete && stage == 'completed') {
+      if (recommendations != null && recommendations.isNotEmpty) {
+        setState(() {
+          if (stage != null) {
+            _currentStage = stage;
+          }
+          _activeCategory = nextCategory;
+          _activeTags = nextTags;
+          _isLoading = false;
+          _showRecommendationButton = false;
+          _recommendations = recommendations;
+        });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RecommendationResultScreen(
+              recommendations: recommendations,
+              selectedCategories: widget.selectedCategories,
+            ),
+          ),
+        );
+        return;
+      } else if (requestRecommendationsOnEmpty) {
+        setState(() {
+          if (stage != null) {
+            _currentStage = stage;
+          }
+          _activeCategory = nextCategory;
+          _activeTags = nextTags;
+          _isLoading = false;
+          _showRecommendationButton = false;
+        });
+        _requestRecommendations();
+        return;
+      } else {
+        setState(() {
+          if (stage != null) {
+            _currentStage = stage;
+          }
+          _activeCategory = nextCategory;
+          _activeTags = nextTags;
+          _isLoading = false;
+        });
+        return;
+      }
+    }
+
+    if (originalUserMessage == "추가하기" &&
+        availableCategories != null &&
+        availableCategories.isNotEmpty) {
+      setState(() {
+        if (stage != null) {
+          _currentStage = stage;
+        }
+        _activeCategory = nextCategory;
+        _activeTags = nextTags;
+        _deactivatePreviousButtons();
+        _messages.add(ChatMessage(
+          text: message,
+          isUser: false,
+          timestamp: DateTime.now(),
+          selectedCategories: availableCategories.cast<String>(),
+        ));
+        _isLoading = false;
+      });
+      _scrollToBottom();
+      _maintainFocus();
+      return;
+    }
+
+    setState(() {
+      if (stage != null) {
+        _currentStage = stage;
+      }
+      _activeCategory = nextCategory;
+      _activeTags = nextTags;
+      _deactivatePreviousButtons();
+      _messages.add(ChatMessage(
+        text: message,
+        isUser: false,
+        timestamp: DateTime.now(),
+        showYesNoButtons: showYesNoButtons,
+        yesNoQuestion: yesNoQuestion,
+        availableCategories: availableCategories?.cast<String>(),
+      ));
+      _isLoading = false;
+    });
+
+    _scrollToBottom();
+    _maintainFocus();
+  }
+
+  Future<void> _handleTagRemove(String category, String tag) async {
+    if (_isLoading) return;
+    if (category.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('카테고리 정보가 없어 태그를 삭제할 수 없어요.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+    _scrollToBottom();
+
+    try {
+      final command =
+          "$TAG_ACTION_PREFIX:$TAG_ACTION_REMOVE$TAG_ACTION_SEPARATOR$category$TAG_ACTION_SEPARATOR$tag";
+      final response = await _openAIService.sendMessage(command);
+      if (!mounted) return;
+      _processServerResponse(response, originalUserMessage: command);
+    } catch (e) {
+      _addErrorMessage('태그를 삭제하는 중 오류가 발생했어요.\n오류: $e');
+    }
+  }
+
+  Future<void> _handleTagClear(String category) async {
+    if (_isLoading) return;
+    if (category.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('카테고리 정보가 없어 태그를 모두 지울 수 없어요.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+    _scrollToBottom();
+
+    try {
+      final command =
+          "$TAG_ACTION_PREFIX:$TAG_ACTION_CLEAR$TAG_ACTION_SEPARATOR$category";
+      final response = await _openAIService.sendMessage(command);
+      if (!mounted) return;
+      _processServerResponse(response, originalUserMessage: command);
+    } catch (e) {
+      _addErrorMessage('태그를 모두 삭제하는 중 오류가 발생했어요.\n오류: $e');
     }
   }
 
@@ -1024,6 +1156,136 @@ class _ChatBubble extends StatelessWidget {
               ),
             ],
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 현재 태그를 보여주는 패널
+class _ActiveTagPanel extends StatelessWidget {
+  final List<String> tags;
+  final bool isLoading;
+  final void Function(String tag)? onTagRemove;
+  final VoidCallback? onClearAll;
+
+  const _ActiveTagPanel({
+    required this.tags,
+    required this.isLoading,
+    this.onTagRemove,
+    this.onClearAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (tags.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    const accent = Color(0xFFFF7A21);
+    final canModify = onTagRemove != null && !isLoading;
+    final canClearAll = onClearAll != null && !isLoading && tags.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent.withOpacity(0.2)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '현재 키워드',
+            style: const TextStyle(
+              color: Color(0xFFFF7A21),
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: tags.map((tag) => _TagChip(
+                  label: tag,
+                  canModify: canModify,
+                  onRemove: canModify ? () => onTagRemove?.call(tag) : null,
+                )).toList(),
+          ),
+          if (canClearAll) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: onClearAll,
+                icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFFF7A21)),
+                label: const Text(
+                  '전체 삭제',
+                  style: TextStyle(
+                    color: Color(0xFFFF7A21),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TagChip extends StatelessWidget {
+  final String label;
+  final bool canModify;
+  final VoidCallback? onRemove;
+
+  const _TagChip({
+    required this.label,
+    required this.canModify,
+    this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = Color(0xFFFF7A21);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8F2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withOpacity(0.6), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF4A4A4A),
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: canModify ? onRemove : null,
+            child: Icon(
+              Icons.close,
+              size: 16,
+              color: canModify ? accent : accent.withOpacity(0.3),
+            ),
+          ),
         ],
       ),
     );
