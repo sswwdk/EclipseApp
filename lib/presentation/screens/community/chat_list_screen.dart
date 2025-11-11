@@ -101,7 +101,28 @@ class _MessageScreenState extends State<MessageScreen> {
         .whereType<Map<String, dynamic>>()
         .toList();
 
-    normalized.sort((a, b) {
+    final merged = <String, Map<String, dynamic>>{};
+    for (final thread in normalized) {
+      final key = thread['otherUserId']?.toString().isNotEmpty == true
+          ? thread['otherUserId'].toString()
+          : thread['threadId']?.toString() ?? thread.hashCode.toString();
+
+      final existing = merged[key];
+      if (existing == null) {
+        merged[key] = thread;
+      } else {
+        final existingTime = existing['updatedAt'] as DateTime?;
+        final newTime = thread['updatedAt'] as DateTime?;
+        if (newTime != null &&
+            (existingTime == null || newTime.isAfter(existingTime))) {
+          merged[key] = thread;
+        }
+      }
+    }
+
+    final threads = merged.values.toList();
+
+    threads.sort((a, b) {
       final aTime = a['updatedAt'] as DateTime?;
       final bTime = b['updatedAt'] as DateTime?;
       if (aTime == null && bTime == null) return 0;
@@ -110,7 +131,7 @@ class _MessageScreenState extends State<MessageScreen> {
       return bTime.compareTo(aTime);
     });
 
-    return normalized;
+    return threads;
   }
 
   Future<void> _refreshMessages() async {
@@ -122,40 +143,195 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   List<Map<String, dynamic>> _extractThreadList(dynamic payload) {
+    if (payload == null) return [];
+
     if (payload is List) {
-      return payload.whereType<Map<String, dynamic>>().toList();
+      final result = <Map<String, dynamic>>[];
+      for (final item in payload) {
+        if (item is Map<String, dynamic>) {
+          result.add(item);
+        } else {
+          result.addAll(_extractThreadList(item));
+        }
+      }
+      return result;
     }
 
     if (payload is Map<String, dynamic>) {
-      final keys = [
-        'threads',
-        'chats',
-        'chatList',
-        'data',
-        'results',
-        'items',
-        'content',
-        'rows',
-        'list',
-      ];
+      if (payload.containsKey('received_messages') ||
+          payload.containsKey('send_messages')) {
+        final result = <Map<String, dynamic>>[];
 
-      for (final key in keys) {
-        if (!payload.containsKey(key)) continue;
-        final value = payload[key];
-        final extracted = _extractThreadList(value);
-        if (extracted.isNotEmpty) {
-          return extracted;
+        void addMessages(dynamic source, String direction) {
+          if (source is List) {
+            for (final item in source) {
+              if (item == null) continue;
+              Map<String, dynamic> message;
+              if (item is Map<String, dynamic>) {
+                message = item;
+              } else if (item is Map) {
+                message = Map<String, dynamic>.from(item);
+              } else {
+                message = {'message': item};
+              }
+              result.add({
+                '__type': 'simple_message',
+                '__direction': direction,
+                '__payload': message,
+              });
+            }
+          }
         }
+
+        addMessages(payload['received_messages'], 'received');
+        addMessages(payload['send_messages'], 'sent');
+
+        if (result.isNotEmpty) {
+          return result;
+        }
+      }
+
+      if (_looksLikeThread(payload)) {
+        return [payload];
+      }
+
+      final aggregated = <Map<String, dynamic>>[];
+      for (final entry in payload.entries) {
+        aggregated.addAll(_extractThreadList(entry.value));
+      }
+
+      if (aggregated.isNotEmpty) {
+        return aggregated;
       }
     }
 
     return [];
   }
 
+  bool _looksLikeThread(Map<String, dynamic> raw) {
+    final messageKeys = [
+      'message',
+      'content',
+      'text',
+      'lastMessage',
+      'last_message',
+      'recentMessage',
+      'preview',
+    ];
+    final hasMessage = messageKeys.any(
+      (key) => raw[key] != null && raw[key].toString().trim().isNotEmpty,
+    );
+
+    final userKeys = [
+      'otherUser',
+      'partner',
+      'recipient',
+      'receiver',
+      'sender',
+      'user',
+      'member',
+      'opponent',
+      'friend',
+    ];
+    final hasUser = userKeys.any((key) => raw[key] != null);
+
+    final idKeys = [
+      'threadId',
+      'thread_id',
+      'chatId',
+      'chat_id',
+      'conversationId',
+      'conversation_id',
+      'otherUserId',
+      'other_user_id',
+      'sender_id',
+      'receiver_id',
+      'id',
+    ];
+    final hasIds = idKeys.any((key) => raw[key] != null);
+
+    return hasMessage && (hasUser || hasIds);
+  }
+
   Map<String, dynamic>? _normalizeThread(
     Map<String, dynamic> raw,
     String currentUserId,
   ) {
+    if (raw['__type'] == 'simple_message') {
+      final direction = raw['__direction']?.toString();
+      final payload = raw['__payload'];
+
+      Map<String, dynamic> message;
+      if (payload is Map<String, dynamic>) {
+        message = payload;
+      } else if (payload is Map) {
+        message = Map<String, dynamic>.from(payload);
+      } else {
+        message = {'message': payload};
+      }
+
+      final sender = _firstNonEmptyString([
+        message['sender'],
+        message['sender_name'],
+        message['from'],
+        message['from_user'],
+        message['user'],
+      ]);
+
+      final receiver = _firstNonEmptyString([
+        message['receiver'],
+        message['receiver_name'],
+        message['to'],
+        message['to_user'],
+        message['target'],
+      ]);
+
+      final otherUserId = direction == 'sent'
+          ? (receiver ?? sender)
+          : sender;
+
+      if (otherUserId == null || otherUserId.isEmpty) {
+        return null;
+      }
+
+      final displayName = _firstNonEmptyString([
+            message['nickname'],
+            message['nickName'],
+            message['name'],
+            message['userName'],
+            message['memberName'],
+          ]) ??
+          otherUserId;
+
+      final updatedAt = _parseDateTime(
+            message['create_at'] ??
+                message['created_at'] ??
+                message['createdAt'] ??
+                message['timestamp'],
+          ) ??
+          DateTime.now();
+
+      final lastMessage = _extractMessageText(message) ??
+          (direction == 'sent' ? '보낸 쪽지' : '받은 쪽지');
+
+      return {
+        'threadId': '${direction ?? 'message'}:$otherUserId',
+        'otherUserId': otherUserId,
+        'nickname': displayName,
+        'lastMessage': lastMessage,
+        'updatedAt': updatedAt,
+        'timeLabel': _formatTimeAgo(updatedAt),
+        'unreadCount': direction == 'received' ? 1 : 0,
+        'post': null,
+        'profileImageUrl': _firstNonEmptyString([
+          message['profileImageUrl'],
+          message['profile_image_url'],
+          message['avatarUrl'],
+        ]),
+        'raw': message,
+      };
+    }
+
     final senderId = _firstNonEmptyString([
       raw['sender_id'],
       raw['senderId'],
