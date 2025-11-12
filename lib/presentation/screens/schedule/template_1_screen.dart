@@ -923,10 +923,15 @@ class _TimelineRow extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: item.type == _ItemType.origin
-                      ? Colors.grey[100]
+                      ? Colors.white
                       : Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  border: Border.all(
+                    color: item.type == _ItemType.origin
+                        ? const Color(0xFFFF8126).withOpacity(0.6)
+                        : const Color(0xFFFF8126),
+                    width: 2,
+                  ),
                 ),
                 child: Row(
                   children: [

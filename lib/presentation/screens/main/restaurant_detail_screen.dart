@@ -14,6 +14,7 @@ class RestaurantDetailScreen extends StatefulWidget {
 }
 
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
+  late Restaurant _restaurant;
   List<Review> _reviews = const [];
   List<String> _tags = const [];
   bool _isFavorite = false;
@@ -21,6 +22,10 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _restaurant = widget.restaurant;
+    _isFavorite = widget.restaurant.isFavorite;
+    _reviews = widget.restaurant.reviews;
+    _tags = widget.restaurant.tags;
     _fetchDetail();
   }
 
@@ -49,6 +54,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       
       if (!mounted) return;
       setState(() {
+        _restaurant = res;
         _reviews = res.reviews;
         _tags = res.tags;
         _isFavorite = res.isFavorite;
@@ -63,7 +69,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final restaurant = widget.restaurant;
+    final restaurant = _restaurant;
     final averageStars = restaurant.averageStars ?? restaurant.rating ?? 0.0;
     return Scaffold(
       backgroundColor: Colors.white,

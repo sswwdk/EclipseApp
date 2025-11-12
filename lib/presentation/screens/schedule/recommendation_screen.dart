@@ -3,7 +3,6 @@ import '../main/restaurant_detail_screen.dart';
 import '../main/main_screen.dart';
 import 'route_confirm_screen.dart';
 import '../../../data/services/like_service.dart';
-import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../widgets/common_dialogs.dart';
 import 'result_choice_confirm_screen.dart';
@@ -33,6 +32,45 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
 
   // 카테고리별 선택 상태 (카테고리 -> 선택된 장소 인덱스 Set, 최대 2개)
   Map<String, Set<int>> _selectedStates = {};
+
+  double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return null;
+      return double.tryParse(trimmed);
+    }
+    return null;
+  }
+
+  double? _extractAverageStars(Map<String, dynamic> place) {
+    final candidates = [
+      place['average_stars'],
+      place['avg_rating'],
+      place['rating'],
+    ];
+    for (final candidate in candidates) {
+      final parsed = _parseDouble(candidate);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+    final nestedCandidates = [
+      place['data'],
+      place['store'],
+      place['category_data'],
+    ];
+    for (final nested in nestedCandidates) {
+      if (nested is Map<String, dynamic>) {
+        final nestedParsed = _extractAverageStars(nested);
+        if (nestedParsed != null) {
+          return nestedParsed;
+        }
+      }
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -158,6 +196,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                           place['image'] as String? ?? 
                           '';
         final placeId = place['id'] as String? ?? '';
+        final double? averageStars = _extractAverageStars(place);
 
         final isFavorite = _favoriteStates[category]?[index] ?? false;
         // isSelected는 위에서 이미 선언됨
@@ -172,7 +211,8 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
               detailAddress: placeAddress,
               subCategory: placeCategory,
               image: placeImage.isNotEmpty ? placeImage : null,
-              rating: null,
+              rating: averageStars,
+              averageStars: averageStars,
             );
 
             Navigator.push(
