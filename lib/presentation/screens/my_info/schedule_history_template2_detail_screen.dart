@@ -23,6 +23,7 @@ class ScheduleHistoryTemplate2DetailScreen extends StatefulWidget {
 class _ScheduleHistoryTemplate2DetailScreenState
     extends State<ScheduleHistoryTemplate2DetailScreen> {
   bool _isLoading = true;
+  bool _isLoadingRatings = false; // 🔥 추가
   String? _errorMessage;
 
   late List<_ScheduleItem> _items = [];
@@ -65,12 +66,67 @@ class _ScheduleHistoryTemplate2DetailScreenState
       setState(() {
         _isLoading = false;
       });
+
+      // 🔥 평점 정보 로드
+      _loadRatings();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _errorMessage = '일정표를 불러오는 중 오류가 발생했습니다: $e';
         _isLoading = false;
       });
+    }
+  }
+
+  // 🔥 평점 정보를 API에서 가져오는 메서드
+  Future<void> _loadRatings() async {
+    if (_items.length <= 1) return; // 출발지만 있으면 리턴
+
+    setState(() {
+      _isLoadingRatings = true;
+    });
+
+    try {
+      // 출발지를 제외한 매장들만 처리 (i는 1부터 시작)
+      for (int i = 1; i < _items.length; i++) {
+        final item = _items[i];
+
+        if (item.categoryId != null && item.categoryId!.isNotEmpty) {
+          try {
+            print('🔍 매장 정보 조회 중: ${item.categoryId}');
+
+            final restaurant = await ApiService.getRestaurant(item.categoryId!);
+
+            print(
+              '✅ 평점 조회 완료: ${restaurant.averageStars ?? restaurant.rating}',
+            );
+
+            if (mounted) {
+              setState(() {
+                _items[i] = _ScheduleItem(
+                  title: item.title,
+                  category: item.category,
+                  address: item.address,
+                  icon: item.icon,
+                  categoryId: item.categoryId,
+                  rating:
+                      restaurant.averageStars ??
+                      restaurant.rating, // 🔥 평점 업데이트
+                  imageUrl: item.imageUrl ?? restaurant.image, // 🔥 이미지도 업데이트
+                );
+              });
+            }
+          } catch (e) {
+            print('❌ 매장 ${item.categoryId} 평점 로드 실패: $e');
+          }
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingRatings = false;
+        });
+      }
     }
   }
 
@@ -142,12 +198,27 @@ class _ScheduleHistoryTemplate2DetailScreenState
       }
       final categoryType = _getCategoryNameFromType(categoryTypeInt);
 
+      // 🔥 평점 정보 - average_stars 우선 사용
       double? rating;
-      final ratingValue = category['rating'];
-      if (ratingValue is String) {
-        rating = double.tryParse(ratingValue);
-      } else if (ratingValue is num) {
-        rating = ratingValue.toDouble();
+      final averageStarsValue = category['average_stars'];
+      if (averageStarsValue != null) {
+        if (averageStarsValue is String) {
+          rating = double.tryParse(averageStarsValue);
+        } else if (averageStarsValue is num) {
+          rating = averageStarsValue.toDouble();
+        }
+      }
+
+      // average_stars가 없으면 rating 사용
+      if (rating == null) {
+        final ratingValue = category['rating'];
+        if (ratingValue != null) {
+          if (ratingValue is String) {
+            rating = double.tryParse(ratingValue);
+          } else if (ratingValue is num) {
+            rating = ratingValue.toDouble();
+          }
+        }
       }
 
       // 🔥 이미지 URL 추출
@@ -164,7 +235,7 @@ class _ScheduleHistoryTemplate2DetailScreenState
           icon: _iconFor(categoryType),
           categoryId: categoryId,
           rating: rating,
-          imageUrl: imageUrl, // 🔥 추가
+          imageUrl: imageUrl,
         ),
       );
 
@@ -295,6 +366,7 @@ class _ScheduleHistoryTemplate2DetailScreenState
                           transportType: _transportTypes[index] ?? 0,
                           routeResult: _routeResults[index],
                           originName: originName,
+                          isLoadingRating: _isLoadingRatings, // 🔥 추가
                         ),
                         const SizedBox(height: 30),
                       ],
@@ -359,6 +431,7 @@ class _PlannerItemCard extends StatelessWidget {
   final int transportType;
   final RouteResult? routeResult;
   final String originName;
+  final bool isLoadingRating; // 🔥 추가
 
   const _PlannerItemCard({
     Key? key,
@@ -367,6 +440,7 @@ class _PlannerItemCard extends StatelessWidget {
     required this.transportType,
     this.routeResult,
     required this.originName,
+    this.isLoadingRating = false, // 🔥 추가
   }) : super(key: key);
 
   @override
@@ -437,7 +511,6 @@ class _PlannerItemCard extends StatelessWidget {
                     item.imageUrl!,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
-                      // 🔥 이미지 로딩 실패 시 이모지 표시
                       String emoji = _getEmojiForCategory(item.category);
                       return Container(
                         color: const Color(0xFFFFF5E8),
@@ -451,7 +524,6 @@ class _PlannerItemCard extends StatelessWidget {
                     },
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
-                      // 🔥 로딩 중 표시
                       return Container(
                         color: const Color(0xFFFFF5E8),
                         child: Center(
@@ -468,7 +540,6 @@ class _PlannerItemCard extends StatelessWidget {
                     },
                   )
                 : Container(
-                    // 🔥 이미지 URL이 없으면 이모지와 배경색 표시
                     color: const Color(0xFFFFF5E8),
                     child: Center(
                       child: Text(
@@ -479,31 +550,66 @@ class _PlannerItemCard extends StatelessWidget {
                   ),
           ),
           const SizedBox(height: 8),
-          _buildStars(item.rating ?? 0.0),
+          // 🔥 로딩 중일 때 표시
+          if (isLoadingRating && (item.rating == null || item.rating == 0))
+            const SizedBox(
+              width: 90,
+              height: 18,
+              child: Center(
+                child: SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFFD97941),
+                  ),
+                ),
+              ),
+            )
+          else
+            _buildStars(item.rating ?? 0.0),
         ],
       ),
     );
   }
 
+  // 🔥 소수점 별점 표시 메서드
   Widget _buildStars(double rating) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(5, (index) {
-        if (index < rating.floor()) {
-          return const Text(
-            '★',
-            style: TextStyle(fontSize: 18, color: Color(0xFFD97941)),
-          );
-        } else {
-          return Text(
-            '☆',
-            style: TextStyle(
-              fontSize: 18,
-              color: const Color(0xFFD97941).withOpacity(0.3),
-            ),
-          );
-        }
+        return _buildStar(index, rating);
       }),
+    );
+  }
+
+  Widget _buildStar(int index, double rating) {
+    double fillPercentage = 0.0;
+
+    if (index < rating.floor()) {
+      fillPercentage = 1.0;
+    } else if (index < rating) {
+      fillPercentage = rating - index;
+    } else {
+      fillPercentage = 0.0;
+    }
+
+    return SizedBox(
+      width: 18,
+      height: 18,
+      child: Stack(
+        children: [
+          Icon(
+            Icons.star_border,
+            size: 18,
+            color: const Color(0xFFD97941).withOpacity(0.3),
+          ),
+          ClipRect(
+            clipper: _StarClipper(fillPercentage),
+            child: const Icon(Icons.star, size: 18, color: Color(0xFFD97941)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -812,7 +918,6 @@ class _PlannerItemCard extends StatelessWidget {
         ),
       );
 
-      // 🔥 매장 상세 정보 API 호출 (이미지 포함)
       print('🔍 매장 상세 정보 조회 시작: ${item.categoryId}');
       final detailedRestaurant = await ApiService.getRestaurant(
         item.categoryId!,
@@ -820,9 +925,8 @@ class _PlannerItemCard extends StatelessWidget {
       print('✅ 매장 상세 정보 조회 완료: ${detailedRestaurant.image}');
 
       if (!context.mounted) return;
-      Navigator.pop(context); // 로딩 닫기
+      Navigator.pop(context);
 
-      // 🔥 API에서 받은 전체 정보로 Restaurant 객체 생성
       final restaurant = Restaurant(
         id: item.categoryId!,
         name: detailedRestaurant.name.isNotEmpty
@@ -830,9 +934,10 @@ class _PlannerItemCard extends StatelessWidget {
             : item.title,
         subCategory: detailedRestaurant.subCategory ?? item.category,
         detailAddress: detailedRestaurant.detailAddress ?? item.address,
-        image: detailedRestaurant.image, // 🔥 API에서 받은 이미지 사용
+        image: detailedRestaurant.image,
         phone: detailedRestaurant.phone,
-        rating: detailedRestaurant.rating ?? item.rating,
+        rating: detailedRestaurant.rating,
+        averageStars: detailedRestaurant.averageStars, // 🔥 추가
         businessHour: detailedRestaurant.businessHour,
       );
 
@@ -841,9 +946,8 @@ class _PlannerItemCard extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RestaurantDetailReviewScreen(
-            restaurant: restaurant,
-          ),
+          builder: (context) =>
+              RestaurantDetailReviewScreen(restaurant: restaurant),
         ),
       );
     } catch (e) {
@@ -859,5 +963,22 @@ class _PlannerItemCard extends StatelessWidget {
         ),
       );
     }
+  }
+}
+
+// 🔥 파일 맨 하단에 _StarClipper 클래스 추가
+class _StarClipper extends CustomClipper<Rect> {
+  final double percentage;
+
+  _StarClipper(this.percentage);
+
+  @override
+  Rect getClip(Size size) {
+    return Rect.fromLTWH(0, 0, size.width * percentage, size.height);
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Rect> oldClipper) {
+    return true;
   }
 }
