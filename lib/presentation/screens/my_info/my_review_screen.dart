@@ -17,12 +17,14 @@ class MyReviewScreen extends StatefulWidget {
   State<MyReviewScreen> createState() => _MyReviewScreenState();
 }
 
-class _MyReviewScreenState extends State<MyReviewScreen> {
+class _MyReviewScreenState extends State<MyReviewScreen>
+    with TickerProviderStateMixin {
   bool _loading = true;
   String? _errorMessage;
-  List<MyReviewItem> _reviews = const [];
   List<_CategorySection> _sections = const [];
   final Map<String, String> _resolvedAddresses = {};
+  TabController? _tabController;
+  List<String> _categories = const [];
 
   @override
   void initState() {
@@ -30,35 +32,10 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
     _loadReviews();
   }
 
-  Widget _buildCategorySection(_CategorySection section) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            section.title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...section.reviews.map((review) {
-          final isLast = identical(review, section.reviews.last);
-          return Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-            child: _buildReviewCard(review),
-          );
-        }),
-      ],
-    );
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
   }
 
   Future<void> _openRestaurantDetail(MyReviewItem review) async {
@@ -101,11 +78,13 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
 
     if (!TokenManager.hasTokens) {
       if (!mounted) return;
+      _tabController?.dispose();
+      _tabController = null;
       setState(() {
         _loading = false;
         _errorMessage = '로그인 정보가 없습니다. 다시 로그인해 주세요.';
-        _reviews = const [];
         _sections = const [];
+        _categories = const [];
       });
       return;
     }
@@ -114,21 +93,45 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
       final response = await ReviewService.getMyReview();
       final reviews = MyReviewItem.parseList(response);
       final sections = _groupByCategory(reviews);
+      final categories = sections.map((section) => section.title).toList();
+      int previousIndex = 0;
+      final oldController = _tabController;
+      if (oldController != null) {
+        try {
+          previousIndex = oldController.index;
+        } catch (e) {
+          previousIndex = 0;
+        }
+        _tabController = null;
+        oldController.dispose();
+      }
+
+      if (categories.isNotEmpty) {
+        final initialIndex = previousIndex.clamp(0, categories.length - 1);
+        _tabController = TabController(
+          length: categories.length,
+          vsync: this,
+          initialIndex: initialIndex,
+        );
+      }
 
       if (!mounted) return;
       setState(() {
-        _reviews = reviews;
         _sections = sections;
+        _categories = categories;
         _loading = false;
       });
       _prefetchRestaurantAddresses(reviews);
     } catch (e) {
       if (!mounted) return;
+      final oldController = _tabController;
+      _tabController = null;
+      oldController?.dispose();
       setState(() {
         _loading = false;
         _errorMessage = '리뷰를 불러오는 데 실패했습니다: $e';
-        _reviews = const [];
         _sections = const [];
+        _categories = const [];
       });
     }
   }
@@ -215,13 +218,47 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
           icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimaryColor),
           onPressed: () => Navigator.pop(context),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: AppTheme.primaryColor,
-          ),
-        ),
+        bottom: (_categories.isNotEmpty && _tabController != null)
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: false,
+                  labelColor: const Color(0xFFFF7A21),
+                  unselectedLabelColor: Colors.grey[600],
+                  indicatorColor: const Color(0xFFFF7A21),
+                  dividerColor: const Color(0xFFFF7A21),
+                  labelStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.normal,
+                  ),
+                  tabs: _categories
+                      .map(
+                        (category) => Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(_getCategoryIcon(category), size: 20),
+                              const SizedBox(width: 6),
+                              Text(category),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              )
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(
+                  height: 1,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadReviews,
@@ -265,29 +302,83 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
       );
     }
 
-    if (_reviews.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            '아직 리뷰를 작성하지 않았어요',
-            style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
+    if (_categories.isEmpty || _tabController == null) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: const [
+          Center(
+            child: Text(
+              '아직 리뷰를 작성하지 않았어요',
+              style: TextStyle(
+                color: AppTheme.textSecondaryColor,
+                fontSize: 14,
+              ),
+            ),
           ),
-        ),
+        ],
+      );
+    }
+
+    return TabBarView(
+      controller: _tabController,
+      children: _categories
+          .map((category) => _buildReviewList(category))
+          .toList(growable: false),
+    );
+  }
+
+  Widget _buildReviewList(String category) {
+    final section = _sections.firstWhere(
+      (s) => s.title == category,
+      orElse: () => _CategorySection(title: category, reviews: const []),
+    );
+    final reviews = section.reviews;
+
+    if (reviews.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: const [
+          Center(
+            child: Text(
+              '아직 리뷰를 작성하지 않았어요',
+              style: TextStyle(
+                color: AppTheme.textSecondaryColor,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      itemCount: _sections.length,
+      itemCount: reviews.length,
+      physics: const AlwaysScrollableScrollPhysics(),
       itemBuilder: (context, index) {
-        final section = _sections[index];
+        final review = reviews[index];
+        final isLast = index == reviews.length - 1;
         return Padding(
-          padding: EdgeInsets.only(bottom: index == _sections.length - 1 ? 0 : 24),
-          child: _buildCategorySection(section),
+          padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
+          child: _buildReviewCard(review),
         );
       },
     );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case '음식점':
+        return Icons.restaurant;
+      case '카페':
+        return Icons.local_cafe;
+      case '콘텐츠':
+        return Icons.movie_filter;
+      default:
+        return Icons.place;
+    }
   }
 
   Widget _buildReviewCard(MyReviewItem review) {
@@ -314,6 +405,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -350,6 +442,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
                     color: Colors.grey[50],
                   ),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text.rich(
