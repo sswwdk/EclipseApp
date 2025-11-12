@@ -178,25 +178,6 @@ class _RestaurantDetailReviewScreenState
                             ),
                           ),
                           const Spacer(),
-                          // 🔥 추가: 남은 리뷰 작성 가능 횟수 표시
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF8126).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '남은 리뷰: $_remainingReviews회',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFFF8126),
-                              ),
-                            ),
-                          ),
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: _isSubmitting
