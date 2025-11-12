@@ -5,6 +5,7 @@ import 'favorite_list_screen.dart';
 import 'schedule_history_screen.dart';
 import 'my_review_screen.dart';
 import 'my_posts_screen.dart';
+import 'notice_screen.dart';
 import '../main/main_screen.dart';
 import '../auth/login_screen.dart';
 import '../../../core/theme/app_theme.dart';
@@ -265,7 +266,13 @@ class MyInfoScreen extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.campaign_outlined,
             title: '공지사항',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const NoticeScreen(),
+                ),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
