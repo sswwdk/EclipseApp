@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../data/models/review.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/like_service.dart';
 import '../../../data/services/review_service.dart';
 import '../../widgets/user_avatar.dart';
 class RestaurantDetailReviewScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class RestaurantDetailReviewScreen extends StatefulWidget {
 
 class _RestaurantDetailReviewScreenState
     extends State<RestaurantDetailReviewScreen> {
+  late Restaurant _restaurant;
   List<Review> _reviews = const [];
   List<String> _tags = const [];
   bool _isFavorite = false;
@@ -30,6 +32,7 @@ class _RestaurantDetailReviewScreenState
   @override
   void initState() {
     super.initState();
+    _restaurant = widget.restaurant;
     _fetchDetail();
   }
 
@@ -62,6 +65,7 @@ class _RestaurantDetailReviewScreenState
           return bCreated.compareTo(aCreated);
         });
       setState(() {
+        _restaurant = res;
         _reviews = sortedReviews;
         _tags = res.tags;
         _isFavorite = res.isFavorite;
@@ -185,9 +189,25 @@ class _RestaurantDetailReviewScreenState
     }
   }
 
+  Future<void> _toggleFavorite() async {
+    final next = !_isFavorite;
+    setState(() => _isFavorite = next);
+    try {
+      final categoryId = _restaurant.id;
+      if (next) {
+        await LikeService.likeStore(categoryId);
+      } else {
+        await LikeService.unlikeStore(categoryId);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isFavorite = !next);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final restaurant = widget.restaurant;
+    final restaurant = _restaurant;
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, _shouldRefresh);
@@ -217,12 +237,7 @@ class _RestaurantDetailReviewScreenState
                 _isFavorite ? Icons.favorite : Icons.favorite_border,
                 color: _isFavorite ? Colors.red : Colors.black,
               ),
-              onPressed: () {
-                setState(() {
-                  _isFavorite = !_isFavorite;
-                });
-                // TODO: LikeService 연동 필요 시 추가
-              },
+              onPressed: _toggleFavorite,
             ),
             const SizedBox(width: 8),
           ],
