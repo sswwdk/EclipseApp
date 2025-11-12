@@ -61,21 +61,30 @@ class _MainScreenState extends State<MainScreen> {
         centerTitle: true,
         actions: [
           // 일정표 히스토리 버튼
-          IconButton(
-            icon: const Icon(
-              Icons.calendar_today_outlined,
-              color: Color(0xFFFF8126),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: const Color(0xFFFF8126),
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(8),
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ScheduleHistoryScreen(),
-                ),
-              );
-            },
+            child: IconButton(
+              icon: const Icon(
+                Icons.calendar_today_outlined,
+                color: Color(0xFFFF8126),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScheduleHistoryScreen(),
+                  ),
+                );
+              },
+            ),
           ),
-          const SizedBox(width: 8),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
