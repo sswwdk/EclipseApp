@@ -81,4 +81,26 @@ class ReviewService {
       throw Exception('네트워크 오류: $e');
     }
   }
+
+  static Future<int> getMyReviewCount(String categoryId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/users/me/reviews/count/$categoryId'),
+        headers: {
+          'Content-Type': 'application/json',
+          ...TokenManager.jwtHeader,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        return data['review_count'] ?? 0;
+      } else {
+        throw Exception('리뷰 개수 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('리뷰 개수 조회 오류: $e');
+      return 0;
+    }
+  }
 }
