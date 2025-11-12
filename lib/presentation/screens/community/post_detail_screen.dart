@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:characters/characters.dart';
 import 'chat_screen.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 import '../../../data/services/community_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/helpers/token_manager.dart';
@@ -59,14 +60,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          '게시글',
-          style: TextStyle(
-            color: Color(0xFFFF8126),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('게시글'),
         centerTitle: true,
         actions: [
           PopupMenuButton<String>(

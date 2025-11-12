@@ -8,6 +8,7 @@ import '../main/main_screen.dart';
 import '../main/restaurant_detail_screen.dart';
 import '../../widgets/common_dialogs.dart';
 import '../../widgets/transportation_selector_widget.dart';
+import '../../widgets/app_title_widget.dart';
 import 'template_utils.dart';
 
 class Template3Screen extends StatefulWidget {
@@ -204,7 +205,7 @@ class _Template3ScreenState extends State<Template3Screen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('템플릿 3'),
+        title: const AppTitleWidget('템플릿 3'),
         centerTitle: true,
         backgroundColor: backgroundColor,
         elevation: 0,

@@ -8,6 +8,7 @@ import '../main/main_screen.dart';
 import 'dart:async';
 import '../../widgets/common_dialogs.dart';
 import '../../widgets/transportation_selector_widget.dart';
+import '../../widgets/app_title_widget.dart';
 import 'template_utils.dart';
 
 class Template2Screen extends StatefulWidget {
@@ -233,13 +234,8 @@ class _Template2ScreenState extends State<Template2Screen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: AppTitleWidget(
           widget.isReadOnly ? '일정표 상세' : '템플릿 2',
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
         ),
         centerTitle: true,
         actions: [

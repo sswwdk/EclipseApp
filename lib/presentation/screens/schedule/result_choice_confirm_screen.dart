@@ -6,6 +6,7 @@ import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import 'dart:async';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 
 /// 선택된 장소만 모아 보여주는 화면
 class SelectedPlacesScreen extends StatefulWidget {
@@ -76,14 +77,7 @@ class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          '선택한 장소',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('선택한 장소'),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),

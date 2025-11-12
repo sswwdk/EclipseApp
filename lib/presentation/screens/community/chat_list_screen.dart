@@ -3,6 +3,7 @@ import 'package:characters/characters.dart';
 import 'chat_screen.dart';
 import '../../../data/services/chat_service.dart';
 import '../../../shared/helpers/token_manager.dart';
+import '../../widgets/app_title_widget.dart';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -31,14 +32,7 @@ class _MessageScreenState extends State<MessageScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          '내 쪽지함',
-          style: TextStyle(
-            color: Color(0xFFFF8126),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('내 쪽지함'),
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),

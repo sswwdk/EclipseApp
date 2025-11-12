@@ -7,6 +7,7 @@ import '../../../data/models/restaurant.dart';
 import '../../../shared/helpers/history_parser.dart';
 import '../main/restaurant_detail_review_screen.dart'; // 🔥 상세 화면 import
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 
 /// 일정표 히스토리 상세 화면
 class ScheduleHistoryDetailScreen extends StatefulWidget {
@@ -215,14 +216,7 @@ class _ScheduleHistoryDetailScreenState
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '일정표 상세',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('일정표 상세'),
         centerTitle: true,
       ),
       body: _isLoading

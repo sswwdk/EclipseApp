@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/services/community_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../community/post_detail_screen.dart';
+import '../../widgets/app_title_widget.dart';
 
 class MyPostsScreen extends StatefulWidget {
   const MyPostsScreen({Key? key}) : super(key: key);
@@ -66,14 +67,7 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
-        title: const Text(
-          '내가 쓴 게시글',
-          style: TextStyle(
-            color: AppTheme.textPrimaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('내가 쓴 게시글'),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimaryColor),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'community_screen.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 import '../../../data/services/community_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -33,14 +34,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          '글쓰기',
-          style: TextStyle(
-            color: Color(0xFFFF8126),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('글쓰기'),
         centerTitle: true,
         actions: [
           TextButton(

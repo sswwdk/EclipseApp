@@ -7,6 +7,7 @@ import '../main/main_screen.dart';
 import 'dart:async';
 import '../../widgets/common_dialogs.dart';
 import '../../widgets/transportation_selector_widget.dart';
+import '../../widgets/app_title_widget.dart';
 import 'template_utils.dart';
 
 class ScheduleBuilderScreen extends StatefulWidget {
@@ -202,13 +203,8 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: AppTitleWidget(
           widget.isReadOnly ? '일정표 상세' : '템플릿 1',
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
         ),
         centerTitle: true,
         actions: [
@@ -935,14 +931,7 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '출발지 입력',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('출발지 입력'),
         centerTitle: true,
       ),
       body: _isLoading

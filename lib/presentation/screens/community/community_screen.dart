@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/bottom_navigation_widget.dart';
 import '../../widgets/user_avatar.dart';
+import '../../widgets/app_title_widget.dart';
 import 'choose_schedule_screen.dart';
 import 'post_detail_screen.dart';
 import 'chat_list_screen.dart';
@@ -40,14 +41,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         backgroundColor: Colors.white, // 🔥 흰색으로 변경
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
-          '커뮤니티',
-          style: TextStyle(
-            color: AppTheme.primaryColor,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('커뮤니티'),
         centerTitle: true,
         actions: [
           Transform.rotate(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../auth/login_screen.dart';
 import '../auth/find_account_screen.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 import '../../../data/services/user_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 
@@ -124,14 +125,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '회원 탈퇴',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('회원 탈퇴'),
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),

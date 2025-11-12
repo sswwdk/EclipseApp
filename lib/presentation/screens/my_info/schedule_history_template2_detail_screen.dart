@@ -6,6 +6,7 @@ import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../shared/helpers/history_parser.dart';
 import '../main/restaurant_detail_review_screen.dart';
+import '../../widgets/app_title_widget.dart';
 
 class ScheduleHistoryTemplate2DetailScreen extends StatefulWidget {
   final String historyId;
@@ -291,14 +292,7 @@ class _ScheduleHistoryTemplate2DetailScreenState
           icon: const Icon(Icons.arrow_back, color: Color(0xFFD97941)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '오늘의 일정표',
-          style: TextStyle(
-            color: Color(0xFFD97941),
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('오늘의 일정표'),
         centerTitle: true,
       ),
       body: _isLoading

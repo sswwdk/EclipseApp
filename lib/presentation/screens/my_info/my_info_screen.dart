@@ -11,6 +11,7 @@ import '../main/main_screen.dart';
 import '../auth/login_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 
 class MyInfoScreen extends StatelessWidget {
   final String? fromScreen; // 어느 화면에서 왔는지 추적
@@ -23,14 +24,7 @@ class MyInfoScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
-        title: const Text(
-          '내 정보',
-          style: TextStyle(
-            color: AppTheme.textPrimaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('내 정보'),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(

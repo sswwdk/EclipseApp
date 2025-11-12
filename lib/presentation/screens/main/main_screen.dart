@@ -7,6 +7,7 @@ import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import 'restaurant_detail_screen.dart';
 import '../../widgets/store_card.dart';
+import '../../widgets/app_title_widget.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -56,15 +57,8 @@ class _MainScreenState extends State<MainScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
-          '할 일 추천',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: false,
+        title: const AppTitleWidget('할 일 추천'),
+        centerTitle: true,
         actions: [
           // 일정표 히스토리 버튼
           IconButton(

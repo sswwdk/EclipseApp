@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 import 'choose_template_screen.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 
 class RouteConfirmScreen extends StatefulWidget {
   final Map<String, List<dynamic>> selected; // 카테고리별 선택 목록 (Map 또는 String)
@@ -65,14 +66,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '경로 확정하기',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('경로 확정하기'),
         centerTitle: true,
         actions: const [SizedBox(width: 48)],
       ),

@@ -7,6 +7,7 @@ import 'change/change_email_screen.dart';
 import 'change/change_address_screen.dart';
 import 'change/change_phone_screen.dart';
 import '../../../shared/helpers/token_manager.dart';
+import '../../widgets/app_title_widget.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({Key? key}) : super(key: key);
@@ -23,14 +24,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          '프로필 설정',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('프로필 설정'),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),

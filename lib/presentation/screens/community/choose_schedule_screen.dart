@@ -3,6 +3,7 @@ import 'create_post_screen.dart';
 import '../../../data/services/history_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../widgets/app_title_widget.dart';
 
 class _ScheduleSummary {
   final String historyId;
@@ -49,14 +50,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          '내 일정표',
-          style: TextStyle(
-            color: Color(0xFFFF8126),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('내 일정표'),
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),

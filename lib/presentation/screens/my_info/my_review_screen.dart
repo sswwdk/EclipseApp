@@ -7,6 +7,7 @@ import '../../../data/services/api_service.dart';
 import '../../../data/services/review_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 import '../main/restaurant_detail_review_screen.dart';
 
 class MyReviewScreen extends StatefulWidget {
@@ -208,14 +209,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
-        title: const Text(
-          '내가 쓴 리뷰',
-          style: TextStyle(
-            color: AppTheme.textPrimaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('내가 쓴 리뷰'),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimaryColor),

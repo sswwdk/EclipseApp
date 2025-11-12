@@ -5,6 +5,7 @@ import '../../../data/models/restaurant.dart';
 import '../main/restaurant_detail_screen.dart';
 import '../../widgets/common_dialogs.dart';
 import '../../widgets/store_card.dart';
+import '../../widgets/app_title_widget.dart';
 
 /// 찜목록을 보여주는 화면
 class FavoriteListScreen extends StatefulWidget {
@@ -410,14 +411,7 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
             Navigator.pop(context);
           },
         ),
-        title: const Text(
-          '찜 목록',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('찜 목록'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: TabBar(

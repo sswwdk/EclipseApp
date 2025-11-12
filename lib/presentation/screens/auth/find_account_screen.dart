@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 
 class FindAccountScreen extends StatefulWidget {
   const FindAccountScreen({Key? key}) : super(key: key);
@@ -92,13 +93,8 @@ class _FindAccountScreenState extends State<FindAccountScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: AppTitleWidget(
           _selectedTab == 0 ? '아이디 찾기' : '비밀번호 찾기',
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
         ),
         centerTitle: true,
       ),

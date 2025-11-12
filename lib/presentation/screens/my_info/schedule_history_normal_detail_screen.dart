@@ -5,6 +5,7 @@ import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../main/restaurant_detail_review_screen.dart';
+import '../../widgets/app_title_widget.dart';
 
 /// "그냥" 탭 히스토리 상세 화면 (선택한 장소 목록 표시)
 class ScheduleHistoryNormalDetailScreen extends StatefulWidget {
@@ -265,14 +266,7 @@ class _ScheduleHistoryNormalDetailScreenState
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          _dateText ?? '선택한 장소',
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: AppTitleWidget(_dateText ?? '선택한 장소'),
         centerTitle: true,
       ),
       body: _isLoading

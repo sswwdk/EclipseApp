@@ -3,6 +3,7 @@ import '../../../data/services/api_service.dart';
 import '../../../data/services/like_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../data/models/review.dart';
+import '../../widgets/app_title_widget.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   final Restaurant restaurant;
@@ -80,14 +81,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          restaurant.name,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: AppTitleWidget(restaurant.name),
         centerTitle: true,
         actions: [
           IconButton(

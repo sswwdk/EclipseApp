@@ -7,6 +7,7 @@ import '../../../data/services/like_service.dart';
 import '../../../data/services/review_service.dart';
 import '../../../data/services/history_service.dart';
 import '../../widgets/user_avatar.dart';
+import '../../widgets/app_title_widget.dart';
 
 class RestaurantDetailReviewScreen extends StatefulWidget {
   final Restaurant restaurant;
@@ -271,14 +272,7 @@ class _RestaurantDetailReviewScreenState
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context, _shouldRefresh),
           ),
-          title: Text(
-            restaurant.name,
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          title: AppTitleWidget(restaurant.name),
           centerTitle: true,
           actions: [
             IconButton(

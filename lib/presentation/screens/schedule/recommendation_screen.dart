@@ -4,6 +4,7 @@ import '../main/main_screen.dart';
 import 'route_confirm_screen.dart';
 import '../../../data/models/restaurant.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/app_title_widget.dart';
 import 'result_choice_confirm_screen.dart';
 import '../../widgets/store_card.dart';
 
@@ -296,14 +297,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
             );
           },
         ),
-        title: const Text(
-          '추천 결과',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('추천 결과'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: widget.selectedCategories.length == 1

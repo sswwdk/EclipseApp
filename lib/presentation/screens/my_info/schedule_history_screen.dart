@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/services/history_service.dart';
 import '../../../shared/helpers/token_manager.dart';
+import '../../widgets/app_title_widget.dart';
 import 'schedule_history_normal_detail_screen.dart';
 import 'schedule_history_template1_detail_screen.dart';
 import 'schedule_history_template2_detail_screen.dart';
@@ -239,14 +240,7 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen>
       appBar: AppBar(
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
-        title: const Text(
-          '일정표 히스토리',
-          style: TextStyle(
-            color: AppTheme.textPrimaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('일정표 히스토리'),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimaryColor),

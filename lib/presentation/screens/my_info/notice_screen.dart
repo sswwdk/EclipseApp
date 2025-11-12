@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_title_widget.dart';
 
 class NoticeScreen extends StatelessWidget {
   const NoticeScreen({super.key});
@@ -14,14 +15,7 @@ class NoticeScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          '공지사항',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('공지사항'),
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),

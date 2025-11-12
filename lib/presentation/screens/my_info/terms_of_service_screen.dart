@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_title_widget.dart';
 
 class TermsOfServiceScreen extends StatelessWidget {
   const TermsOfServiceScreen({Key? key}) : super(key: key);
@@ -10,14 +11,7 @@ class TermsOfServiceScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          '이용약관',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const AppTitleWidget('이용약관'),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(

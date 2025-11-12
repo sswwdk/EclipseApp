@@ -5,6 +5,7 @@ import '../../../data/services/route_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../shared/helpers/history_parser.dart';
 import '../main/restaurant_detail_review_screen.dart';
+import '../../widgets/app_title_widget.dart';
 
 class ScheduleHistoryTemplate3DetailScreen extends StatefulWidget {
   final String historyId;
@@ -250,7 +251,7 @@ class _ScheduleHistoryTemplate3DetailScreenState
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('템플릿 3'),
+        title: const AppTitleWidget('템플릿 3'),
         centerTitle: true,
         backgroundColor: backgroundColor,
         elevation: 0,
