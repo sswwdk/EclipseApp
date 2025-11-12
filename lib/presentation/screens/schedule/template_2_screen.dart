@@ -3,6 +3,7 @@ import '../../../data/services/history_service.dart';
 import '../../../data/services/service_api.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
+import '../../../data/services/api_service.dart';
 import '../main/main_screen.dart';
 import 'dart:async';
 import '../../widgets/common_dialogs.dart';
@@ -48,6 +49,7 @@ class _Template2ScreenState extends State<Template2Screen> {
   bool _isLoadingRoutes = false;
   bool _isSaving = false;
   bool _isSharing = false;
+  bool _isLoadingRatings = false; // 🔥 추가
 
   @override
   void initState() {
@@ -74,6 +76,68 @@ class _Template2ScreenState extends State<Template2Screen> {
         _transportTypes[i] = 0;
       }
       _loadAllRoutes();
+    }
+
+    // 🔥 평점 정보 로드
+    _loadRatings();
+  }
+
+  // 🔥 평점 정보를 API에서 가져오는 메서드
+  Future<void> _loadRatings() async {
+    if (widget.orderedPlaces == null || widget.orderedPlaces!.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingRatings = true;
+    });
+
+    try {
+      for (int i = 0; i < widget.orderedPlaces!.length; i++) {
+        final placeData = widget.orderedPlaces![i];
+
+        // 🔥 id 필드 사용 (category_id 대신)
+        final categoryId = placeData['id'] as String?;
+
+        if (categoryId != null && categoryId.isNotEmpty) {
+          try {
+            print('🔍 매장 정보 조회 중: $categoryId');
+
+            // 🔥 API 호출해서 상세 정보 가져오기
+            final restaurant = await ApiService.getRestaurant(categoryId);
+
+            print(
+              '✅ 평점 조회 완료: ${restaurant.averageStars ?? restaurant.rating}',
+            );
+
+            // 🔥 평점 업데이트 (i+1 인덱스 주의: 0번은 출발지)
+            if (mounted && i + 1 < _items.length) {
+              setState(() {
+                _items[i + 1] = _ScheduleItem(
+                  title: _items[i + 1].title,
+                  category: _items[i + 1].category,
+                  address: _items[i + 1].address,
+                  icon: _items[i + 1].icon,
+                  rating:
+                      restaurant.averageStars ??
+                      restaurant.rating, // 🔥 평점 업데이트
+                  imageUrl:
+                      _items[i + 1].imageUrl ??
+                      restaurant.image, // 🔥 이미지도 업데이트
+                );
+              });
+            }
+          } catch (e) {
+            print('❌ 매장 $categoryId 평점 로드 실패: $e');
+          }
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingRatings = false;
+        });
+      }
     }
   }
 
@@ -649,7 +713,8 @@ Widget _buildHeader() {
         category: '출발지',
         address: originTitle,
         icon: Icons.home_outlined,
-        imageUrl: null, // 🔥 출발지는 이미지 없음
+        imageUrl: null,
+        rating: null,
       ),
     );
 
@@ -658,6 +723,9 @@ Widget _buildHeader() {
         final placeData = widget.orderedPlaces![i];
         final placeName = placeData['name'] as String? ?? '알 수 없음';
         final category = placeData['category'] as String? ?? '기타';
+
+        print('🔍 placeData 전체: $placeData');
+        print('🔍 category_id: ${placeData['category_id']}');
 
         String? address;
         address = placeData['address'] as String?;
@@ -674,16 +742,32 @@ Widget _buildHeader() {
           }
         }
 
-        // 평점 정보
+        // 🔥 평점 정보 - average_stars 우선, 없으면 rating
         double? rating;
-        final ratingValue = placeData['rating'] ?? placeData['data']?['rating'];
-        if (ratingValue is String) {
-          rating = double.tryParse(ratingValue);
-        } else if (ratingValue is num) {
-          rating = ratingValue.toDouble();
+        final averageStarsValue =
+            placeData['average_stars'] ?? placeData['data']?['average_stars'];
+        if (averageStarsValue != null) {
+          if (averageStarsValue is String) {
+            rating = double.tryParse(averageStarsValue);
+          } else if (averageStarsValue is num) {
+            rating = averageStarsValue.toDouble();
+          }
         }
 
-        // 🔥 이미지 URL 추출
+        // average_stars가 없으면 rating 시도
+        if (rating == null) {
+          final ratingValue =
+              placeData['rating'] ?? placeData['data']?['rating'];
+          if (ratingValue != null) {
+            if (ratingValue is String) {
+              rating = double.tryParse(ratingValue);
+            } else if (ratingValue is num) {
+              rating = ratingValue.toDouble();
+            }
+          }
+        }
+
+        // 이미지 URL 추출
         String? imageUrl;
         imageUrl = placeData['image_url'] as String?;
         if (imageUrl == null || imageUrl.isEmpty) {
@@ -693,6 +777,8 @@ Widget _buildHeader() {
           }
         }
 
+        print('🔍 매장명: $placeName, 평점: $rating');
+
         items.add(
           _ScheduleItem(
             title: placeName,
@@ -700,7 +786,7 @@ Widget _buildHeader() {
             address: address,
             icon: _iconFor(category),
             rating: rating,
-            imageUrl: imageUrl, // 🔥 추가
+            imageUrl: imageUrl,
           ),
         );
       }
@@ -709,7 +795,7 @@ Widget _buildHeader() {
         for (final placeName in places) {
           String? address;
           double? rating;
-          String? imageUrl; // 🔥 추가
+          String? imageUrl;
 
           if (widget.selectedPlacesWithData != null) {
             final categoryPlaces = widget.selectedPlacesWithData![category];
@@ -725,14 +811,28 @@ Widget _buildHeader() {
                   address = placeData['detail_address'] as String?;
                 }
 
-                final ratingValue = placeData['rating'];
-                if (ratingValue is String) {
-                  rating = double.tryParse(ratingValue);
-                } else if (ratingValue is num) {
-                  rating = ratingValue.toDouble();
+                // 🔥 평점 정보 - average_stars 우선
+                final averageStarsValue = placeData['average_stars'];
+                if (averageStarsValue != null) {
+                  if (averageStarsValue is String) {
+                    rating = double.tryParse(averageStarsValue);
+                  } else if (averageStarsValue is num) {
+                    rating = averageStarsValue.toDouble();
+                  }
                 }
 
-                // 🔥 이미지 URL 추출
+                // average_stars가 없으면 rating 사용
+                if (rating == null) {
+                  final ratingValue = placeData['rating'];
+                  if (ratingValue != null) {
+                    if (ratingValue is String) {
+                      rating = double.tryParse(ratingValue);
+                    } else if (ratingValue is num) {
+                      rating = ratingValue.toDouble();
+                    }
+                  }
+                }
+
                 imageUrl = placeData['image_url'] as String?;
               }
             }
@@ -745,7 +845,7 @@ Widget _buildHeader() {
               address: address,
               icon: _iconFor(category),
               rating: rating,
-              imageUrl: imageUrl, // 🔥 추가
+              imageUrl: imageUrl,
             ),
           );
         }
@@ -984,21 +1084,43 @@ class _PlannerItemCardState extends State<_PlannerItemCard> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(5, (index) {
-        if (index < rating.floor()) {
-          return const Text(
-            '★',
-            style: TextStyle(fontSize: 18, color: Color(0xFFD97941)),
-          );
-        } else {
-          return Text(
-            '☆',
-            style: TextStyle(
-              fontSize: 18,
-              color: const Color(0xFFD97941).withOpacity(0.3),
-            ),
-          );
-        }
+        return _buildStar(index, rating);
       }),
+    );
+  }
+
+  Widget _buildStar(int index, double rating) {
+    double fillPercentage = 0.0;
+
+    if (index < rating.floor()) {
+      // 완전히 채워진 별
+      fillPercentage = 1.0;
+    } else if (index < rating) {
+      // 부분적으로 채워진 별
+      fillPercentage = rating - index;
+    } else {
+      // 빈 별
+      fillPercentage = 0.0;
+    }
+
+    return SizedBox(
+      width: 18,
+      height: 18,
+      child: Stack(
+        children: [
+          // 배경 (빈 별)
+          Icon(
+            Icons.star_border,
+            size: 18,
+            color: const Color(0xFFD97941).withOpacity(0.3),
+          ),
+          // 채워진 부분
+          ClipRect(
+            clipper: _StarClipper(fillPercentage),
+            child: const Icon(Icons.star, size: 18, color: Color(0xFFD97941)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1394,5 +1516,21 @@ class _PlannerItemCardState extends State<_PlannerItemCard> {
       default:
         return '📍';
     }
+  }
+}
+
+class _StarClipper extends CustomClipper<Rect> {
+  final double percentage;
+
+  _StarClipper(this.percentage);
+
+  @override
+  Rect getClip(Size size) {
+    return Rect.fromLTWH(0, 0, size.width * percentage, size.height);
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Rect> oldClipper) {
+    return true;
   }
 }
