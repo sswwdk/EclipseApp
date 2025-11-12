@@ -564,7 +564,7 @@ class HistoryService {
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
-        return data['visit_count'] ?? 0;
+        return data ?? 0;
       } else {
         throw Exception('방문 횟수 조회 실패: ${response.statusCode}');
       }
