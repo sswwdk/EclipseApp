@@ -6,9 +6,13 @@ import '../../widgets/common_dialogs.dart';
 
 class RouteConfirmScreen extends StatefulWidget {
   final Map<String, List<dynamic>> selected; // 카테고리별 선택 목록 (Map 또는 String)
+  final bool showOriginDialogOnInit;
 
-  const RouteConfirmScreen({Key? key, required this.selected})
-    : super(key: key);
+  const RouteConfirmScreen({
+    Key? key,
+    required this.selected,
+    this.showOriginDialogOnInit = false,
+  }) : super(key: key);
 
   @override
   State<RouteConfirmScreen> createState() => _RouteConfirmScreenState();
@@ -31,7 +35,7 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
         final firstPlace = places[0];
         print('    첫 번째 항목 타입: ${firstPlace.runtimeType}');
         if (firstPlace is Map) {
-          print('    필드 목록: ${(firstPlace as Map).keys.toList()}');
+          print('    필드 목록: ${firstPlace.keys.toList()}');
           print('    전체 데이터: $firstPlace');
         } else {
           print('    데이터: $firstPlace');
@@ -40,6 +44,12 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
     });
 
     _items = _buildScheduleItems(widget.selected);
+
+    if (widget.showOriginDialogOnInit) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showOriginAddressInput();
+      });
+    }
   }
 
   @override
@@ -266,7 +276,7 @@ for (final item in _items) {
                     'latitude': latValue, // ✅ dynamic으로 전달
                     'longitude': lngValue, // ✅ dynamic으로 전달
                     'data': {
-                      ...?(matchedPlace ?? {}),
+                      ...(matchedPlace ?? {}),
                       'lat': latValue, // ✅ data에도 좌표 보존
                       'lng': lngValue, // ✅ data에도 좌표 보존
                     },
@@ -405,17 +415,16 @@ for (final item in _items) {
   }
 
   Future<void> _showOriginAddressInput() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OriginAddressInputScreen(
-          initialAddress: _originAddress,
-          initialDetailAddress: _originDetailAddress,
-        ),
+    final result = await showDialog<Map<String, String?>>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => OriginAddressInputDialog(
+        initialAddress: _originAddress,
+        initialDetailAddress: _originDetailAddress,
       ),
     );
 
-    if (result != null && result is Map<String, String?>) {
+    if (result != null) {
       setState(() {
         _originAddress = result['address'];
         _originDetailAddress = result['detailAddress'];
@@ -681,23 +690,23 @@ class _TimelineRow extends StatelessWidget {
   }
 }
 
-// 출발지 주소 입력 화면 (미리보기 단계에서 사용)
-class OriginAddressInputScreen extends StatefulWidget {
+// 출발지 주소 입력 화면 (모달 팝업)
+class OriginAddressInputDialog extends StatefulWidget {
   final String? initialAddress;
   final String? initialDetailAddress;
 
-  const OriginAddressInputScreen({
+  const OriginAddressInputDialog({
     Key? key,
     this.initialAddress,
     this.initialDetailAddress,
   }) : super(key: key);
 
   @override
-  State<OriginAddressInputScreen> createState() =>
-      _OriginAddressInputScreenState();
+  State<OriginAddressInputDialog> createState() =>
+      _OriginAddressInputDialogState();
 }
 
-class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
+class _OriginAddressInputDialogState extends State<OriginAddressInputDialog> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _detailAddressController =
       TextEditingController();
@@ -830,127 +839,170 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          '출발지 입력',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF8126)),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 20),
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final maxHeight = MediaQuery.of(context).size.height * 0.8;
 
-                  // GPS 버튼
-                  ElevatedButton.icon(
-                    onPressed: _isLoadingGPS ? null : _getCurrentLocation,
-                    icon: _isLoadingGPS
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      backgroundColor: Colors.transparent,
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 420,
+                maxHeight: maxHeight,
+              ),
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 12, 8),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              '출발지 입력',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          )
-                        : const Icon(Icons.my_location, size: 20),
-                    label: Text(_isLoadingGPS ? '위치 가져오는 중...' : '현재 위치로 설정'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF8126),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: _addressController,
-                    textInputAction: TextInputAction.next,
-                    onSubmitted: (_) => FocusScope.of(
-                      context,
-                    ).requestFocus(_detailAddressFocusNode),
-                    decoration: InputDecoration(
-                      hintText: '예: 서울시 강남구 테헤란로 123',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      filled: true,
-                      fillColor: const Color(0xFFF5F5F5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 18,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.black),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _detailAddressController,
-                    focusNode: _detailAddressFocusNode,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _saveAddress(),
-                    decoration: InputDecoration(
-                      hintText: '상세 주소 (건물명, 동/호수 등)',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      filled: true,
-                      fillColor: const Color(0xFFF5F5F5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                    const Divider(height: 1, color: Color(0xFFEAEAEA)),
+                    if (_isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 48),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFFFF8126),
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed:
+                                    _isLoadingGPS ? null : _getCurrentLocation,
+                                icon: _isLoadingGPS
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.my_location, size: 20),
+                                label: Text(
+                                  _isLoadingGPS ? '위치 가져오는 중...' : '현재 위치로 설정',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFF8126),
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: _addressController,
+                                textInputAction: TextInputAction.next,
+                                onSubmitted: (_) => FocusScope.of(
+                                  context,
+                                ).requestFocus(_detailAddressFocusNode),
+                                decoration: InputDecoration(
+                                  hintText: '예: 서울시 강남구 테헤란로 123',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF5F5F5),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 18,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: _detailAddressController,
+                                focusNode: _detailAddressFocusNode,
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => _saveAddress(),
+                                decoration: InputDecoration(
+                                  hintText: '상세 주소 (건물명, 동/호수 등)',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF5F5F5),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 18,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                onPressed: _saveAddress,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFF8126),
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 18),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  minimumSize:
+                                      const Size(double.infinity, 52),
+                                ),
+                                child: const Text(
+                                  '저장하기',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 18,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _saveAddress,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF8126),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      minimumSize: const Size(double.infinity, 52),
-                    ),
-                    child: const Text(
-                      '저장하기',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+          ),
+        ),
+      ),
     );
   }
 }

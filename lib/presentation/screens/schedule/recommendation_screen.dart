@@ -614,7 +614,10 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            RouteConfirmScreen(selected: selectedByCategory),
+                            RouteConfirmScreen(
+                              selected: selectedByCategory,
+                              showOriginDialogOnInit: true,
+                            ),
                       ),
                     );
                   },
