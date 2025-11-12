@@ -40,14 +40,6 @@ class _MessageScreenState extends State<MessageScreen> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
-            onPressed: () {
-              // 더보기 메뉴
-            },
-          ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
