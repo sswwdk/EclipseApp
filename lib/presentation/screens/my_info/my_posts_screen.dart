@@ -181,7 +181,11 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
               },
             ),
           ),
-        );
+        ).then((result) {
+          if (result == true) {
+            _loadPosts();
+          }
+        });
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
