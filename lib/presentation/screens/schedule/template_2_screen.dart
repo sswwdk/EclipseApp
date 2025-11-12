@@ -235,7 +235,7 @@ class _Template2ScreenState extends State<Template2Screen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.isReadOnly ? '일정표 상세' : '오늘의 일정표',
+          widget.isReadOnly ? '일정표 상세' : '템플릿 2',
           style: const TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -979,8 +979,9 @@ class _PlannerItemCardState extends State<_PlannerItemCard> {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white.withOpacity(0.7),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD97941), width: 2),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -448,8 +448,9 @@ class _PlannerItemCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white.withOpacity(0.7),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD97941), width: 2),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
