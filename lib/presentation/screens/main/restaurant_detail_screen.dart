@@ -64,6 +64,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final restaurant = widget.restaurant;
+    final averageStars = restaurant.averageStars ?? restaurant.rating ?? 0.0;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -211,7 +212,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '평점: ${(restaurant.rating ?? 0.0).toStringAsFixed(1)}',
+                        '평점: ${averageStars.toStringAsFixed(1)}',
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 14,

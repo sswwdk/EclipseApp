@@ -16,6 +16,7 @@ class Restaurant {
   final String? longitude;
   final String? lastCrawl;
   final double? rating;
+  final double? averageStars;
   final List<Review> reviews;
   final List<String> tags;
   final bool isFavorite;
@@ -35,11 +36,13 @@ class Restaurant {
     this.latitude,
     this.longitude,
     this.lastCrawl,
-    this.rating,
+    double? rating,
+    double? averageStars,
     this.reviews = const [],
     this.tags = const [],
     this.isFavorite = false,
-  });
+  })  : rating = rating ?? averageStars,
+        averageStars = averageStars ?? rating;
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
     return Restaurant(
@@ -58,6 +61,7 @@ class Restaurant {
       longitude: json['longitude'],
       lastCrawl: json['last_crawl'],
       rating: _parseDouble(json['rating']),
+      averageStars: _parseDouble(json['average_stars']),
       reviews: Review.fromList(json['reviews']),
       tags: _parseStringList(json['tags']),
       isFavorite: (json['is_like'] == true),
@@ -82,6 +86,7 @@ class Restaurant {
       longitude: null,
       lastCrawl: null,
       rating: _parseDouble(json['rating']),
+      averageStars: _parseDouble(json['average_stars']),
       reviews: Review.fromList(json['reviews']),
       tags: _parseStringList(json['tags']),
       isFavorite: (json['is_like'] == true),

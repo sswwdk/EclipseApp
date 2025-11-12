@@ -287,6 +287,7 @@ class _RestaurantDetailReviewScreenState
   @override
   Widget build(BuildContext context) {
     final restaurant = _restaurant;
+    final averageStars = restaurant.averageStars ?? restaurant.rating ?? 0.0;
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, _shouldRefresh);
@@ -436,7 +437,7 @@ class _RestaurantDetailReviewScreenState
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '평점: ${(restaurant.rating ?? 0.0).toStringAsFixed(1)}',
+                          '평점: ${averageStars.toStringAsFixed(1)}',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 14,

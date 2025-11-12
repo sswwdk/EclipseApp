@@ -75,7 +75,8 @@ class ApiService {
           detailAddress: obj['detail_address'] as String?, // 🔥 추가
           phone: obj['phone'] as String?, // 🔥 추가
           businessHour: obj['business_hour'] as String?, // 🔥 추가
-          rating: _parseDouble(obj['rating']) ?? 0.0,
+          rating: _parseDouble(obj['rating']) ?? _parseDouble(obj['average_stars']) ?? 0.0,
+          averageStars: _parseDouble(obj['average_stars']),
           reviews: Review.fromList(obj['reviews']),
           tags: _parseStringList(obj['tags']),
           isFavorite: obj['is_like'] ?? false,
