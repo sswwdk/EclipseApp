@@ -5,7 +5,9 @@ import '../../../data/models/review.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/like_service.dart';
 import '../../../data/services/review_service.dart';
+import '../../../data/services/history_service.dart';
 import '../../widgets/user_avatar.dart';
+
 class RestaurantDetailReviewScreen extends StatefulWidget {
   final Restaurant restaurant;
 
@@ -29,11 +31,17 @@ class _RestaurantDetailReviewScreenState
   int _newRating = 5;
   final TextEditingController _reviewController = TextEditingController();
 
+  // 🔥 추가: 방문 횟수와 리뷰 개수
+  int _visitCount = 0;
+  int _myReviewCount = 0;
+  bool _isLoadingReviewLimit = true;
+
   @override
   void initState() {
     super.initState();
     _restaurant = widget.restaurant;
     _fetchDetail();
+    _fetchReviewLimit(); // 🔥 추가
   }
 
   @override
@@ -45,18 +53,14 @@ class _RestaurantDetailReviewScreenState
   Future<void> _fetchDetail() async {
     try {
       final res = await ApiService.getRestaurant(widget.restaurant.id);
-      debugPrint('[RestaurantDetailReviewScreen] fetched restaurant detail: '
-          'id=${res.id}, name=${res.name}, '
-          'reviews=${res.reviews.map((r) => {
-            'nickname': r.nickname,
-            'rating': r.rating,
-            'content': r.content,
-            'createdAt': r.createdAt?.toIso8601String(),
-          }).toList()}');
+      debugPrint(
+        '[RestaurantDetailReviewScreen] fetched restaurant detail: '
+        'id=${res.id}, name=${res.name}, '
+        'reviews=${res.reviews.map((r) => {'nickname': r.nickname, 'rating': r.rating, 'content': r.content, 'createdAt': r.createdAt?.toIso8601String()}).toList()}',
+      );
       if (!mounted) return;
-      final sortedReviews = [
-        ...res.reviews,
-      ]..sort((a, b) {
+      final sortedReviews = [...res.reviews]
+        ..sort((a, b) {
           final aCreated = a.createdAt;
           final bCreated = b.createdAt;
           if (aCreated == null && bCreated == null) return 0;
@@ -78,12 +82,68 @@ class _RestaurantDetailReviewScreenState
     }
   }
 
+  // 🔥 추가: 방문 횟수와 리뷰 개수 조회
+  Future<void> _fetchReviewLimit() async {
+    setState(() {
+      _isLoadingReviewLimit = true;
+    });
+
+    try {
+      final visitCount = await HistoryService.getVisitCount(
+        widget.restaurant.id,
+      );
+      final reviewCount = await ReviewService.getMyReviewCount(
+        widget.restaurant.id,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _visitCount = visitCount;
+        _myReviewCount = reviewCount;
+        _isLoadingReviewLimit = false;
+      });
+
+      debugPrint('🔍 방문 횟수: $_visitCount, 작성한 리뷰 개수: $_myReviewCount');
+    } catch (e) {
+      debugPrint('방문 횟수/리뷰 개수 조회 실패: $e');
+      if (!mounted) return;
+      setState(() {
+        _isLoadingReviewLimit = false;
+      });
+    }
+  }
+
+  // 🔥 추가: 리뷰 작성 가능 여부 확인
+  bool get _canWriteReview {
+    return _visitCount > _myReviewCount;
+  }
+
+  // 🔥 추가: 남은 리뷰 작성 가능 횟수
+  int get _remainingReviews {
+    return (_visitCount - _myReviewCount).clamp(0, 999);
+  }
+
   void _resetReviewForm() {
     _reviewController.clear();
     _newRating = 5;
   }
 
   Future<void> _openReviewSheet(BuildContext context) async {
+    // 🔥 추가: 리뷰 작성 가능 여부 확인
+    if (!_canWriteReview) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _visitCount == 0
+                ? '이 매장을 방문한 기록이 없습니다.\n일정표에 추가하고 방문해주세요.'
+                : '이미 방문 횟수만큼 리뷰를 작성했습니다.\n(방문: $_visitCount회, 리뷰: $_myReviewCount개)',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     _resetReviewForm();
     await showModalBottomSheet(
       context: context,
@@ -103,7 +163,6 @@ class _RestaurantDetailReviewScreenState
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: StatefulBuilder(
-                // 👈 이 부분 추가
                 builder: (BuildContext context, StateSetter setModalState) {
                   return Column(
                     mainAxisSize: MainAxisSize.min,
@@ -119,6 +178,25 @@ class _RestaurantDetailReviewScreenState
                             ),
                           ),
                           const Spacer(),
+                          // 🔥 추가: 남은 리뷰 작성 가능 횟수 표시
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF8126).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '남은 리뷰: $_remainingReviews회',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFFF8126),
+                              ),
+                            ),
+                          ),
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: _isSubmitting
@@ -131,10 +209,7 @@ class _RestaurantDetailReviewScreenState
                         ],
                       ),
                       const SizedBox(height: 16),
-                      _buildReviewForm(
-                        sheetContext,
-                        setModalState,
-                      ), // 👈 setModalState 전달
+                      _buildReviewForm(sheetContext, setModalState),
                     ],
                   );
                 },
@@ -167,7 +242,11 @@ class _RestaurantDetailReviewScreenState
         stars: _newRating,
         comment: content,
       );
+
+      // 🔥 추가: 리뷰 작성 후 다시 조회
       await _fetchDetail();
+      await _fetchReviewLimit();
+
       if (!mounted) return;
       _resetReviewForm();
       Navigator.of(sheetContext).pop();
@@ -243,20 +322,42 @@ class _RestaurantDetailReviewScreenState
           ],
         ),
         body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 250,
-              width: double.infinity,
-              child: ClipRRect(
-                child:
-                    (restaurant.imageUrl != null &&
-                        restaurant.imageUrl!.isNotEmpty)
-                    ? Image.network(
-                        restaurant.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 250,
+                width: double.infinity,
+                child: ClipRRect(
+                  child:
+                      (restaurant.imageUrl != null &&
+                          restaurant.imageUrl!.isNotEmpty)
+                      ? Image.network(
+                          restaurant.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey[200],
+                            child: Icon(
+                              Icons.restaurant,
+                              size: 80,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(
+                                    Color(0xFFFF8126),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
                           color: Colors.grey[200],
                           child: Icon(
                             Icons.restaurant,
@@ -264,118 +365,39 @@ class _RestaurantDetailReviewScreenState
                             color: Colors.grey[400],
                           ),
                         ),
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(
-                                  Color(0xFFFF8126),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      )
-                    : Container(
-                        color: Colors.grey[200],
-                        child: Icon(
-                          Icons.restaurant,
-                          size: 80,
-                          color: Colors.grey[400],
-                        ),
-                      ),
+                ),
               ),
-            ),
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: Color(0xFFFF8126),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          restaurant.detailAddress ??
-                              restaurant.address ??
-                              '주소 정보 없음',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (restaurant.phone != null) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.phone,
-                          color: Color(0xFFFF8126),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          restaurant.phone!,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        color: Color(0xFFFF8126),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '평점: ${(restaurant.rating ?? 0.0).toStringAsFixed(1)}',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      ),
-                    ],
-                  ),
-                  if (restaurant.businessHour != null) ...[
-                    const SizedBox(height: 12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(
-                          Icons.access_time,
+                          Icons.location_on,
                           color: Color(0xFFFF8126),
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            restaurant.businessHour!,
+                            restaurant.detailAddress ??
+                                restaurant.address ??
+                                '주소 정보 없음',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 14,
@@ -384,112 +406,193 @@ class _RestaurantDetailReviewScreenState
                         ),
                       ],
                     ),
-                  ],
-                  const SizedBox(height: 16),
-                  if (_tags.isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _tags
-                          .map((t) => _buildTag('# $t'))
-                          .toList(growable: false),
-                    ),
-                ],
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.all(16),
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '리뷰 (${_reviews.length})',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: _isSubmitting
-                            ? null
-                            : () => _openReviewSheet(context),
-                        icon: const Icon(Icons.edit, color: Color(0xFFFF8126)),
-                        label: const Text(
-                          '리뷰 작성',
-                          style: TextStyle(
+                    if (restaurant.phone != null) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.phone,
                             color: Color(0xFFFF8126),
-                            fontWeight: FontWeight.w600,
+                            size: 20,
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Text(
+                            restaurant.phone!,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-              const SizedBox(height: 30),
-                  if (_reviews.isEmpty)
-                    Text(
-                      '아직 작성된 리뷰가 없습니다.',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    )
-                  else ...[
-                    for (int i = 0; i < _reviews.length; i++) ...[
-                      _buildReview(
-                        nickname: _reviews[i].nickname,
-                        rating: _reviews[i].rating,
-                        content: _reviews[i].content,
-                        createdAt: _reviews[i].createdAt,
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          color: Color(0xFFFF8126),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '평점: ${(restaurant.rating ?? 0.0).toStringAsFixed(1)}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (restaurant.businessHour != null) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.access_time,
+                            color: Color(0xFFFF8126),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              restaurant.businessHour!,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      if (i != _reviews.length - 1) ...[
-                        const SizedBox(height: 12),
-                        const Divider(color: Colors.grey),
-                        const SizedBox(height: 12),
+                    ],
+                    const SizedBox(height: 16),
+                    if (_tags.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _tags
+                            .map((t) => _buildTag('# $t'))
+                            .toList(growable: false),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Container(
+                margin: const EdgeInsets.all(16),
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '리뷰 (${_reviews.length})',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: (_isSubmitting || !_canWriteReview)
+                              ? null
+                              : () => _openReviewSheet(context),
+                          icon: Icon(
+                            Icons.edit,
+                            color: _canWriteReview
+                                ? const Color(0xFFFF8126)
+                                : Colors.grey,
+                          ),
+                          label: Text(
+                            '리뷰 작성',
+                            style: TextStyle(
+                              color: _canWriteReview
+                                  ? const Color(0xFFFF8126)
+                                  : Colors.grey,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    if (_reviews.isEmpty)
+                      Text(
+                        '아직 작성된 리뷰가 없습니다.',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      )
+                    else ...[
+                      for (int i = 0; i < _reviews.length; i++) ...[
+                        _buildReview(
+                          nickname: _reviews[i].nickname,
+                          rating: _reviews[i].rating,
+                          content: _reviews[i].content,
+                          createdAt: _reviews[i].createdAt,
+                        ),
+                        if (i != _reviews.length - 1) ...[
+                          const SizedBox(height: 12),
+                          const Divider(color: Colors.grey),
+                          const SizedBox(height: 12),
+                        ],
                       ],
                     ],
                   ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-        bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: SizedBox(
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _isSubmitting ? null : () => _openReviewSheet(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF8126),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Text(
-                '리뷰 작성',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ],
+          ),
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: (_isSubmitting || !_canWriteReview)
+                    ? null
+                    : () => _openReviewSheet(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _canWriteReview
+                      ? const Color(0xFFFF8126)
+                      : Colors.grey,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  _canWriteReview
+                      ? '리뷰 작성'
+                      : _visitCount == 0
+                      ? '방문 기록이 없습니다'
+                      : '리뷰 작성 불가',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
         ),
       ),
     );
@@ -527,7 +630,7 @@ class _RestaurantDetailReviewScreenState
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(width: 12),
-            _buildSelectableStars(setModalState), // 👈 setModalState 전달
+            _buildSelectableStars(setModalState),
             const SizedBox(width: 8),
             Text(
               '$_newRating점',
@@ -607,45 +710,41 @@ class _RestaurantDetailReviewScreenState
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        UserAvatar(
-          imageUrl: null,
-          displayName: nickname,
-          radius: 20,
-        ),
+        UserAvatar(imageUrl: null, displayName: nickname, radius: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-              Expanded(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      nickname,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Colors.black,
+                  Expanded(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          nickname,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildStarRating(rating),
+                      ],
+                    ),
+                  ),
+                  if (createdAt != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        _formatReviewDate(createdAt),
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        textAlign: TextAlign.right,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    _buildStarRating(rating),
-                  ],
-                ),
-              ),
-              if (createdAt != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    _formatReviewDate(createdAt),
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -661,7 +760,6 @@ class _RestaurantDetailReviewScreenState
   }
 
   Widget _buildSelectableStars(StateSetter setModalState) {
-    // 👈 파라미터 추가
     return Row(
       children: List.generate(5, (index) {
         final isFilled = index < _newRating;
@@ -670,7 +768,6 @@ class _RestaurantDetailReviewScreenState
               ? null
               : () {
                   setModalState(() {
-                    // 👈 setState 대신 setModalState 사용
                     _newRating = index + 1;
                   });
                 },

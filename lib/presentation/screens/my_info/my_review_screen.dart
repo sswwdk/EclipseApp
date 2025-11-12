@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/restaurant.dart';
+import '../../../data/services/api_service.dart';
 import '../../../data/services/review_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../../widgets/common_dialogs.dart';
@@ -20,6 +21,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
   String? _errorMessage;
   List<MyReviewItem> _reviews = const [];
   List<_CategorySection> _sections = const [];
+  final Map<String, String> _resolvedAddresses = {};
 
   @override
   void initState() {
@@ -68,11 +70,14 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
       return;
     }
 
+    final fallbackAddress = review.restaurantAddress.isNotEmpty
+        ? review.restaurantAddress
+        : (_resolvedAddresses[review.categoryId] ?? '');
+    final trimmedAddress = fallbackAddress.trim();
     final restaurant = Restaurant(
       id: review.categoryId,
       name: review.restaurantName,
-      detailAddress:
-          review.restaurantAddress.isEmpty ? null : review.restaurantAddress,
+      detailAddress: trimmedAddress.isEmpty ? null : trimmedAddress,
       rating: review.rating,
     );
 
@@ -115,6 +120,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
         _sections = sections;
         _loading = false;
       });
+      _prefetchRestaurantAddresses(reviews);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -123,6 +129,33 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
         _reviews = const [];
         _sections = const [];
       });
+    }
+  }
+
+  Future<void> _prefetchRestaurantAddresses(List<MyReviewItem> reviews) async {
+    final idsToFetch = reviews
+        .where((review) =>
+            review.categoryId.isNotEmpty &&
+            review.restaurantAddress.isEmpty &&
+            (_resolvedAddresses[review.categoryId]?.isEmpty ?? true))
+        .map((review) => review.categoryId)
+        .toSet()
+        .toList();
+    for (final categoryId in idsToFetch) {
+      try {
+        final restaurant = await ApiService.getRestaurant(categoryId);
+        final address =
+            (restaurant.detailAddress ?? restaurant.address ?? '').trim();
+        if (!mounted) return;
+        setState(() {
+          _resolvedAddresses[categoryId] = address;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+        _resolvedAddresses[categoryId] = '';
+        });
+      }
     }
   }
 
@@ -265,6 +298,10 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
 
   Widget _buildReviewCard(MyReviewItem review) {
     final canNavigate = review.categoryId.isNotEmpty;
+    final resolvedAddress = review.restaurantAddress.isNotEmpty
+        ? review.restaurantAddress
+        : (_resolvedAddresses[review.categoryId] ?? '');
+    final displayAddress = resolvedAddress.trimLeft();
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -321,24 +358,31 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        review.restaurantName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimaryColor,
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: review.restaurantName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimaryColor,
+                              ),
+                            ),
+                            if (displayAddress.isNotEmpty) ...[
+                              const TextSpan(text: '\n'),
+                              TextSpan(
+                                text: displayAddress,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondaryColor
+                                      .withOpacity(0.9),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      if (review.restaurantAddress.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          review.restaurantAddress,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -491,7 +535,8 @@ class MyReviewItem {
           .toString();
       final String restaurantAddress =
           (m['restaurant_address'] ?? m['restaurantAddress'] ?? m['address'] ?? '')
-              .toString();
+              .toString()
+              .trim();
       final double rating =
           _parseDouble(m['rating'] ?? m['stars'] ?? m['score']) ?? 0.0;
       final String content = (m['content'] ??
