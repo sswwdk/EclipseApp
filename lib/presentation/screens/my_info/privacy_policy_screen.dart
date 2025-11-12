@@ -37,15 +37,6 @@ class PrivacyPolicyScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
             Text(
-              '개인정보 처리방침',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFFF8126),
-              ),
-            ),
-            SizedBox(height: 16),
-            Text(
               '“오늘 뭐하지”는 이클립스팀이 운영하며, 이용자의 개인정보를 중요하게 생각합니다.\n\n'
               '운영팀은 「개인정보 보호법」 및 관련 법령을 준수하며, 개인정보가 어떠한 방식으로 수집·이용·보관·파기되는지에 대해 투명하게 공개합니다.\n\n'
               '본 방침은 서비스 이용자에게 관련 내용을 명확히 안내하기 위한 것입니다.',
