@@ -272,7 +272,10 @@ class _RestaurantDetailReviewScreenState
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context, _shouldRefresh),
           ),
-          title: AppTitleWidget(restaurant.name),
+          title: AppTitleWidget(
+            restaurant.name,
+            color: Colors.black,
+          ),
           centerTitle: true,
           actions: [
             IconButton(

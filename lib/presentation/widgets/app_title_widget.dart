@@ -16,19 +16,23 @@ class AppTitleWidget extends StatelessWidget {
   
   /// 텍스트 정렬 (기본값: center)
   final TextAlign textAlign;
+  
+  /// 텍스트 색상 (기본값: primaryColor)
+  final Color? color;
 
   const AppTitleWidget(
     this.text, {
     Key? key,
     this.textAlign = TextAlign.center,
+    this.color,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: AppTheme.primaryColor,
+      style: TextStyle(
+        color: color ?? AppTheme.primaryColor,
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
