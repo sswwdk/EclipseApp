@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:characters/characters.dart';
 import 'chat_screen.dart';
+import 'report_reason_screen.dart' show ReportReasonDialog;
 import '../../widgets/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 import '../../../data/services/community_service.dart';
@@ -99,7 +100,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     children: [
                       Icon(Icons.report, color: Colors.red, size: 20),
                       SizedBox(width: 8),
-                      Text('게시글 신고하기'),
+                      Text('사용자 신고하기'),
                     ],
                   ),
                 ),
@@ -774,22 +775,59 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  void _showReportDialog() {
-    CommonDialogs.showReportConfirmation(
+  void _showReportDialog() async {
+    // 게시글 작성자 정보 가져오기
+    final userId = _currentPost?['userId']?.toString() ?? 
+                   _currentPost?['user_id']?.toString();
+    final nickname = _currentPost?['nickname']?.toString() ?? '사용자';
+    
+    if (userId == null || userId.isEmpty) {
+      _showSnackBar('사용자 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    final result = await showDialog(
       context: context,
-      title: '게시글 신고하기',
-      content: '이 게시글을 신고하시겠습니까?\n신고된 게시글은 검토 후 조치됩니다.',
-      onConfirm: () {
-        _showReportSuccess();
-      },
+      builder: (context) => ReportReasonDialog(
+        targetType: 'user',
+        targetId: userId,
+        targetName: nickname,
+      ),
     );
+
+    if (result != null && result is Map) {
+      final reason = result['reason'] as String?;
+      if (reason != null) {
+        await _submitUserReport(userId, reason);
+      }
+    }
   }
 
-  void _showReportSuccess() {
-    CommonDialogs.showSuccess(
-      context: context,
-      message: '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
-    );
+  Future<void> _submitUserReport(String userId, String reason) async {
+    final currentUserId = TokenManager.userId;
+    if (currentUserId == null) {
+      _showSnackBar('로그인이 필요합니다.');
+      return;
+    }
+
+    try {
+      await CommunityService.reportContent(
+        currentUserId,
+        'user',
+        userId,
+        reason,
+      );
+      
+      if (!mounted) return;
+      
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar('신고에 실패했습니다. 다시 시도해주세요.');
+    }
   }
 
   Future<void> _handleSubmitComment() async {
