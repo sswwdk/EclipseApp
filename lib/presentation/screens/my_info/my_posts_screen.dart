@@ -171,6 +171,13 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
                 'nickname': post.nickname,
                 'profileImageUrl': post.profileImageUrl,
                 'raw': post.raw,
+                'schedule': post.raw?['schedule'],
+                'merge_history_name':
+                    post.raw?['merge_history_name'] ?? post.schedulePlaces.join(' → '),
+                'scheduleTitle': post.scheduleTitle,
+                'schedulePlaces': post.schedulePlaces,
+                'scheduleDate': post.scheduleDate,
+                'scheduleTime': post.scheduleTime,
               },
             ),
           ),
