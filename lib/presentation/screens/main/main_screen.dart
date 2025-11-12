@@ -6,6 +6,7 @@ import '../community/community_screen.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import 'restaurant_detail_screen.dart';
+import '../../widgets/store_card.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -159,25 +160,7 @@ class _MainScreenState extends State<MainScreen> {
                   .map(
                     (restaurant) => Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: _buildRecommendationCard(
-                        imagePlaceholder: restaurant.imageUrl ?? "레스토랑 이미지",
-                        title: restaurant.name,
-                        rating: restaurant.rating ?? 0.0,
-                        reviewCount: 0, // API에서 리뷰 수가 없으므로 0으로 설정
-                        tags: [
-                          if (restaurant.description != null)
-                            restaurant.description!,
-                        ],
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => RestaurantDetailScreen(
-                                restaurant: restaurant,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                      child: _buildRecommendationCard(restaurant),
                     ),
                   )
                   .toList(),
@@ -238,172 +221,29 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildRecommendationCard({
-    required String imagePlaceholder,
-    required String title,
-    required double rating,
-    required int reviewCount,
-    required List<String> tags,
-    VoidCallback? onTap,
-  }) {
-    final bool isUrl = Uri.tryParse(imagePlaceholder)?.isAbsolute ?? false;
+  Widget _buildRecommendationCard(Restaurant restaurant) {
+    final imageUrl = restaurant.imageUrl;
+    final bool isUrl =
+        imageUrl != null && Uri.tryParse(imageUrl)?.isAbsolute == true;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+    return StoreCard(
+      title: restaurant.name,
+      rating: restaurant.averageStars ?? restaurant.rating ?? 0.0,
+      reviewCount: restaurant.reviewCount ?? restaurant.reviews.length,
+      imageUrl: isUrl ? imageUrl : null,
+      imagePlaceholderText: isUrl ? null : (imageUrl ?? '이미지를 불러올 수 없습니다'),
+      tags: [
+        if (restaurant.description != null) restaurant.description!,
+      ],
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => RestaurantDetailScreen(
+              restaurant: restaurant,
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 이미지 영역: URL이면 network image로, 아니면 텍스트 플레이스홀더로 표시
-            Container(
-              height: 200,
-              width: double.infinity,
-              // ClipRRect로 상단 둥근 모서리 유지
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-                child: isUrl
-                    ? Image.network(
-                        imagePlaceholder,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: 200,
-                        // 로딩 중 인디케이터
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFFFF8126),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                        // 로드 실패 시 대체 UI
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey[500],
-                                    size: 40,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '이미지 로드 실패',
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      )
-                    : Container(
-                        color: Colors.grey[200],
-                        child: Center(
-                          child: Text(
-                            imagePlaceholder,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-
-            // 내용 부분
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 제목
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // 평점
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        color: Color(0xFFFF8126),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$rating ($reviewCount)',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // 태그들
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: tags.map((tag) => _buildTag(tag)).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTag(String tag) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFF8126),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        '# $tag',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

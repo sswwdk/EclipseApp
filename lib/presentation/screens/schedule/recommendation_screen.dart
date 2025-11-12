@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import '../main/restaurant_detail_screen.dart';
 import '../main/main_screen.dart';
 import 'route_confirm_screen.dart';
-import '../../../data/services/like_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../widgets/common_dialogs.dart';
 import 'result_choice_confirm_screen.dart';
+import '../../widgets/store_card.dart';
 
 /// 추천 결과를 보여주는 화면
 class RecommendationResultScreen extends StatefulWidget {
@@ -27,11 +27,15 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
     with SingleTickerProviderStateMixin {
   TabController? _tabController;
 
-  // 카테고리별 찜 상태 (카테고리 -> 장소 인덱스 -> 찜 여부)
-  Map<String, Map<int, bool>> _favoriteStates = {};
-
   // 카테고리별 선택 상태 (카테고리 -> 선택된 장소 인덱스 Set, 최대 2개)
   Map<String, Set<int>> _selectedStates = {};
+
+  int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    return int.tryParse(value.toString());
+  }
 
   double? _parseDouble(dynamic value) {
     if (value == null) return null;
@@ -72,6 +76,41 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
     return null;
   }
 
+  int? _extractReviewCount(Map<String, dynamic> place) {
+    final candidates = [
+      place['review_count'],
+      place['reviews_count'],
+      place['reviewCount'],
+      place['review_cnt'],
+    ];
+    for (final candidate in candidates) {
+      final parsed = _parseInt(candidate);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+
+    final nestedCandidates = [
+      place['data'],
+      place['store'],
+      place['category_data'],
+    ];
+    for (final nested in nestedCandidates) {
+      if (nested is Map<String, dynamic>) {
+        final nestedParsed = _extractReviewCount(nested);
+        if (nestedParsed != null) {
+          return nestedParsed;
+        }
+      }
+    }
+
+    final reviews = place['reviews'];
+    if (reviews is List) {
+      return reviews.length;
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -86,7 +125,6 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
 
     // 초기 상태 설정
     for (var category in widget.selectedCategories) {
-      _favoriteStates[category] = {};
       _selectedStates[category] = {};
     }
   }
@@ -95,26 +133,6 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
   void dispose() {
     _tabController?.dispose();
     super.dispose();
-  }
-
-  /// 찜 버튼 토글
-  void _toggleFavorite(String category, int index, String categoryId) async {
-    final bool newState = !(_favoriteStates[category]![index] ?? false);
-    setState(() {
-      _favoriteStates[category]![index] = newState;
-    });
-    try {
-      if (newState) {
-        await LikeService.likeStore(categoryId);
-      } else {
-        await LikeService.unlikeStore(categoryId);
-      }
-    } catch (e) {
-      // 서버 실패 시 UI 상태를 롤백
-      setState(() {
-        _favoriteStates[category]![index] = !newState;
-      });
-    }
   }
 
   /// 선택 버튼 토글 (카테고리별 최대 2개 선택)
@@ -198,13 +216,22 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
         final placeId = place['id'] as String? ?? '';
         final double? averageStars = _extractAverageStars(place);
 
-        final isFavorite = _favoriteStates[category]?[index] ?? false;
-        // isSelected는 위에서 이미 선언됨
+        final reviewCount = _extractReviewCount(place) ?? 0;
 
-        return InkWell(
+        return StoreCard(
+          title: placeName,
+          rating: averageStars ?? 0.0,
+          reviewCount: reviewCount,
+          imageUrl: placeImage.isNotEmpty ? placeImage : null,
+          imagePlaceholderText: placeName,
+          tags: [placeCategory],
+          subtitle: placeAddress,
+          enableFavorite: false,
+          enableSelection: true,
+          isSelected: isSelected,
+          onSelectToggle: () => _toggleSelection(category, index),
           onTap: () {
             if (!mounted) return;
-            // 추천 아이템으로부터 상세 화면에 전달할 모델 구성
             final restaurant = Restaurant(
               id: placeId,
               name: placeName,
@@ -213,200 +240,17 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
               image: placeImage.isNotEmpty ? placeImage : null,
               rating: averageStars,
               averageStars: averageStars,
+              reviewCount: reviewCount,
             );
 
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => RestaurantDetailScreen(restaurant: restaurant),
+                builder: (context) =>
+                    RestaurantDetailScreen(restaurant: restaurant),
               ),
-            ).then((value) {
-              if (value is bool) {
-                setState(() {
-                  _favoriteStates[category]![index] = value;
-                });
-              }
-            });
+            );
           },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                  child: Stack(
-                    children: [
-                      // 🔥 이미지 표시
-                      placeImage.isNotEmpty
-                          ? Image.network(
-                              placeImage,
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 200,
-                                  width: double.infinity,
-                                  color: Colors.grey[200],
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '이미지를 불러올 수 없습니다',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                );
-                              },
-                            )
-                          : Container(
-                              height: 200,
-                              width: double.infinity,
-                              color: Colors.grey[200],
-                              alignment: Alignment.center,
-                              child: Text(
-                                '이미지를 불러올 수 없습니다',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                      // 찜 버튼
-                      Positioned(
-                        top: 12,
-                        left: 12,
-                        child: GestureDetector(
-                          onTap: () => _toggleFavorite(
-                            category,
-                            index,
-                            placeId,
-                          ), // 🔥 ID 전달
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: isFavorite ? Colors.red : Colors.grey[600],
-                              size: 22,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // 선택 체크박스
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: GestureDetector(
-                          onTap: () => _toggleSelection(category, index),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFFFF8126)
-                                  : Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.check,
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.grey[600],
-                              size: 22,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 🔥 매장 이름
-                      Text(
-                        placeName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // 🔥 실제 카테고리
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF8126),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          '# $placeCategory',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      // 🔥 실제 주소
-                      Text(
-                        placeAddress,
-                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         );
       },
     );

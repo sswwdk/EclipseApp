@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/like_service.dart';
 import '../../../shared/helpers/token_manager.dart';
-import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../main/restaurant_detail_screen.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/store_card.dart';
 
 /// 찜목록을 보여주는 화면
 class FavoriteListScreen extends StatefulWidget {
@@ -151,6 +151,9 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
                 type: _mapTypeToCategory(
                   item['type'],
                 ), // type int를 카테고리 문자열로 매핑
+                reviewCount: _parseInt(
+                  item['review_count'] ?? item['reviews_count'],
+                ),
                 isFavorite: true, // 찜 목록이므로 항상 true
               );
 
@@ -319,7 +322,20 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
       itemBuilder: (context, index) {
         final restaurant = places[index];
 
-        return InkWell(
+        return StoreCard(
+          title: restaurant.name,
+          rating: restaurant.averageStars ?? restaurant.rating ?? 0.0,
+          reviewCount: restaurant.reviewCount ?? restaurant.reviews.length,
+          imageUrl: restaurant.image,
+          imagePlaceholderText: category,
+          tags: [
+            category,
+            if ((restaurant.subCategory ?? '').trim().isNotEmpty)
+              restaurant.subCategory!.trim(),
+          ],
+          enableFavorite: true,
+          isFavorite: true,
+          onFavoriteToggle: () => _toggleFavorite(category, index),
           onTap: () async {
             if (!mounted) return;
             await Navigator.push(
@@ -329,139 +345,9 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
                     RestaurantDetailScreen(restaurant: restaurant),
               ),
             );
-            // 상세 화면에서 돌아왔을 때 찜 상태 갱신
             if (!mounted) return;
             await _loadFavorites();
           },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 이미지 플레이스홀더
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                  child: Stack(
-                    children: [
-                      // 이미지 (있으면 표시, 없으면 플레이스홀더)
-                      restaurant.image != null && restaurant.image!.isNotEmpty
-                          ? Image.network(
-                              restaurant.image!,
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                height: 200,
-                                width: double.infinity,
-                                color: Colors.grey[200],
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  _getCategoryIcon(category),
-                                  size: 64,
-                                  color: Colors.grey[400],
-                                ),
-                              ),
-                            )
-                          : Container(
-                              height: 200,
-                              width: double.infinity,
-                              color: Colors.grey[200],
-                              alignment: Alignment.center,
-                              child: Icon(
-                                _getCategoryIcon(category),
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                            ),
-                      // 하트 버튼 (찜 취소)
-                      Positioned(
-                        top: 12,
-                        left: 12,
-                        child: GestureDetector(
-                          onTap: () => _toggleFavorite(category, index),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.favorite,
-                              color: Colors.red,
-                              size: 22,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // 내용 영역
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        restaurant.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF8126),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          '#${category}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         );
       },
     );
@@ -499,6 +385,13 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
       default:
         return Icons.place;
     }
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    return int.tryParse(value.toString());
   }
 
   // 하드코딩 데이터 제거됨

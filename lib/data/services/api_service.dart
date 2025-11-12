@@ -66,6 +66,8 @@ class ApiService {
           print('🧾 getRestaurant($id) raw reviews 로그 실패: $e');
         }
 
+        final reviews = Review.fromList(obj['reviews']);
+
         // 이 API에서는 태그/리뷰만 사용한다. 나머지는 기본값으로 반환
         return Restaurant(
           id: id,
@@ -77,7 +79,10 @@ class ApiService {
           businessHour: obj['business_hour'] as String?, // 🔥 추가
           rating: _parseDouble(obj['rating']) ?? _parseDouble(obj['average_stars']) ?? 0.0,
           averageStars: _parseDouble(obj['average_stars']),
-          reviews: Review.fromList(obj['reviews']),
+          reviewCount:
+              _parseInt(obj['review_count'] ?? obj['reviews_count']) ??
+              reviews.length,
+          reviews: reviews,
           tags: _parseStringList(obj['tags']),
           isFavorite: obj['is_like'] ?? false,
         );
@@ -106,4 +111,11 @@ List<String> _parseStringList(dynamic v) {
     return v.map((e) => e.toString()).toList();
   }
   return const [];
+}
+
+int? _parseInt(dynamic v) {
+  if (v == null) return null;
+  if (v is int) return v;
+  if (v is double) return v.round();
+  return int.tryParse(v.toString());
 }
