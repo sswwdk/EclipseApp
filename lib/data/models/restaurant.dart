@@ -18,6 +18,7 @@ class Restaurant {
   final double? rating;
   final double? averageStars;
   final List<Review> reviews;
+  final int? reviewCount;
   final List<String> tags;
   final bool isFavorite;
 
@@ -38,6 +39,7 @@ class Restaurant {
     this.lastCrawl,
     double? rating,
     double? averageStars,
+    this.reviewCount,
     this.reviews = const [],
     this.tags = const [],
     this.isFavorite = false,
@@ -45,6 +47,7 @@ class Restaurant {
         averageStars = averageStars ?? rating;
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
+    final reviews = Review.fromList(json['reviews']);
     return Restaurant(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
@@ -62,7 +65,9 @@ class Restaurant {
       lastCrawl: json['last_crawl'],
       rating: _parseDouble(json['rating']),
       averageStars: _parseDouble(json['average_stars']),
-      reviews: Review.fromList(json['reviews']),
+      reviewCount:
+          _parseInt(json['review_count']) ?? _safeLength(json['reviews']),
+      reviews: reviews,
       tags: _parseStringList(json['tags']),
       isFavorite: (json['is_like'] == true),
     );
@@ -70,6 +75,7 @@ class Restaurant {
 
   // 서버 응답 형식에 맞는 팩토리 메서드
   factory Restaurant.fromMainScreenJson(Map<String, dynamic> json) {
+    final reviews = Review.fromList(json['reviews']);
     return Restaurant(
       id: json['id']?.toString() ?? '',
       name: json['title']?.toString() ?? '',
@@ -87,7 +93,13 @@ class Restaurant {
       lastCrawl: null,
       rating: _parseDouble(json['rating']),
       averageStars: _parseDouble(json['average_stars']),
-      reviews: Review.fromList(json['reviews']),
+      reviewCount: _parseInt(
+            json['review_count'] ??
+                json['reviews_count'] ??
+                json['reviewCount'],
+          ) ??
+          _safeLength(json['reviews']),
+      reviews: reviews,
       tags: _parseStringList(json['tags']),
       isFavorite: (json['is_like'] == true),
     );
@@ -111,5 +123,19 @@ List<String> _parseStringList(dynamic v) {
     return v.map((e) => e.toString()).toList();
   }
   return const [];
+}
+
+int? _parseInt(dynamic v) {
+  if (v == null) return null;
+  if (v is int) return v;
+  if (v is double) return v.round();
+  return int.tryParse(v.toString());
+}
+
+int? _safeLength(dynamic v) {
+  if (v is List) {
+    return v.length;
+  }
+  return null;
 }
 
