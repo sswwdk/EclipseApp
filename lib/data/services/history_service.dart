@@ -319,9 +319,7 @@ class HistoryService {
       print('📍 최종 categories 데이터: $categories');
 
       final scheduleTitle = categories
-          .map(
-            (c) => (c['category_name'] as String?)?.trim(),
-          )
+          .map((c) => (c['category_name'] as String?)?.trim())
           .whereType<String>()
           .where((name) => name.isNotEmpty)
           .join(' → ');
@@ -551,6 +549,28 @@ class HistoryService {
     } catch (e) {
       print('히스토리 저장 오류: $e');
       throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  static Future<int> getVisitCount(String categoryId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/users/me/histories/visit-count/$categoryId'),
+        headers: {
+          'Content-Type': 'application/json',
+          ...TokenManager.jwtHeader,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        return data['visit_count'] ?? 0;
+      } else {
+        throw Exception('방문 횟수 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('방문 횟수 조회 오류: $e');
+      return 0;
     }
   }
 }
