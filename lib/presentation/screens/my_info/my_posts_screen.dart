@@ -234,23 +234,15 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
               _buildScheduleFlow(post),
             ],
             const SizedBox(height: 8),
-            // 메타데이터 (댓글 수, 날짜)
+            // 메타데이터 (게시 날짜)
             Row(
               children: [
                 Icon(
-                  Icons.chat_bubble_outline,
+                  Icons.calendar_today_outlined,
                   size: 14,
                   color: Colors.grey[600],
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  '${post.commentCount}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(width: 16),
                 Text(
                   post.dateText,
                   style: TextStyle(
