@@ -268,7 +268,7 @@ class _RatingReviewRow extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          rating.isNaN ? '평점 정보 없음' : '평균 ${rating.toStringAsFixed(1)}점',
+          rating.isNaN ? '평점 정보 없음' :'${rating.toStringAsFixed(1)}점',
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
