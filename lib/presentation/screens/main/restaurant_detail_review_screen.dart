@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../data/models/review.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/like_service.dart';
 import '../../../data/services/review_service.dart';
-
+import '../../widgets/user_avatar.dart';
 class RestaurantDetailReviewScreen extends StatefulWidget {
   final Restaurant restaurant;
 
@@ -17,9 +19,11 @@ class RestaurantDetailReviewScreen extends StatefulWidget {
 
 class _RestaurantDetailReviewScreenState
     extends State<RestaurantDetailReviewScreen> {
+  late Restaurant _restaurant;
   List<Review> _reviews = const [];
   List<String> _tags = const [];
   bool _isFavorite = false;
+  bool _shouldRefresh = false;
 
   bool _isSubmitting = false;
   int _newRating = 5;
@@ -28,6 +32,7 @@ class _RestaurantDetailReviewScreenState
   @override
   void initState() {
     super.initState();
+    _restaurant = widget.restaurant;
     _fetchDetail();
   }
 
@@ -40,9 +45,28 @@ class _RestaurantDetailReviewScreenState
   Future<void> _fetchDetail() async {
     try {
       final res = await ApiService.getRestaurant(widget.restaurant.id);
+      debugPrint('[RestaurantDetailReviewScreen] fetched restaurant detail: '
+          'id=${res.id}, name=${res.name}, '
+          'reviews=${res.reviews.map((r) => {
+            'nickname': r.nickname,
+            'rating': r.rating,
+            'content': r.content,
+            'createdAt': r.createdAt?.toIso8601String(),
+          }).toList()}');
       if (!mounted) return;
+      final sortedReviews = [
+        ...res.reviews,
+      ]..sort((a, b) {
+          final aCreated = a.createdAt;
+          final bCreated = b.createdAt;
+          if (aCreated == null && bCreated == null) return 0;
+          if (aCreated == null) return 1;
+          if (bCreated == null) return -1;
+          return bCreated.compareTo(aCreated);
+        });
       setState(() {
-        _reviews = res.reviews;
+        _restaurant = res;
+        _reviews = sortedReviews;
         _tags = res.tags;
         _isFavorite = res.isFavorite;
       });
@@ -141,7 +165,7 @@ class _RestaurantDetailReviewScreenState
       await ReviewService.setMyReview(
         categoryId: widget.restaurant.id,
         stars: _newRating,
-        comments: content,
+        comment: content,
       );
       await _fetchDetail();
       if (!mounted) return;
@@ -150,6 +174,7 @@ class _RestaurantDetailReviewScreenState
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('리뷰가 작성되었습니다.')));
+      _shouldRefresh = true;
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -164,44 +189,60 @@ class _RestaurantDetailReviewScreenState
     }
   }
 
+  Future<void> _toggleFavorite() async {
+    final next = !_isFavorite;
+    setState(() => _isFavorite = next);
+    try {
+      final categoryId = _restaurant.id;
+      if (next) {
+        await LikeService.likeStore(categoryId);
+      } else {
+        await LikeService.unlikeStore(categoryId);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isFavorite = !next);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final restaurant = widget.restaurant;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    final restaurant = _restaurant;
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _shouldRefresh);
+        return false;
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          restaurant.name,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => Navigator.pop(context, _shouldRefresh),
           ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: _isFavorite ? Colors.red : Colors.black,
+          title: Text(
+            restaurant.name,
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
-            onPressed: () {
-              setState(() {
-                _isFavorite = !_isFavorite;
-              });
-              // TODO: LikeService 연동 필요 시 추가
-            },
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SingleChildScrollView(
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: Icon(
+                _isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: _isFavorite ? Colors.red : Colors.black,
+              ),
+              onPressed: _toggleFavorite,
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+        body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -428,7 +469,7 @@ class _RestaurantDetailReviewScreenState
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
+        bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: SizedBox(
@@ -448,6 +489,7 @@ class _RestaurantDetailReviewScreenState
               ),
             ),
           ),
+        ),
         ),
       ),
     );
@@ -565,14 +607,10 @@ class _RestaurantDetailReviewScreenState
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            color: Colors.grey,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.person, color: Colors.white, size: 20),
+        UserAvatar(
+          imageUrl: null,
+          displayName: nickname,
+          radius: 20,
         ),
         const SizedBox(width: 12),
         Expanded(

@@ -56,6 +56,15 @@ class ApiService {
         final Map<String, dynamic> obj = (root['data'] is Map<String, dynamic>)
             ? Map<String, dynamic>.from(root['data'])
             : root;
+        try {
+          final rawReviews = obj['reviews'];
+          print(
+            '🧾 getRestaurant($id) raw reviews: '
+            '${rawReviews is List ? json.encode(rawReviews) : rawReviews}',
+          );
+        } catch (e) {
+          print('🧾 getRestaurant($id) raw reviews 로그 실패: $e');
+        }
 
         // 이 API에서는 태그/리뷰만 사용한다. 나머지는 기본값으로 반환
         return Restaurant(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:characters/characters.dart';
 import '../../widgets/bottom_navigation_widget.dart';
+import '../../widgets/user_avatar.dart';
 import 'choose_schedule_screen.dart';
 import 'post_detail_screen.dart';
 import 'chat_list_screen.dart';
@@ -594,7 +594,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
           Row(
             children: [
               // 프로필 이미지
-              _buildProfileAvatar(profileImageUrl, nickname),
+              UserAvatar(
+                imageUrl: profileImageUrl,
+                displayName: nickname,
+                radius: 20,
+              ),
               const SizedBox(width: 12),
               // 닉네임과 위치, 시간
               Expanded(
@@ -674,34 +678,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ),
         ],
       ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileAvatar(String? profileImageUrl, String nickname) {
-    if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: 20,
-        backgroundColor: AppTheme.dividerColor,
-        backgroundImage: NetworkImage(profileImageUrl),
-      );
-    }
-
-    final initial = nickname.trim().isNotEmpty
-        ? nickname.characters.first.toUpperCase()
-        : '?';
-    final colors = _avatarColorsFor(initial);
-
-    return CircleAvatar(
-      radius: 20,
-      backgroundColor: colors.background,
-      child: Text(
-        initial,
-        style: TextStyle(
-          color: colors.foreground,
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
         ),
       ),
     );
@@ -917,15 +893,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  _AvatarColors _avatarColorsFor(String initial) {
-    if (initial.isEmpty) {
-      return _avatarColorPalettes.first;
-    }
-    final rune = initial.runes.first;
-    final index = rune.abs() % _avatarColorPalettes.length;
-    return _avatarColorPalettes[index];
-  }
-
   String? _extractScheduleTitle(Map<String, dynamic>? schedule) {
     if (schedule == null) return null;
     final candidates = [
@@ -953,20 +920,3 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 }
 
-class _AvatarColors {
-  final Color background;
-  final Color foreground;
-
-  const _AvatarColors(this.background, this.foreground);
-}
-
-const List<_AvatarColors> _avatarColorPalettes = [
-  _AvatarColors(Color(0xFFFFE5E0), Color(0xFFFF6B57)),
-  _AvatarColors(Color(0xFFE3F2FD), Color(0xFF1565C0)),
-  _AvatarColors(Color(0xFFF1F8E9), Color(0xFF2E7D32)),
-  _AvatarColors(Color(0xFFEDE7F6), Color(0xFF5E35B1)),
-  _AvatarColors(Color(0xFFFFF3E0), Color(0xFFEF6C00)),
-  _AvatarColors(Color(0xFFE0F2F1), Color(0xFF00897B)),
-  _AvatarColors(Color(0xFFFFEBEE), Color(0xFFD81B60)),
-  _AvatarColors(Color(0xFFF3E5F5), Color(0xFF8E24AA)),
-];
