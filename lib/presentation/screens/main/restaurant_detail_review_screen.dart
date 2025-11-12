@@ -10,9 +10,13 @@ import '../../widgets/user_avatar.dart';
 
 class RestaurantDetailReviewScreen extends StatefulWidget {
   final Restaurant restaurant;
+  final bool showReviewButton;
 
-  const RestaurantDetailReviewScreen({Key? key, required this.restaurant})
-    : super(key: key);
+  const RestaurantDetailReviewScreen({
+    Key? key,
+    required this.restaurant,
+    this.showReviewButton = true,
+  }) : super(key: key);
 
   @override
   State<RestaurantDetailReviewScreen> createState() =>
@@ -31,10 +35,8 @@ class _RestaurantDetailReviewScreenState
   int _newRating = 5;
   final TextEditingController _reviewController = TextEditingController();
 
-  // 🔥 추가: 방문 횟수와 리뷰 개수
   int _visitCount = 0;
   int _myReviewCount = 0;
-  bool _isLoadingReviewLimit = true;
 
   @override
   void initState() {
@@ -84,10 +86,6 @@ class _RestaurantDetailReviewScreenState
 
   // 🔥 추가: 방문 횟수와 리뷰 개수 조회
   Future<void> _fetchReviewLimit() async {
-    setState(() {
-      _isLoadingReviewLimit = true;
-    });
-
     try {
       final visitCount = await HistoryService.getVisitCount(
         widget.restaurant.id,
@@ -100,27 +98,17 @@ class _RestaurantDetailReviewScreenState
       setState(() {
         _visitCount = visitCount;
         _myReviewCount = reviewCount;
-        _isLoadingReviewLimit = false;
       });
 
       debugPrint('🔍 방문 횟수: $_visitCount, 작성한 리뷰 개수: $_myReviewCount');
     } catch (e) {
       debugPrint('방문 횟수/리뷰 개수 조회 실패: $e');
-      if (!mounted) return;
-      setState(() {
-        _isLoadingReviewLimit = false;
-      });
     }
   }
 
   // 🔥 추가: 리뷰 작성 가능 여부 확인
   bool get _canWriteReview {
     return _visitCount > _myReviewCount;
-  }
-
-  // 🔥 추가: 남은 리뷰 작성 가능 횟수
-  int get _remainingReviews {
-    return (_visitCount - _myReviewCount).clamp(0, 999);
   }
 
   void _resetReviewForm() {
@@ -494,26 +482,27 @@ class _RestaurantDetailReviewScreenState
                           ),
                         ),
                         const Spacer(),
-                        TextButton.icon(
-                          onPressed: (_isSubmitting || !_canWriteReview)
-                              ? null
-                              : () => _openReviewSheet(context),
-                          icon: Icon(
-                            Icons.edit,
-                            color: _canWriteReview
-                                ? const Color(0xFFFF8126)
-                                : Colors.grey,
-                          ),
-                          label: Text(
-                            '리뷰 작성',
-                            style: TextStyle(
+                        if (widget.showReviewButton)
+                          TextButton.icon(
+                            onPressed: (_isSubmitting || !_canWriteReview)
+                                ? null
+                                : () => _openReviewSheet(context),
+                            icon: Icon(
+                              Icons.edit,
                               color: _canWriteReview
                                   ? const Color(0xFFFF8126)
                                   : Colors.grey,
-                              fontWeight: FontWeight.w600,
+                            ),
+                            label: Text(
+                              '리뷰 작성',
+                              style: TextStyle(
+                                color: _canWriteReview
+                                    ? const Color(0xFFFF8126)
+                                    : Colors.grey,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 30),
@@ -543,39 +532,42 @@ class _RestaurantDetailReviewScreenState
             ],
           ),
         ),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: SizedBox(
-              height: 56,
-              child: ElevatedButton(
-                onPressed: (_isSubmitting || !_canWriteReview)
-                    ? null
-                    : () => _openReviewSheet(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _canWriteReview
-                      ? const Color(0xFFFF8126)
-                      : Colors.grey,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+        bottomNavigationBar: widget.showReviewButton
+            ? SafeArea(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: (_isSubmitting || !_canWriteReview)
+                          ? null
+                          : () => _openReviewSheet(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _canWriteReview
+                            ? const Color(0xFFFF8126)
+                            : Colors.grey,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        _canWriteReview
+                            ? '리뷰 작성'
+                            : _visitCount == 0
+                                ? '방문 기록이 없습니다'
+                                : '리뷰 작성 불가',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                child: Text(
-                  _canWriteReview
-                      ? '리뷰 작성'
-                      : _visitCount == 0
-                      ? '방문 기록이 없습니다'
-                      : '리뷰 작성 불가',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+              )
+            : null,
       ),
     );
   }
