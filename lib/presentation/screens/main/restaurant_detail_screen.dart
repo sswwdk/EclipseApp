@@ -3,7 +3,9 @@ import '../../../data/services/api_service.dart';
 import '../../../data/services/like_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../data/models/review.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../widgets/app_title_widget.dart';
+import '../../widgets/store/menu.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   final Restaurant restaurant;
@@ -18,6 +20,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   late Restaurant _restaurant;
   List<Review> _reviews = const [];
   List<String> _tags = const [];
+  List<String> _menuPreview = const [];
   bool _isFavorite = false;
 
   @override
@@ -27,6 +30,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     _isFavorite = widget.restaurant.isFavorite;
     _reviews = widget.restaurant.reviews;
     _tags = widget.restaurant.tags;
+    _menuPreview = widget.restaurant.menuPreview;
     _fetchDetail();
   }
 
@@ -58,6 +62,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         _restaurant = res;
         _reviews = res.reviews;
         _tags = res.tags;
+        _menuPreview = res.menuPreview;
         _isFavorite = res.isFavorite;
       });
     } catch (e) {
@@ -165,18 +170,23 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 children: [
                   // 주소
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Icon(
                         Icons.location_on,
                         color: Color(0xFFFF8126),
-                        size: 20,
+                        size: 26,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        restaurant.detailAddress ?? restaurant.address ?? '주소 정보 없음',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          restaurant.detailAddress ?? restaurant.address ?? '주소 정보 없음',
+                          style: const TextStyle(
+                            color: Color(0xFF1B1B1B),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.start,
                         ),
                       ),
                     ],
@@ -185,20 +195,25 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                   // 전화번호
                   if (restaurant.phone != null) ...[
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
                         const Icon(
                           Icons.phone,
                           color: Color(0xFFFF8126),
-                          size: 20,
+                          size: 24,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
+                        const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
                           restaurant.phone!,
                           style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
+                            color: Colors.grey[700],
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
                           ),
+                          textAlign: TextAlign.start,
+                        ),
                         ),
                       ],
                     ),
@@ -207,18 +222,26 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                   // 평점 (서버 값만 표시, 없으면 0)
                   const SizedBox(height: 12),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Icon(
                         Icons.star,
                         color: Color(0xFFFF8126),
-                        size: 20,
+                        size: 26,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '평점: ${averageStars.toStringAsFixed(1)}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            '평점: ${averageStars.toStringAsFixed(1)}',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.start,
+                          ),
                         ),
                       ),
                     ],
@@ -228,21 +251,24 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                   if (restaurant.businessHour != null) ...[
                     const SizedBox(height: 12),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Icon(
                           Icons.access_time,
                           color: Color(0xFFFF8126),
-                          size: 20,
+                          size: 24,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             restaurant.businessHour!,
                             style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
+                              color: Colors.grey[700],
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                              height: 1.4,
                             ),
+                          textAlign: TextAlign.start,
                           ),
                         ),
                       ],
@@ -251,13 +277,23 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                   
                   const SizedBox(height: 16),
                   
-                  // 태그들 (서버에서 받은 태그 사용)
-                  if (_tags.isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _tags.map((t) => _buildTag('# $t')).toList(),
+                  if (_menuPreview.isNotEmpty) ...[
+                    const SizedBox(),
+                    StoreMenuPreview(
+                      menus: _menuPreview,
+                      title: '관련 태그',
                     ),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  if (_tags.isNotEmpty) ...[
+                    StoreMenuPreview(
+                      menus: _tags.map((t) => '# $t').toList(growable: false),
+                      title: '리뷰 태그',
+                      primaryColor: Color.fromARGB(255, 54, 82, 138)
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ],
               ),
             ),
@@ -286,7 +322,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                   Text(
                     '리뷰 (${_reviews.length})',
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
@@ -295,7 +331,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                   if (_reviews.isEmpty)
                     Text(
                       '아직 작성된 리뷰가 없습니다.',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      style: AppTheme.emptyStateMessage,
                     )
                   else ...[
                     for (int i = 0; i < _reviews.length; i++) ...[
@@ -303,6 +339,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                         nickname: _reviews[i].nickname,
                         rating: _reviews[i].rating,
                         content: _reviews[i].content,
+                        createdAt: _reviews[i].createdAt,
                       ),
                       if (i != _reviews.length - 1) ...[
                         const SizedBox(height: 12),
@@ -319,29 +356,11 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       ),
     );
   }
-
-  Widget _buildTag(String tag) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFFF8126)),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        tag,
-        style: const TextStyle(
-          color: Color(0xFFFF8126),
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
   Widget _buildReview({
     required String nickname,
     required double rating,
     required String content,
+    DateTime? createdAt,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,17 +388,34 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    nickname,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Colors.black,
+                  Expanded(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          nickname,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildStarRating(rating),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  _buildStarRating(rating),
+                  if (createdAt != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        _formatReviewDate(createdAt),
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -421,5 +457,14 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         }
       }),
     );
+  }
+
+  String _formatReviewDate(DateTime createdAt) {
+    final local = createdAt.toLocal();
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    final date =
+        '${local.year}.${twoDigits(local.month)}.${twoDigits(local.day)}';
+    final time = '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
+    return '$date $time';
   }
 }

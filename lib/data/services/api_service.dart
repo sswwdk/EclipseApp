@@ -84,6 +84,7 @@ class ApiService {
               reviews.length,
           reviews: reviews,
           tags: _parseStringList(obj['tags']),
+          menuPreview: _parseStringList(obj['menu_preview']),
           isFavorite: obj['is_like'] ?? false,
         );
       } else if (response.statusCode == 404) {
