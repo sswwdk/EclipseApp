@@ -7,6 +7,8 @@ import '../../../shared/helpers/token_manager.dart';
 import '../main/main_screen.dart';
 import '../main/restaurant_detail_screen.dart';
 import '../../widgets/common_dialogs.dart';
+import '../../widgets/transportation_selector_widget.dart';
+import 'template_utils.dart';
 
 class Template3Screen extends StatefulWidget {
   final Map<String, List<String>> selected;
@@ -139,30 +141,23 @@ class _Template3ScreenState extends State<Template3Screen> {
     ({double lat, double lng}) origin,
     ({double lat, double lng}) destination,
   ) async {
-    try {
-      print('🔍 구간 $segmentIndex 경로 계산 중: ${_stops[segmentIndex].title} → ${_stops[segmentIndex + 1].title}');
-      
-      // 선택된 이동수단을 int로 변환 (walk: 0, public: 1, car: 2)
-      int transportType = 0;
-      final selectedKey = _selectedTransportKeys[segmentIndex];
-      if (selectedKey == 'public') {
-        transportType = 1;
-      } else if (selectedKey == 'car') {
-        transportType = 2;
-      }
-      
-      final route = await RouteService.calculateRoute(
-        origin: origin,
-        destination: destination,
-        transportType: transportType,
-      );
-
-      print('✅ 구간 $segmentIndex 경로 계산 완료: ${route.durationMinutes}분, ${route.distanceMeters}m');
-      return MapEntry(segmentIndex, route);
-    } catch (e) {
-      print('❌ 구간 $segmentIndex 경로 계산 실패: $e');
-      return null;
+    // 선택된 이동수단을 int로 변환 (walk: 0, public: 1, car: 2)
+    int transportType = 0;
+    final selectedKey = _selectedTransportKeys[segmentIndex];
+    if (selectedKey == 'public') {
+      transportType = 1;
+    } else if (selectedKey == 'car') {
+      transportType = 2;
     }
+
+    return TemplateUtils.calculateRouteForSegment(
+      segmentIndex: segmentIndex,
+      origin: origin,
+      destination: destination,
+      transportType: transportType,
+      originTitle: _stops[segmentIndex].title,
+      destinationTitle: _stops[segmentIndex + 1].title,
+    );
   }
 
   /// 🔥 교통수단 변경 시 특정 구간만 재계산
@@ -241,33 +236,10 @@ class _Template3ScreenState extends State<Template3Screen> {
         ],
       ),
       body: _isLoadingRoutes
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(
-                    color: Color(0xFFFB7C9E),
-                    strokeWidth: 3,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    '경로 정보 계산 중...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_calculatedRoutes.length} / ${_stops.length - 1} 구간 완료',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
+          ? TemplateUtils.buildLoadingWidget(
+              completedRoutes: _calculatedRoutes.length,
+              totalRoutes: _stops.length - 1,
+              accentColor: const Color(0xFFFB7C9E),
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
@@ -671,242 +643,49 @@ class _Template3ScreenState extends State<Template3Screen> {
     final fromStop = _stops[index];
     final toStop = _stops[index + 1];
     final selectedKey = _selectedTransportKeys[index];
-    final currentOption = _transportOptionByKey(selectedKey);
     final routeResult = _calculatedRoutes[index]; // 🔥 계산된 경로 정보
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF3F7),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withOpacity(0.18)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentColor.withOpacity(0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  currentOption.icon,
-                  color: accentColor,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${fromStop.title} → ${toStop.title}',
-                      style: textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF4E4A4A),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    // 🔥 소요시간 및 거리 정보 표시
-                    if (routeResult != null) ...[
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 14,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '약 ${routeResult.durationMinutes}분',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: accentColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (routeResult.distanceMeters > 0) ...[
-                            const SizedBox(width: 12),
-                            Icon(
-                              Icons.straighten,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              routeResult.distanceMeters >= 1000
-                                  ? '약 ${(routeResult.distanceMeters / 1000).toStringAsFixed(1)}km'
-                                  : '약 ${routeResult.distanceMeters}m',
-                              style: textTheme.bodySmall?.copyWith(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ] else
-                      Text(
-                        '이동수단을 선택해 주세요',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              if (!widget.isReadOnly)
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: selectedKey,
-                    icon: Icon(
-                      Icons.expand_more,
-                      color: accentColor,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    items: _transportOptions
-                        .map(
-                          (option) => DropdownMenuItem<String>(
-                            value: option.key,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  option.icon,
-                                  size: 20,
-                                  color: accentColor,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(option.label),
-                              ],
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        _selectedTransportKeys[index] = value;
-                      });
-                      // 🔥 교통수단 변경 시 해당 구간 재계산
-                      _recalculateRoute(index);
-                    },
-                  ),
-                ),
-            ],
-          ),
-          // 🔥 대중교통인 경우 상세 경로 표시
-          if (selectedKey == 'public' &&
-              routeResult?.steps != null &&
-              routeResult!.steps!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '상세 경로',
-                    style: textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF4E4A4A),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...routeResult.steps!.map((step) => _buildRouteStep(step)),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRouteStep(RouteStep step) {
-    IconData icon;
-    Color iconColor;
-
-    switch (step.type) {
-      case 'walk':
-        icon = Icons.directions_walk;
-        iconColor = const Color(0xFF4A90E2);
-        break;
-      case 'transit':
-        icon = Icons.train;
-        iconColor = const Color(0xFF5CB85C);
-        break;
-      case 'drive':
-        icon = Icons.directions_car;
-        iconColor = const Color(0xFFF0AD4E);
-        break;
-      default:
-        icon = Icons.arrow_forward;
-        iconColor = Colors.grey;
+    
+    // 선택된 key를 int로 변환 (walk: 0, public: 1, car: 2)
+    int selectedTransportType = 0;
+    if (selectedKey == 'public') {
+      selectedTransportType = 1;
+    } else if (selectedKey == 'car') {
+      selectedTransportType = 2;
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(icon, color: iconColor, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (step.description != null && step.description!.isNotEmpty)
-                  Text(
-                    step.description!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF4E4A4A),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                if (step.type == 'walk' || step.durationMinutes > 0) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    step.durationMinutes > 0
-                        ? '${step.durationMinutes}분'
-                        : '환승',
-                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+    // 좌표 가져오기
+    final originCoords = index == 0
+        ? _getOriginCoordinates()
+        : _getPlaceCoordinates(_stops[index]);
+    final destCoords = _getPlaceCoordinates(_stops[index + 1]);
+
+    return TransportationSelectorWidget(
+      segmentIndex: index,
+      selectedTransportType: selectedTransportType,
+      onTransportTypeChanged: widget.isReadOnly
+          ? null
+          : (type) {
+              // int를 다시 key로 변환
+              String newKey = 'walk';
+              if (type == 1) {
+                newKey = 'public';
+              } else if (type == 2) {
+                newKey = 'car';
+              }
+              
+              setState(() {
+                _selectedTransportKeys[index] = newKey;
+              });
+              // 교통수단 변경 시 해당 구간 재계산
+              _recalculateRoute(index);
+            },
+      isReadOnly: widget.isReadOnly,
+      originCoordinates: originCoords,
+      destinationCoordinates: destCoords,
+      initialRouteResult: routeResult,
+      originName: fromStop.title,
+      destinationName: toStop.title,
+      style: TransportationSelectorStyle.dropdown,
     );
   }
 
@@ -931,45 +710,10 @@ class _Template3ScreenState extends State<Template3Screen> {
   }
 
   Future<void> _showGoHomeDialog() async {
-    final result = await showDialog<bool>(
+    await TemplateUtils.showGoHomeDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text(
-          '홈으로 돌아가기',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          '저장하지 않은 일정표는 다시 불러올 수 없습니다',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFB7C9E),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('홈으로 돌아가기'),
-          ),
-        ],
-      ),
+      accentColor: const Color(0xFFFB7C9E),
     );
-
-    if (result == true && mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-        (route) => false,
-      );
-    }
   }
 
   /// 🔥 저장하기 기능
@@ -1327,110 +1071,16 @@ class _Template3ScreenState extends State<Template3Screen> {
 
   /// 🔥 장소의 위경도를 가져오는 헬퍼 메서드
   ({double lat, double lng})? _getPlaceCoordinates(_TimelineStop stop) {
-    if (widget.orderedPlaces == null || widget.orderedPlaces!.isEmpty) {
-      return null;
-    }
-
-    // orderedPlaces에서 해당 장소 찾기
-    for (final placeData in widget.orderedPlaces!) {
-      final placeName = placeData['name'] as String? ?? '';
-      if (placeName == stop.title) {
-        // 위경도를 최상위 레벨에서 먼저 확인
-        dynamic latValue = placeData['latitude'] ?? placeData['lat'];
-        dynamic lngValue = placeData['longitude'] ?? placeData['lng'];
-
-        // 최상위 레벨에 없으면 data 안에서 확인
-        if (latValue == null || lngValue == null) {
-          final data = placeData['data'] as Map<String, dynamic>?;
-          if (data != null) {
-            latValue ??= data['latitude'] ?? data['lat'];
-            lngValue ??= data['longitude'] ?? data['lng'];
-          }
-        }
-
-        // 문자열이면 파싱, 숫자면 그대로 사용
-        double? lat;
-        double? lng;
-
-        if (latValue is String) {
-          lat = double.tryParse(latValue);
-        } else if (latValue is num) {
-          lat = latValue.toDouble();
-        }
-
-        if (lngValue is String) {
-          lng = double.tryParse(lngValue);
-        } else if (lngValue is num) {
-          lng = lngValue.toDouble();
-        }
-
-        if (lat != null && lng != null) {
-          return (lat: lat, lng: lng);
-        }
-        return null;
-      }
-    }
-    
-    // selectedPlacesWithData에서도 확인
-    if (widget.selectedPlacesWithData != null) {
-      for (final category in widget.selectedPlacesWithData!.values) {
-        for (final place in category) {
-          final placeName = place['name'] as String? ?? '';
-          if (placeName == stop.title) {
-            dynamic latValue = place['latitude'] ?? place['lat'];
-            dynamic lngValue = place['longitude'] ?? place['lng'];
-
-            if (latValue == null || lngValue == null) {
-              final data = place['data'] as Map<String, dynamic>?;
-              if (data != null) {
-                latValue ??= data['latitude'] ?? data['lat'];
-                lngValue ??= data['longitude'] ?? data['lng'];
-              }
-            }
-
-            double? lat;
-            double? lng;
-
-            if (latValue is String) {
-              lat = double.tryParse(latValue);
-            } else if (latValue is num) {
-              lat = latValue.toDouble();
-            }
-
-            if (lngValue is String) {
-              lng = double.tryParse(lngValue);
-            } else if (lngValue is num) {
-              lng = lngValue.toDouble();
-            }
-
-            if (lat != null && lng != null) {
-              return (lat: lat, lng: lng);
-            }
-          }
-        }
-      }
-    }
-    
-    return null;
+    return TemplateUtils.getPlaceCoordinates(
+      placeTitle: stop.title,
+      orderedPlaces: widget.orderedPlaces,
+      selectedPlacesWithData: widget.selectedPlacesWithData,
+    );
   }
 
   /// 🔥 출발지 좌표를 가져오는 헬퍼 메서드
   ({double lat, double lng})? _getOriginCoordinates() {
-    // 출발지 주소가 GPS 위치 형식인지 확인
-    if (widget.originAddress != null && widget.originAddress!.contains('위도:')) {
-      // GPS 위치 형식: "위도: 37.505147, 경도: 126.943349"
-      final latMatch = RegExp(r'위도:\s*([\d.]+)').firstMatch(widget.originAddress!);
-      final lngMatch = RegExp(r'경도:\s*([\d.]+)').firstMatch(widget.originAddress!);
-
-      if (latMatch != null && lngMatch != null) {
-        final lat = double.tryParse(latMatch.group(1)!);
-        final lng = double.tryParse(lngMatch.group(1)!);
-        if (lat != null && lng != null) {
-          return (lat: lat, lng: lng);
-        }
-      }
-    }
-    return null;
+    return TemplateUtils.getOriginCoordinates(widget.originAddress);
   }
 }
 
