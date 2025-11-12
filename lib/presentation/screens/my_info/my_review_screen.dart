@@ -276,7 +276,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Text(
-            '텅텅 비어있어요.',
+            '아직 리뷰를 작성하지 않았어요',
             style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
           ),
         ),
