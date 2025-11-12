@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../data/services/history_service.dart';
-import '../../../shared/helpers/token_manager.dart';
-import '../../widgets/app_title_widget.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../data/services/history_service.dart';
+import '../../../../shared/helpers/token_manager.dart';
+import '../../../widgets/app_title_widget.dart';
 import 'schedule_history_normal_detail_screen.dart';
 import 'schedule_history_template1_detail_screen.dart';
 import 'schedule_history_template2_detail_screen.dart';

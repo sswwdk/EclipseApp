@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../schedule/schedule_screen.dart';
 import '../my_info/my_info_screen.dart';
-import '../my_info/schedule_history_screen.dart';
+import '../my_info/schedule/schedule_history_screen.dart';
 import '../community/community_screen.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
@@ -70,7 +70,7 @@ class _MainScreenState extends State<MainScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ScheduleHistoryScreen(),
+                  builder: (context) => ScheduleHistoryScreen(),
                 ),
               );
             },

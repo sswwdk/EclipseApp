@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../data/services/history_service.dart';
-import '../../../shared/helpers/token_manager.dart';
-import '../../../data/services/route_service.dart';
-import '../../../data/services/api_service.dart';
-import '../../../data/models/restaurant.dart';
-import '../../../shared/helpers/history_parser.dart';
-import '../main/restaurant_detail_review_screen.dart';
-import '../../widgets/app_title_widget.dart';
+import '../../../../data/services/history_service.dart';
+import '../../../../shared/helpers/token_manager.dart';
+import '../../../../data/services/route_service.dart';
+import '../../../../data/services/api_service.dart';
+import '../../../../data/models/restaurant.dart';
+import '../../../../shared/helpers/history_parser.dart';
+import '../../main/restaurant_detail_review_screen.dart';
+import '../../../widgets/app_title_widget.dart';
 
 class ScheduleHistoryTemplate2DetailScreen extends StatefulWidget {
   final String historyId;

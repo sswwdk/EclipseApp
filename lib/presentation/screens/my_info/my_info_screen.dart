@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'profile_settings_screen.dart';
 import 'terms_of_service_screen.dart';
 import 'favorite_list_screen.dart';
-import 'schedule_history_screen.dart';
+import 'schedule/schedule_history_screen.dart';
 import 'my_review_screen.dart';
 import 'my_posts_screen.dart';
 import 'notice_screen.dart';
@@ -186,7 +186,7 @@ class MyInfoScreen extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const ScheduleHistoryScreen(),
+                  builder: (context) => ScheduleHistoryScreen(),
                 ),
               );
             },

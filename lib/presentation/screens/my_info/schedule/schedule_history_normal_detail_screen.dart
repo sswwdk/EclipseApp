@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../data/services/history_service.dart';
-import '../../../shared/helpers/token_manager.dart';
-import '../../../data/services/api_service.dart';
-import '../../../data/models/restaurant.dart';
-import '../main/restaurant_detail_review_screen.dart';
-import '../../widgets/app_title_widget.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../data/services/history_service.dart';
+import '../../../../shared/helpers/token_manager.dart';
+import '../../../../data/services/api_service.dart';
+import '../../../../data/models/restaurant.dart';
+import '../../main/restaurant_detail_review_screen.dart';
+import '../../../widgets/app_title_widget.dart';
 
 /// "그냥" 탭 히스토리 상세 화면 (선택한 장소 목록 표시)
 class ScheduleHistoryNormalDetailScreen extends StatefulWidget {
