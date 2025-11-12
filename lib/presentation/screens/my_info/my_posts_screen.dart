@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/services/community_service.dart';
@@ -40,6 +41,9 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
 
     try {
       final response = await CommunityService.getMyPosts(userId);
+      debugPrint(
+        '[MyPosts] 서버 응답: ${const JsonEncoder.withIndent('  ').convert(response)}',
+      );
       final parsed = MyPostItem.parseList(response);
       if (!mounted) return;
       setState(() {
@@ -391,6 +395,8 @@ class MyPostItem {
     required this.scheduleTime,
   });
 
+  static bool _loggedSampleItem = false;
+
   static List<MyPostItem> parseList(dynamic response) {
     List<dynamic> items;
     if (response is List) {
@@ -409,9 +415,27 @@ class MyPostItem {
     return items.whereType<Map<String, dynamic>>().map((m) {
       final Map<String, dynamic> raw = Map<String, dynamic>.from(m);
 
+      if (!_loggedSampleItem) {
+        debugPrint('[MyPosts] 첫 게시글 원본 데이터: ${jsonEncode(raw)}');
+        _loggedSampleItem = true;
+      }
+
       final String id = (raw['id'] ?? raw['post_id'] ?? '').toString();
-      final String title = (raw['title'] ?? raw['content'] ?? '').toString();
-      final String content = (raw['content'] ?? raw['text'] ?? '').toString();
+      final String title = _firstNonEmptyString([
+            raw['title'],
+            raw['subject'],
+            raw['headline'],
+            raw['content'],
+            raw['body'],
+          ]) ??
+          '';
+      final String content = _firstNonEmptyString([
+            raw['body'],
+            raw['content'],
+            raw['text'],
+            raw['description'],
+          ]) ??
+          '';
 
       final dynamic commentValue =
           raw['comment_count'] ?? raw['commentCount'] ?? raw['comments'] ?? 0;
@@ -419,8 +443,20 @@ class MyPostItem {
           ? commentValue
           : int.tryParse(commentValue.toString()) ?? 0;
 
-      final String date =
-          (raw['created_at'] ?? raw['createdAt'] ?? raw['date'] ?? '').toString();
+      final String date = (_firstNonEmptyString([
+            raw['create_at'],
+            raw['created_at'],
+            raw['createdAt'],
+            raw['created_time'],
+            raw['createdTime'],
+            raw['registered_at'],
+            raw['registeredAt'],
+            raw['uploaded_at'],
+            raw['uploadedAt'],
+            raw['date'],
+          ]) ??
+          '')
+          .toString();
 
       final nickname = (raw['nickname'] ??
               raw['user_nickname'] ??
@@ -465,26 +501,14 @@ class MyPostItem {
 
   static String _formatDate(String dateString) {
     if (dateString.isEmpty) return '날짜 없음';
-    
-    try {
-      // 다양한 날짜 형식 처리
-      final date = DateTime.parse(dateString);
-      final now = DateTime.now();
-      final difference = now.difference(date);
 
-      if (difference.inDays == 0) {
-        return '오늘';
-      } else if (difference.inDays == 1) {
-        return '어제';
-      } else if (difference.inDays < 7) {
-        return '${difference.inDays}일 전';
-      } else if (difference.inDays < 30) {
-        return '${(difference.inDays / 7).floor()}주 전';
-      } else {
-        return '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
-      }
+    try {
+      final sanitized = dateString.contains(' ')
+          ? dateString.replaceFirst(' ', 'T')
+          : dateString;
+      final date = DateTime.parse(sanitized);
+      return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
     } catch (e) {
-      // 파싱 실패 시 원본 문자열 반환 (이미 포맷된 경우)
       return dateString.length > 10 ? dateString.substring(0, 10) : dateString;
     }
   }
