@@ -193,10 +193,10 @@ class StoreCard extends StatelessWidget {
         behavior: HitTestBehavior.translucent,
         onTap: onFavoriteToggle,
         child: Container(
-          width: 40,
-          height: 40,
+          width: 45,
+          height: 45,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color.fromARGB(255, 236, 236, 236).withOpacity(0.8),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -209,7 +209,7 @@ class StoreCard extends StatelessWidget {
           child: Icon(
             isFavorite ? Icons.favorite : Icons.favorite_border,
             color: isFavorite ? Colors.red : Colors.grey[600],
-            size: 22,
+            size: 28,
           ),
         ),
       ),
