@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:characters/characters.dart';
-import 'my_info_detail/delete_account_screen.dart';
-import 'my_info_detail/change/change_nickname_screen.dart';
-import 'my_info_detail/change/change_password_screen.dart';
-import 'my_info_detail/change/change_email_screen.dart';
-import 'my_info_detail/change/change_address_screen.dart';
-import 'my_info_detail/change/change_phone_screen.dart';
-import '../../../shared/helpers/token_manager.dart';
-import '../../widgets/app_title_widget.dart';
+import 'delete_account_screen.dart';
+import 'change/change_nickname_screen.dart';
+import 'change/change_password_screen.dart';
+import 'change/change_email_screen.dart';
+import 'change/change_address_screen.dart';
+import 'change/change_phone_screen.dart';
+import '../../../../shared/helpers/token_manager.dart';
+import '../../../widgets/app_title_widget.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({Key? key}) : super(key: key);

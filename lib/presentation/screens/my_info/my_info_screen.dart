@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'profile_settings_screen.dart';
+import 'my_info_detail/profile_settings_screen.dart';
 import 'myinfo_etc/terms_of_service_screen.dart';
 import 'favorite_list_screen.dart';
 import 'schedule_history/schedule_history_screen.dart';
