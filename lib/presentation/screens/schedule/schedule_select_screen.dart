@@ -103,11 +103,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                   SizedBox(height: 8),
                   Text(
                     '서울특별시의 구를 선택해주세요.\n자동완성 목록에서 선택하시면 편리합니다.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppTheme.emptyStateMessage,
                   ),
                 ],
               ),
@@ -343,43 +339,56 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
       ),
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '총 몇 명이 함께하시나요? (본인 포함)',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '인원 수를 알려주세요.',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _CircleIconButton(icon: Icons.remove, onTap: _decrement),
-                const SizedBox(width: 28),
-                Text(
-                  '$_count',
-                  style: const TextStyle(
-                    color: Color(0xFFFF7A21),
-                    fontSize: 48,
-                    fontWeight: FontWeight.w800,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      '총 몇 명이 함께하시나요? (본인 포함)',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 28),
-                _CircleIconButton(icon: Icons.add, onTap: _increment),
-              ],
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      '인원 수를 알려주세요.',
+                      style: AppTheme.emptyStateMessage,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _CircleIconButton(icon: Icons.remove, onTap: _decrement),
+                  const SizedBox(width: 28),
+                  Text(
+                    '$_count',
+                    style: const TextStyle(
+                      color: Color(0xFFFF7A21),
+                      fontSize: 48,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 28),
+                  _CircleIconButton(icon: Icons.add, onTap: _increment),
+                ],
+              ),
             ),
             const Spacer(),
             Padding(
@@ -551,26 +560,22 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                '무엇을 하고 싶으신가요?',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '하고 싶은 일을 골라주세요.',
-                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                    '무엇을 하고 싶으신가요?',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
+                    ),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 8),
                   Text(
-                    '중복 선택도 가능합니다.',
-                    style: TextStyle(fontSize: 13, color: Colors.black38),
+                    '하고 싶은 일을 골라주세요.\n중복 선택도 가능합니다.',
+                    style: AppTheme.emptyStateMessage,
                   ),
                 ],
               ),
