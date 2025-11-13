@@ -249,6 +249,19 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
     final restaurant = _favoritePlaces[category]?[index];
     if (restaurant == null) return;
 
+    // 삭제 확인 팝업 표시
+    final confirmed = await CommonDialogs.showConfirmation(
+      context: context,
+      title: '찜 목록에서 삭제하시겠습니까?',
+      content: '${restaurant.name}을(를) 삭제하시겠습니까?',
+      cancelText: '취소',
+      confirmText: '삭제',
+      confirmButtonColor: const Color(0xFFFF7A21),
+    );
+
+    // 확인을 누른 경우에만 삭제 진행
+    if (confirmed != true) return;
+
     try {
       final userId = TokenManager.userId ?? '';
       if (userId.isEmpty) return;
