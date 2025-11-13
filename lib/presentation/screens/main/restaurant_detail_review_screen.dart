@@ -9,7 +9,7 @@ import '../../../data/services/history_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../widgets/user_avatar.dart';
 import '../../widgets/app_title_widget.dart';
-import '../../widgets/store/menu.dart';
+import '../../widgets/store_detail/menu.dart';
 
 class RestaurantDetailReviewScreen extends StatefulWidget {
   final Restaurant restaurant;

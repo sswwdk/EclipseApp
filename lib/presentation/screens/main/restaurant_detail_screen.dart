@@ -5,7 +5,7 @@ import '../../../data/models/restaurant.dart';
 import '../../../data/models/review.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../widgets/app_title_widget.dart';
-import '../../widgets/store/menu.dart';
+import '../../widgets/store_detail/menu.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   final Restaurant restaurant;
