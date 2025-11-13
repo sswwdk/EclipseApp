@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../../data/services/service_api.dart'; // 통합된 서비스 import (OpenAIService 포함)
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import 'loading_screan.dart';
 import 'schedule_screen.dart';
 

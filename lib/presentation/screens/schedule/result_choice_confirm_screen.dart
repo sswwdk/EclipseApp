@@ -5,7 +5,7 @@ import '../../../data/services/history_service.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import 'dart:async';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 
 /// 선택된 장소만 모아 보여주는 화면

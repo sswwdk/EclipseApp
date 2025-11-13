@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/app_title_widget.dart';
+import '../../../widgets/app_title_widget.dart';
 
 class TermsOfServiceScreen extends StatelessWidget {
   const TermsOfServiceScreen({Key? key}) : super(key: key);

@@ -3,8 +3,8 @@ import '../../../data/services/like_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../../../data/models/restaurant.dart';
 import '../main/restaurant_detail_screen.dart';
-import '../../widgets/common_dialogs.dart';
-import '../../widgets/store_card.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
+import '../../widgets/store/store_card.dart';
 import '../../widgets/app_title_widget.dart';
 
 /// 찜목록을 보여주는 화면

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'schedule_chat_screen.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 
 /// 위치 입력 화면
 class LocationInputScreen extends StatefulWidget {

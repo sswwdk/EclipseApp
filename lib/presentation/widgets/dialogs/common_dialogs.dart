@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dialogs/confirmation_dialog.dart';
-import 'dialogs/info_dialog.dart';
+import 'confirmation_dialog.dart';
+import 'info_dialog.dart';
 
 /// 공통 다이얼로그 위젯들
 class CommonDialogs {

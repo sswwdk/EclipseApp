@@ -1,85 +1,70 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/wave_painter.dart';
-import '../../../../data/services/user_service.dart';
-import '../../../widgets/common_dialogs.dart';
+import '../../../../widgets/wave_painter.dart';
+import '../../../../../data/services/user_service.dart';
+import '../../../../../shared/helpers/token_manager.dart';
+import '../../../../widgets/dialogs/common_dialogs.dart';
 
-class ChangePhoneScreen extends StatefulWidget {
-  const ChangePhoneScreen({Key? key}) : super(key: key);
+class ChangeEmailScreen extends StatefulWidget {
+  const ChangeEmailScreen({Key? key}) : super(key: key);
 
   @override
-  State<ChangePhoneScreen> createState() => _ChangePhoneScreenState();
+  State<ChangeEmailScreen> createState() => _ChangeEmailScreenState();
 }
 
-class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
-  final TextEditingController _currentPhoneController = TextEditingController();
-  final TextEditingController _newPhoneController = TextEditingController();
-  final TextEditingController _confirmPhoneController = TextEditingController();
+class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
+  final TextEditingController _currentEmailController = TextEditingController();
+  final TextEditingController _newEmailController = TextEditingController();
+  final TextEditingController _confirmEmailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final FocusNode _newPhoneFocusNode = FocusNode();
-  final FocusNode _confirmPhoneFocusNode = FocusNode();
+  final FocusNode _newEmailFocusNode = FocusNode();
+  final FocusNode _confirmEmailFocusNode = FocusNode();
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // 현재 전화번호를 입력 필드에 미리 채우기 (실제로는 서버에서 가져와야 함)
-    _currentPhoneController.text = '010-1234-5678';
+    // 현재 이메일을 토큰 매니저에서 불러와 표시
+    _currentEmailController.text = TokenManager.userEmail ?? '';
   }
 
   @override
   void dispose() {
-    _currentPhoneController.dispose();
-    _newPhoneController.dispose();
-    _confirmPhoneController.dispose();
+    _currentEmailController.dispose();
+    _newEmailController.dispose();
+    _confirmEmailController.dispose();
     _passwordController.dispose();
-    _newPhoneFocusNode.dispose();
-    _confirmPhoneFocusNode.dispose();
+    _newEmailFocusNode.dispose();
+    _confirmEmailFocusNode.dispose();
     super.dispose();
   }
 
-  String _formatPhoneNumber(String phone) {
-    // 숫자만 추출
-    String numbers = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    
-    // 010-XXXX-XXXX 형식으로 포맷팅
-    if (numbers.length >= 11) {
-      return '${numbers.substring(0, 3)}-${numbers.substring(3, 7)}-${numbers.substring(7, 11)}';
-    } else if (numbers.length >= 7) {
-      return '${numbers.substring(0, 3)}-${numbers.substring(3, 7)}-${numbers.substring(7)}';
-    } else if (numbers.length >= 3) {
-      return '${numbers.substring(0, 3)}-${numbers.substring(3)}';
-    }
-    return numbers;
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
-  bool _isValidPhoneNumber(String phone) {
-    String numbers = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    return numbers.length == 11 && numbers.startsWith('010');
-  }
-
-  Future<void> _handleChangePhone() async {
-    if (_currentPhoneController.text.isEmpty) {
-      _showSnackBar('현재 전화번호를 입력해주세요.');
+  Future<void> _handleChangeEmail() async {
+    if (_currentEmailController.text.isEmpty) {
+      _showSnackBar('현재 이메일을 입력해주세요.');
       return;
     }
 
-    if (_newPhoneController.text.isEmpty) {
-      _showSnackBar('새 전화번호를 입력해주세요.');
+    if (_newEmailController.text.isEmpty) {
+      _showSnackBar('새 이메일을 입력해주세요.');
       return;
     }
 
-    if (!_isValidPhoneNumber(_newPhoneController.text)) {
-      _showSnackBar('올바른 전화번호 형식을 입력해주세요. (010-XXXX-XXXX)');
+    if (!_isValidEmail(_newEmailController.text)) {
+      _showSnackBar('올바른 이메일 형식을 입력해주세요.');
       return;
     }
 
-    if (_newPhoneController.text != _confirmPhoneController.text) {
-      _showSnackBar('새 전화번호가 일치하지 않습니다.');
+    if (_newEmailController.text != _confirmEmailController.text) {
+      _showSnackBar('새 이메일이 일치하지 않습니다.');
       return;
     }
 
-    if (_currentPhoneController.text == _newPhoneController.text) {
-      _showSnackBar('현재 전화번호와 새 전화번호가 동일합니다.');
+    if (_currentEmailController.text == _newEmailController.text) {
+      _showSnackBar('현재 이메일과 새 이메일이 동일합니다.');
       return;
     }
 
@@ -93,14 +78,27 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
     });
 
     try {
-      await UserService.changePhone(
+      final newEmail = _newEmailController.text.trim();
+
+      // 이메일 변경 API 호출
+      await UserService.changeEmail(
         password: _passwordController.text,
-        newPhone: _newPhoneController.text.trim(),
+        newEmail: newEmail,
       );
-      _showSnackBar('전화번호가 변경되었습니다.');
-      Navigator.of(context).pop();
+
+      // ⭐ 이 부분이 중요합니다!
+      TokenManager.setUserEmail(newEmail);
+      print('TokenManager 이메일 업데이트: ${TokenManager.userEmail}');
+
+      _showSnackBar('이메일이 변경되었습니다.');
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        Navigator.of(context).pop(true); // true를 반환
+      }
     } catch (e) {
-      _showSnackBar('전화번호 변경 중 오류가 발생했습니다: $e');
+      _showSnackBar('이메일 변경 중 오류가 발생했습니다: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -128,12 +126,12 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                 size: Size(MediaQuery.of(context).size.width, 200),
                 painter: WavePainter(),
               ),
-              
+
               // 메인 타이틀
               const Padding(
                 padding: EdgeInsets.only(top: 30, bottom: 10),
                 child: Text(
-                  '전화번호 변경',
+                  '이메일 변경',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -141,26 +139,23 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               // 서브 타이틀
               const Text(
-                '새로운 전화번호를 입력해주세요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                '새로운 이메일 주소를 입력해주세요',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              
+
               const SizedBox(height: 40),
-              
-              // 현재 전화번호 입력 필드
+
+              // 현재 이메일 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: TextField(
-                  controller: _currentPhoneController,
-                  enabled: false, // 현재 전화번호는 수정 불가
+                  controller: _currentEmailController,
+                  enabled: false, // 현재 이메일은 수정 불가
                   decoration: InputDecoration(
-                    hintText: '현재 전화번호',
+                    hintText: '현재 이메일',
                     hintStyle: TextStyle(color: Colors.grey[400]),
                     filled: true,
                     fillColor: Colors.grey[100],
@@ -175,91 +170,9 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 15),
-              
-              // 새 전화번호 입력 필드
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: TextField(
-                  controller: _newPhoneController,
-                  focusNode: _newPhoneFocusNode,
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) {
-                    FocusScope.of(context).requestFocus(_confirmPhoneFocusNode);
-                  },
-                  onChanged: (value) {
-                    // 실시간으로 전화번호 포맷팅
-                    String formatted = _formatPhoneNumber(value);
-                    if (formatted != value) {
-                      _newPhoneController.value = TextEditingValue(
-                        text: formatted,
-                        selection: TextSelection.collapsed(offset: formatted.length),
-                      );
-                    }
-                  },
-                  decoration: InputDecoration(
-                    hintText: '새 전화번호 (010-XXXX-XXXX)',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F5F5),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 15),
-              
-              // 전화번호 확인 입력 필드
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: TextField(
-                  controller: _confirmPhoneController,
-                  focusNode: _confirmPhoneFocusNode,
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) {
-                    if (!_isLoading) {
-                      _handleChangePhone();
-                    }
-                  },
-                  onChanged: (value) {
-                    // 실시간으로 전화번호 포맷팅
-                    String formatted = _formatPhoneNumber(value);
-                    if (formatted != value) {
-                      _confirmPhoneController.value = TextEditingValue(
-                        text: formatted,
-                        selection: TextSelection.collapsed(offset: formatted.length),
-                      );
-                    }
-                  },
-                  decoration: InputDecoration(
-                    hintText: '새 전화번호 확인',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F5F5),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 30),
-              
+
               // 비밀번호 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -282,16 +195,78 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
-              const SizedBox(height: 20),
-              
+
+              const SizedBox(height: 15),
+
+              // 새 이메일 입력 필드
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: TextField(
+                  controller: _newEmailController,
+                  focusNode: _newEmailFocusNode,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(_confirmEmailFocusNode);
+                  },
+                  decoration: InputDecoration(
+                    hintText: '새 이메일',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F5F5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              // 이메일 확인 입력 필드
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: TextField(
+                  controller: _confirmEmailController,
+                  focusNode: _confirmEmailFocusNode,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    if (!_isLoading) {
+                      _handleChangeEmail();
+                    }
+                  },
+                  decoration: InputDecoration(
+                    hintText: '새 이메일 확인',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: const Color(0xFFF5F5F5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
               // 변경하기 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleChangePhone,
+                    onPressed: _isLoading ? null : _handleChangeEmail,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF8126),
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -305,7 +280,9 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                               strokeWidth: 2,
                             ),
                           )
@@ -320,16 +297,18 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // 취소 버튼
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFFF8126),
                       side: const BorderSide(
@@ -351,7 +330,7 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
             ],
           ),

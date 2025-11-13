@@ -6,7 +6,7 @@ import '../../../../data/services/api_service.dart'; // 🔥 Restaurant 모델 �
 import '../../../../data/models/restaurant.dart';
 import '../../../../shared/helpers/history_parser.dart';
 import '../../main/restaurant_detail_review_screen.dart'; // 🔥 상세 화면 import
-import '../../../widgets/common_dialogs.dart';
+import '../../../widgets/dialogs/common_dialogs.dart';
 import '../../../widgets/app_title_widget.dart';
 
 /// 일정표 히스토리 상세 화면

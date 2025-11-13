@@ -6,7 +6,7 @@ import '../../../data/models/restaurant.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/review_service.dart';
 import '../../../shared/helpers/token_manager.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 import '../main/restaurant_detail_review_screen.dart';
 
