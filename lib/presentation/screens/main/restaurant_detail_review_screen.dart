@@ -284,10 +284,9 @@ class _RestaurantDetailReviewScreenState
           centerTitle: true,
           actions: [
             IconButton(
-              icon: Icon(
-                _isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: _isFavorite ? Colors.red : Colors.black,
-              ),
+              icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: _isFavorite ? Colors.red : const Color(0xFFFF8126),
+                  size: 28),
               onPressed: _toggleFavorite,
             ),
             const SizedBox(width: 8),
@@ -347,7 +346,7 @@ class _RestaurantDetailReviewScreenState
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.grey.withOpacity(0.6), /* 매장 정보 박스 그림자 색상 */
                       spreadRadius: 1,
                       blurRadius: 4,
                       offset: const Offset(0, 2),
@@ -479,7 +478,7 @@ class _RestaurantDetailReviewScreenState
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 1),
 
               Container(
                 margin: const EdgeInsets.all(16),
@@ -490,7 +489,7 @@ class _RestaurantDetailReviewScreenState
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.grey.withOpacity(0.6), /* 리뷰 박스 그림자 색상 */
                       spreadRadius: 1,
                       blurRadius: 4,
                       offset: const Offset(0, 2),

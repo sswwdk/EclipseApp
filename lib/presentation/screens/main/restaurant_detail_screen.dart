@@ -94,7 +94,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         actions: [
           IconButton(
             icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: _isFavorite ? Colors.red : Colors.black),
+                color: _isFavorite ? Colors.red : const Color(0xFFFF8126),
+                size: 28),
             onPressed: () async {
               final next = !_isFavorite;
               setState(() => _isFavorite = next);
@@ -158,7 +159,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withOpacity(0.6), /* 매장 정보 박스 그림자 색상 */
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 2),
@@ -275,7 +276,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                     ),
                   ],
                   
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 1),
                   
                   if (_menuPreview.isNotEmpty) ...[
                     const SizedBox(),
@@ -308,7 +309,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withOpacity(0.6), /* 리뷰 박스 그림자 색상 */
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 2),
