@@ -971,7 +971,11 @@ class _ChatHeader extends StatelessWidget {
               const Center(
                 child: Text(
                   '하루와 할 일 찾기',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF8126),
+                  ),
                 ),
               ),
             ],
