@@ -54,12 +54,19 @@ class ChatMessage {
 class ChatScreen extends StatefulWidget {
   /// 위치
   final String location;
+
   /// 인원 수 (추후 프롬프트에 활용 가능)
   final int peopleCount;
+
   /// 사용자가 선택한 카테고리 목록
   final List<String> selectedCategories;
 
-  const ChatScreen({super.key, required this.location, required this.peopleCount, required this.selectedCategories});
+  const ChatScreen({
+    super.key,
+    required this.location,
+    required this.peopleCount,
+    required this.selectedCategories,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -70,17 +77,17 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<ChatMessage> _messages = [];
   final ScrollController _scrollController = ScrollController();
   final FocusNode _messageFocusNode = FocusNode();
-  
+
   // OpenAI 서비스 인스턴스
   late OpenAIService _openAIService;
-  
+
   // 로딩 상태
   bool _isLoading = false;
   bool _isFinalLoading = false;
-  
+
   // 현재 대화 단계 (입력창 제어를 위해)
   String _currentStage = "collecting_details";
-  
+
   // 후보지 출력 완료 상태
   bool _showRecommendationButton = false;
   Map<String, dynamic>? _recommendations;
@@ -91,10 +98,10 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // OpenAI 서비스 초기화
     _openAIService = OpenAIService();
-    
+
     // FastAPI 서버와 연결하여 초기화
     _initializeChat();
   }
@@ -115,12 +122,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
       if (mounted) {
         setState(() {
-          _messages.add(ChatMessage(
-            text: firstMessage,
-            isUser: false,
-            timestamp: DateTime.now(),
-            selectedCategories: widget.selectedCategories,
-          ));
+          _messages.add(
+            ChatMessage(
+              text: firstMessage,
+              isUser: false,
+              timestamp: DateTime.now(),
+              selectedCategories: widget.selectedCategories,
+            ),
+          );
           _isLoading = false;
         });
         _scrollToBottom();
@@ -128,11 +137,13 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _messages.add(ChatMessage(
-            text: '서버 연결에 실패했습니다. FastAPI 서버가 실행 중인지 확인해주세요.\n오류: $e',
-            isUser: false,
-            timestamp: DateTime.now(),
-          ));
+          _messages.add(
+            ChatMessage(
+              text: '서버 연결에 실패했습니다. FastAPI 서버가 실행 중인지 확인해주세요.\n오류: $e',
+              isUser: false,
+              timestamp: DateTime.now(),
+            ),
+          );
           _isLoading = false;
         });
       }
@@ -157,9 +168,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
-    
+
     final userMessage = _messageController.text.trim();
-    
+
     // confirming_results 단계에서 긍정적 표현 체크
     if (_currentStage == "confirming_results") {
       final isPositive = _isPositiveResponse(userMessage);
@@ -169,25 +180,25 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
     }
-    
+
+    // 키보드 숨기기
+    _messageFocusNode.unfocus();
+
     setState(() {
       _deactivatePreviousButtons();
-      _messages.add(ChatMessage(
-        text: userMessage,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(text: userMessage, isUser: true, timestamp: DateTime.now()),
+      );
       _isLoading = true; // 로딩 시작
     });
-    
+
     _messageController.clear();
     _scrollToBottom();
-    _maintainFocus();
-    
+
     try {
       // FastAPI /api/chat 호출
       final response = await _openAIService.sendMessage(userMessage);
-      
+
       if (mounted) {
         _processServerResponse(
           response,
@@ -197,7 +208,6 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       _addErrorMessage('죄송합니다. 응답을 가져오는 중 오류가 발생했습니다.\n오류: $e');
-      _maintainFocus();
     }
   }
 
@@ -213,24 +223,13 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  /// 포커스 유지 헬퍼 함수
-  void _maintainFocus() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _messageFocusNode.requestFocus();
-      }
-    });
-  }
-
   /// 에러 메시지 추가 헬퍼 함수
   void _addErrorMessage(String errorText) {
     if (!mounted) return;
     setState(() {
-      _messages.add(ChatMessage(
-        text: errorText,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(text: errorText, isUser: false, timestamp: DateTime.now()),
+      );
       _isLoading = false;
       _isFinalLoading = false;
     });
@@ -251,23 +250,45 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-
   /// 긍정적 표현 체크
   bool _isPositiveResponse(String message) {
     final lowerMessage = message.toLowerCase().trim();
     final positiveWords = [
-      "네", "넹", "넵", "예", "yes", "y", "ok", "좋아", "좋아요", "그래", "맞아", 
-      "ㅇㅇ", "ㅇ", "기기", "ㄱㄱ", "고고", "네네", "응", "어", "ㅇㅋ", "오케이",
-      "후보지", "후보지 출력", "출력", "보여줘", "보여주세요", "확인"
+      "네",
+      "넹",
+      "넵",
+      "예",
+      "yes",
+      "y",
+      "ok",
+      "좋아",
+      "좋아요",
+      "그래",
+      "맞아",
+      "ㅇㅇ",
+      "ㅇ",
+      "기기",
+      "ㄱㄱ",
+      "고고",
+      "네네",
+      "응",
+      "어",
+      "ㅇㅋ",
+      "오케이",
+      "후보지",
+      "후보지 출력",
+      "출력",
+      "보여줘",
+      "보여주세요",
+      "확인",
     ];
-    
+
     return positiveWords.any((word) => lowerMessage.contains(word));
   }
 
-
   @override
   Widget build(BuildContext context) {
-      return WillPopScope(
+    return WillPopScope(
       onWillPop: () async {
         _handleBackNavigation();
         return false; // 기본 뒤로가기 동작 방지
@@ -275,103 +296,107 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF7F7F7),
         body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 상단 헤더 (뒤로가기, 타이틀)
-            _ChatHeader(onBackPressed: _handleBackNavigation),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 상단 헤더 (뒤로가기, 타이틀)
+              _ChatHeader(onBackPressed: _handleBackNavigation),
 
-            // 메시지 리스트
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount:
-                    _messages.length + (_isLoading && !_isFinalLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  // 로딩 인디케이터 표시
-                  if (index == _messages.length &&
-                    _isLoading &&
-                    !_isFinalLoading) {
-                    return const LoadingScreanIndicator();
-                  }
-                  
-                  final message = _messages[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: _buildMessageWidget(message),
-                  );
-                },
-              ),
-            ),
+              // 메시지 리스트
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  itemCount:
+                      _messages.length +
+                      (_isLoading && !_isFinalLoading ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    // 로딩 인디케이터 표시
+                    if (index == _messages.length &&
+                        _isLoading &&
+                        !_isFinalLoading) {
+                      return const LoadingScreanIndicator();
+                    }
 
-            // 하단 입력창 또는 후보지 고르러 가기 버튼
-            if (_activeTags.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: _ActiveTagPanel(
-                  tags: _activeTags,
-                  isLoading: _isLoading,
-                  onTagRemove: (_activeCategory != null)
-                      ? (tag) => _handleTagRemove(_activeCategory!, tag)
-                      : null,
-                  onClearAll: (_activeCategory != null)
-                      ? () => _handleTagClear(_activeCategory!)
-                      : null,
+                    final message = _messages[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _buildMessageWidget(message),
+                    );
+                  },
                 ),
               ),
-            if (_showRecommendationButton)
-              // 후보지 고르러 가기 버튼
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_recommendations != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LoadingScrean(
-                              loadingTask: Future.value(_recommendations!),
-                              selectedCategories: widget.selectedCategories,
+
+              // 하단 입력창 또는 후보지 고르러 가기 버튼
+              if (_activeTags.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: _ActiveTagPanel(
+                    tags: _activeTags,
+                    isLoading: _isLoading,
+                    onTagRemove: (_activeCategory != null)
+                        ? (tag) => _handleTagRemove(_activeCategory!, tag)
+                        : null,
+                    onClearAll: (_activeCategory != null)
+                        ? () => _handleTagClear(_activeCategory!)
+                        : null,
+                  ),
+                ),
+              if (_showRecommendationButton)
+                // 후보지 고르러 가기 버튼
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_recommendations != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LoadingScrean(
+                                loadingTask: Future.value(_recommendations!),
+                                selectedCategories: widget.selectedCategories,
+                              ),
                             ),
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF7A21),
-                      foregroundColor: Colors.white,
-                      elevation: 3,
-                      shadowColor: const Color(0xFFFF7A21).withOpacity(0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF7A21),
+                        foregroundColor: Colors.white,
+                        elevation: 3,
+                        shadowColor: const Color(0xFFFF7A21).withOpacity(0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      '후보지 고르러 가기',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                      child: const Text(
+                        '후보지 고르러 가기',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
+                )
+              else
+                // 일반 채팅 입력창
+                _ChatInputField(
+                  controller: _messageController,
+                  focusNode: _messageFocusNode,
+                  isLoading: _isLoading,
+                  isCompleted: _currentStage == "completed",
+                  onSend: _sendMessage,
                 ),
-              )
-            else
-              // 일반 채팅 입력창
-              _ChatInputField(
-                controller: _messageController,
-                focusNode: _messageFocusNode,
-                isLoading: _isLoading,
-                isCompleted: _currentStage == "completed",
-                onSend: _sendMessage,
-              )
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -383,15 +408,16 @@ class _ChatScreenState extends State<ChatScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3E0),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFFF7A21),
-          width: 1.5,
-        ),
+        border: Border.all(color: const Color(0xFFFF7A21), width: 1.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_getCategoryIcon(category), color: const Color(0xFFFF7A21), size: 18),
+          Icon(
+            _getCategoryIcon(category),
+            color: const Color(0xFFFF7A21),
+            size: 18,
+          ),
           const SizedBox(width: 6),
           Text(
             category,
@@ -436,8 +462,10 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(message.text,
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(
+                  message.text,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 10,
@@ -556,10 +584,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Yes/No 버튼 응답 처리
   void _handleYesNoResponse(bool isYes, {String? userInputMessage}) async {
+    // 키보드 숨기기
+    _messageFocusNode.unfocus();
+
     // 현재 메시지의 yesNoQuestion을 확인하여 결과 확인 단계인지 판단
     final lastMessage = _messages.isNotEmpty ? _messages.last : null;
-    final isResultConfirmation = lastMessage?.yesNoQuestion?.contains("후보지를 출력") == true;
-    
+    final isResultConfirmation =
+        lastMessage?.yesNoQuestion?.contains("후보지를 출력") == true;
+
     // 응답 텍스트 결정
     String response;
     if (userInputMessage != null) {
@@ -572,7 +604,7 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       response = "추가하기"; // "추가하기" 버튼을 눌렀을 때
     }
-    
+
     // 사용자가 입력한 경우 입력창 비우기
     if (userInputMessage != null) {
       _messageController.clear();
@@ -606,18 +638,16 @@ class _ChatScreenState extends State<ChatScreen> {
         _activeTags = [];
         _activeCategory = null;
       }
-      
-      _messages.add(ChatMessage(
-        text: response,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ));
+
+      _messages.add(
+        ChatMessage(text: response, isUser: true, timestamp: DateTime.now()),
+      );
       _isLoading = true;
       _isFinalLoading = expectsFinalTransition;
     });
-    
+
     _scrollToBottom();
-    
+
     try {
       // 서버에는 긍정적 표현을 "네"로 통일하여 전송 (백엔드 호환성)
       String serverMessage;
@@ -630,7 +660,7 @@ class _ChatScreenState extends State<ChatScreen> {
         serverMessage = response;
       }
       final aiResponse = await _openAIService.sendMessage(serverMessage);
-      
+
       if (mounted) {
         final navigateOnComplete = isYes || response == "후보지 출력";
         _processServerResponse(
@@ -648,7 +678,6 @@ class _ChatScreenState extends State<ChatScreen> {
       }
       _recommendationCompleter = null;
       _isFinalLoading = false;
-      _maintainFocus();
     }
   }
 
@@ -662,12 +691,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final message = response['message'] as String? ?? '';
     final stage = response['stage'] as String?;
-    final recommendations = response['recommendations'] as Map<String, dynamic>?;
+    final recommendations =
+        response['recommendations'] as Map<String, dynamic>?;
     final showYesNoButtons = response['showYesNoButtons'] as bool? ?? false;
     final yesNoQuestion = response['yesNoQuestion'] as String?;
-    final availableCategories = response['availableCategories'] as List<dynamic>?;
+    final availableCategories =
+        response['availableCategories'] as List<dynamic>?;
     final rawTags = response['tags'] as List<dynamic>?;
-    final tags = rawTags
+    final tags =
+        rawTags
             ?.map((tag) => tag.toString())
             .where((tag) => tag.trim().isNotEmpty)
             .toList() ??
@@ -678,7 +710,8 @@ class _ChatScreenState extends State<ChatScreen> {
       _currentStage = stage;
     }
 
-    final bool isTagAction = originalUserMessage?.startsWith(TAG_ACTION_PREFIX) ?? false;
+    final bool isTagAction =
+        originalUserMessage?.startsWith(TAG_ACTION_PREFIX) ?? false;
     final bool isAddingCategory = originalUserMessage == "추가하기";
 
     String? nextCategory = _activeCategory;
@@ -711,18 +744,17 @@ class _ChatScreenState extends State<ChatScreen> {
         recommendations != null &&
         recommendations.isNotEmpty) {
       setState(() {
-      if (stage != null) {
-        _currentStage = stage;
-      }
-      _activeCategory = nextCategory;
-      _activeTags = nextTags;
-      _isLoading = false;
-      _isFinalLoading = false;
+        if (stage != null) {
+          _currentStage = stage;
+        }
+        _activeCategory = nextCategory;
+        _activeTags = nextTags;
+        _isLoading = false;
+        _isFinalLoading = false;
         _showRecommendationButton = true;
         _recommendations = recommendations;
       });
       _scrollToBottom();
-      _maintainFocus();
       return;
     }
 
@@ -761,8 +793,7 @@ class _ChatScreenState extends State<ChatScreen> {
       } else {
         if (_recommendationCompleter != null &&
             !(_recommendationCompleter?.isCompleted ?? true)) {
-          _recommendationCompleter
-              ?.completeError(Exception('추천 결과가 없습니다.'));
+          _recommendationCompleter?.completeError(Exception('추천 결과가 없습니다.'));
         }
         _recommendationCompleter = null;
         setState(() {
@@ -788,16 +819,17 @@ class _ChatScreenState extends State<ChatScreen> {
         _activeCategory = nextCategory;
         _activeTags = nextTags;
         _deactivatePreviousButtons();
-        _messages.add(ChatMessage(
-          text: message,
-          isUser: false,
-          timestamp: DateTime.now(),
-          selectedCategories: availableCategories.cast<String>(),
-        ));
+        _messages.add(
+          ChatMessage(
+            text: message,
+            isUser: false,
+            timestamp: DateTime.now(),
+            selectedCategories: availableCategories.cast<String>(),
+          ),
+        );
         _isLoading = false;
       });
       _scrollToBottom();
-      _maintainFocus();
       return;
     }
 
@@ -808,20 +840,21 @@ class _ChatScreenState extends State<ChatScreen> {
       _activeCategory = nextCategory;
       _activeTags = nextTags;
       _deactivatePreviousButtons();
-      _messages.add(ChatMessage(
-        text: message,
-        isUser: false,
-        timestamp: DateTime.now(),
-        showYesNoButtons: showYesNoButtons,
-        yesNoQuestion: yesNoQuestion,
-        availableCategories: availableCategories?.cast<String>(),
-      ));
+      _messages.add(
+        ChatMessage(
+          text: message,
+          isUser: false,
+          timestamp: DateTime.now(),
+          showYesNoButtons: showYesNoButtons,
+          yesNoQuestion: yesNoQuestion,
+          availableCategories: availableCategories?.cast<String>(),
+        ),
+      );
       _isLoading = false;
       _isFinalLoading = false;
     });
 
     _scrollToBottom();
-    _maintainFocus();
   }
 
   Future<void> _handleTagRemove(String category, String tag) async {
@@ -833,6 +866,9 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       return;
     }
+
+    // 키보드 숨기기
+    _messageFocusNode.unfocus();
 
     setState(() {
       _isLoading = true;
@@ -860,6 +896,9 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
+    // 키보드 숨기기
+    _messageFocusNode.unfocus();
+
     setState(() {
       _isLoading = true;
     });
@@ -880,12 +919,15 @@ class _ChatScreenState extends State<ChatScreen> {
   void _requestRecommendations() async {
     try {
       final aiResponse = await _openAIService.requestRecommendations();
-      
+
       if (mounted) {
         final stage = aiResponse['stage'] as String?;
-        final recommendations = aiResponse['recommendations'] as Map<String, dynamic>?;
-        
-        if (stage == 'completed' && recommendations != null && recommendations.isNotEmpty) {
+        final recommendations =
+            aiResponse['recommendations'] as Map<String, dynamic>?;
+
+        if (stage == 'completed' &&
+            recommendations != null &&
+            recommendations.isNotEmpty) {
           if (_recommendationCompleter != null &&
               !(_recommendationCompleter?.isCompleted ?? true)) {
             _recommendationCompleter?.complete(recommendations);
@@ -906,21 +948,24 @@ class _ChatScreenState extends State<ChatScreen> {
         } else {
           if (_recommendationCompleter != null &&
               !(_recommendationCompleter?.isCompleted ?? true)) {
-            _recommendationCompleter
-                ?.completeError(Exception('추천 결과를 생성할 수 없습니다.'));
+            _recommendationCompleter?.completeError(
+              Exception('추천 결과를 생성할 수 없습니다.'),
+            );
             _recommendationCompleter = null;
           }
           setState(() {
-            _messages.add(ChatMessage(
-              text: '추천 결과를 생성할 수 없습니다. 다시 시도해주세요.',
-              isUser: false,
-              timestamp: DateTime.now(),
-            ));
+            _messages.add(
+              ChatMessage(
+                text: '추천 결과를 생성할 수 없습니다. 다시 시도해주세요.',
+                isUser: false,
+                timestamp: DateTime.now(),
+              ),
+            );
             _isLoading = false;
             _isFinalLoading = false;
           });
         }
-        
+
         _scrollToBottom();
       }
     } catch (e) {
@@ -946,10 +991,7 @@ class _ChatHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          bottom: BorderSide(
-            color: Colors.black.withOpacity(0.1),
-            width: 1,
-          ),
+          bottom: BorderSide(color: Colors.black.withOpacity(0.1), width: 1),
         ),
       ),
       child: Padding(
@@ -964,7 +1006,10 @@ class _ChatHeader extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back, color: Colors.black87),
                   onPressed: onBackPressed,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                  constraints: const BoxConstraints.tightFor(
+                    width: 40,
+                    height: 40,
+                  ),
                   iconSize: 24,
                 ),
               ),
@@ -1018,7 +1063,11 @@ class _ChatInputField extends StatelessWidget {
             width: 1.5,
           ),
           boxShadow: const [
-            BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
           ],
         ),
         child: Row(
@@ -1041,10 +1090,7 @@ class _ChatInputField extends StatelessWidget {
                     controller: controller,
                     focusNode: focusNode,
                     enabled: !isDisabled,
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontSize: 15,
-                    ),
+                    style: const TextStyle(color: Colors.black87, fontSize: 15),
                     decoration: const InputDecoration(
                       hintText: '메시지를 입력하세요...',
                       hintStyle: TextStyle(color: Colors.black38, fontSize: 15),
@@ -1097,7 +1143,7 @@ class _ChatBubble extends StatelessWidget {
   final String? selectedButton;
   final VoidCallback? onYesPressed;
   final VoidCallback? onNoPressed;
-  
+
   const _ChatBubble({
     required this.text,
     this.showYesNoButtons = false,
@@ -1162,21 +1208,29 @@ class _ChatBubble extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: isButtonActive ? onYesPressed : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isButtonActive 
-                      ? const Color(0xFFFF7A21) 
-                      : (selectedButton == 'yes' ? Colors.white : Colors.grey[400]),
-                    foregroundColor: isButtonActive 
-                      ? Colors.white 
-                      : (selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.white),
+                    backgroundColor: isButtonActive
+                        ? const Color(0xFFFF7A21)
+                        : (selectedButton == 'yes'
+                              ? Colors.white
+                              : Colors.grey[400]),
+                    foregroundColor: isButtonActive
+                        ? Colors.white
+                        : (selectedButton == 'yes'
+                              ? const Color(0xFFFF7A21)
+                              : Colors.white),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                       side: !isButtonActive && selectedButton == 'yes'
-                        ? const BorderSide(color: Color(0xFFFF7A21), width: 2)
-                        : BorderSide.none,
+                          ? const BorderSide(color: Color(0xFFFF7A21), width: 2)
+                          : BorderSide.none,
                     ),
-                    disabledBackgroundColor: selectedButton == 'yes' ? Colors.white : Colors.grey[400],
-                    disabledForegroundColor: selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.white,
+                    disabledBackgroundColor: selectedButton == 'yes'
+                        ? Colors.white
+                        : Colors.grey[400],
+                    disabledForegroundColor: selectedButton == 'yes'
+                        ? const Color(0xFFFF7A21)
+                        : Colors.white,
                   ),
                   child: const Text(
                     '후보지 출력',
@@ -1192,21 +1246,32 @@ class _ChatBubble extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: isButtonActive ? onYesPressed : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isButtonActive 
-                          ? const Color(0xFFFF7A21) 
-                          : (selectedButton == 'yes' ? Colors.white : Colors.grey[400]),
-                        foregroundColor: isButtonActive 
-                          ? Colors.white 
-                          : (selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.white),
+                        backgroundColor: isButtonActive
+                            ? const Color(0xFFFF7A21)
+                            : (selectedButton == 'yes'
+                                  ? Colors.white
+                                  : Colors.grey[400]),
+                        foregroundColor: isButtonActive
+                            ? Colors.white
+                            : (selectedButton == 'yes'
+                                  ? const Color(0xFFFF7A21)
+                                  : Colors.white),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                           side: !isButtonActive && selectedButton == 'yes'
-                            ? const BorderSide(color: Color(0xFFFF7A21), width: 2)
-                            : BorderSide.none,
+                              ? const BorderSide(
+                                  color: Color(0xFFFF7A21),
+                                  width: 2,
+                                )
+                              : BorderSide.none,
                         ),
-                        disabledBackgroundColor: selectedButton == 'yes' ? Colors.white : Colors.grey[400],
-                        disabledForegroundColor: selectedButton == 'yes' ? const Color(0xFFFF7A21) : Colors.white,
+                        disabledBackgroundColor: selectedButton == 'yes'
+                            ? Colors.white
+                            : Colors.grey[400],
+                        disabledForegroundColor: selectedButton == 'yes'
+                            ? const Color(0xFFFF7A21)
+                            : Colors.white,
                       ),
                       child: const Text(
                         '다음 질문',
@@ -1219,21 +1284,32 @@ class _ChatBubble extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: isButtonActive ? onNoPressed : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isButtonActive 
-                          ? Colors.grey[300] 
-                          : (selectedButton == 'no' ? Colors.white : Colors.grey[400]),
-                        foregroundColor: isButtonActive 
-                          ? Colors.black87 
-                          : (selectedButton == 'no' ? const Color(0xFFFF7A21) : Colors.white),
+                        backgroundColor: isButtonActive
+                            ? Colors.grey[300]
+                            : (selectedButton == 'no'
+                                  ? Colors.white
+                                  : Colors.grey[400]),
+                        foregroundColor: isButtonActive
+                            ? Colors.black87
+                            : (selectedButton == 'no'
+                                  ? const Color(0xFFFF7A21)
+                                  : Colors.white),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                           side: !isButtonActive && selectedButton == 'no'
-                            ? const BorderSide(color: Color(0xFFFF7A21), width: 2)
-                            : BorderSide.none,
+                              ? const BorderSide(
+                                  color: Color(0xFFFF7A21),
+                                  width: 2,
+                                )
+                              : BorderSide.none,
                         ),
-                        disabledBackgroundColor: selectedButton == 'no' ? Colors.white : Colors.grey[400],
-                        disabledForegroundColor: selectedButton == 'no' ? const Color(0xFFFF7A21) : Colors.white,
+                        disabledBackgroundColor: selectedButton == 'no'
+                            ? Colors.white
+                            : Colors.grey[400],
+                        disabledForegroundColor: selectedButton == 'no'
+                            ? const Color(0xFFFF7A21)
+                            : Colors.white,
                       ),
                       child: const Text(
                         '추가하기',
@@ -1282,7 +1358,11 @@ class _ActiveTagPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: accent.withOpacity(0.2)),
         boxShadow: const [
-          BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
         ],
       ),
       child: Column(
@@ -1300,11 +1380,15 @@ class _ActiveTagPanel extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: tags.map((tag) => _TagChip(
-                  label: tag,
-                  canModify: canModify,
-                  onRemove: canModify ? () => onTagRemove?.call(tag) : null,
-                )).toList(),
+            children: tags
+                .map(
+                  (tag) => _TagChip(
+                    label: tag,
+                    canModify: canModify,
+                    onRemove: canModify ? () => onTagRemove?.call(tag) : null,
+                  ),
+                )
+                .toList(),
           ),
           if (shouldShowClearAll) ...[
             const SizedBox(height: 12),
@@ -1329,7 +1413,10 @@ class _ActiveTagPanel extends StatelessWidget {
                   ),
                 ),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   minimumSize: const Size(0, 0),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -1347,11 +1434,7 @@ class _TagChip extends StatelessWidget {
   final bool canModify;
   final VoidCallback? onRemove;
 
-  const _TagChip({
-    required this.label,
-    required this.canModify,
-    this.onRemove,
-  });
+  const _TagChip({required this.label, required this.canModify, this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -1409,15 +1492,12 @@ class _ChipTag extends StatelessWidget {
         color: Colors.white,
         // 카테고리 태그 모서리 둥글기 조절: borderRadius 값 변경
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: accent, 
-          width: 1.6
-        ),
+        border: Border.all(color: accent, width: 1.6),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0F000000), 
-            blurRadius: 8, 
-            offset: Offset(0, 4)
+            color: Color(0x0F000000),
+            blurRadius: 8,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -1429,10 +1509,10 @@ class _ChipTag extends StatelessWidget {
           // 카테고리 태그 아이콘과 텍스트 사이 간격 조절: width 값 변경
           const SizedBox(width: 6),
           Text(
-            label, 
+            label,
             // 카테고리 태그 텍스트 크기 조절: fontSize 값 변경
             style: const TextStyle(
-              color: accent, 
+              color: accent,
               fontWeight: FontWeight.w700,
               fontSize: 12,
             ),
@@ -1441,5 +1521,4 @@ class _ChipTag extends StatelessWidget {
       ),
     );
   }
-
 }
