@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/helpers/token_manager.dart';
 import 'schedule_select_screen.dart';
@@ -30,8 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
           cancelText: '취소',
         );
 
-        if (shouldPop == true && context.mounted) {
-          Navigator.of(context).pop();
+        if (shouldPop == true) {
+          SystemNavigator.pop();
         }
       },
       child: Scaffold(

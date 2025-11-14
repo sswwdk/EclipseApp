@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../widgets/bottom_navigation_widget.dart';
 import '../../widgets/user_avatar.dart';
 import '../../widgets/app_title_widget.dart';
@@ -48,8 +49,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
           cancelText: '취소',
         );
 
-        if (shouldPop == true && context.mounted) {
-          Navigator.of(context).pop();
+        if (shouldPop == true) {
+          SystemNavigator.pop();
         }
       },
       child: Scaffold(

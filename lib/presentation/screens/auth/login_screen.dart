@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../widgets/wave_painter.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import 'signup_screen.dart';
@@ -126,8 +127,8 @@ class _LoginScreenState extends State<LoginScreen> {
           cancelText: '취소',
         );
 
-        if (shouldPop == true && context.mounted) {
-          Navigator.of(context).pop();
+        if (shouldPop == true) {
+          SystemNavigator.pop();
         }
       },
       child: Scaffold(

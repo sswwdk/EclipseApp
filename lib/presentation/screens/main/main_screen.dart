@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../schedule/schedule_screen.dart';
 import '../my_info/my_info_screen.dart';
 import '../my_info/schedule_history/schedule_history_screen.dart';
@@ -64,8 +65,8 @@ class _MainScreenState extends State<MainScreen> {
           cancelText: '취소',
         );
 
-        if (shouldPop == true && context.mounted) {
-          Navigator.of(context).pop();
+        if (shouldPop == true) {
+          SystemNavigator.pop();
         }
       },
       child: Scaffold(
