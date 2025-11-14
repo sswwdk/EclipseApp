@@ -71,6 +71,7 @@ class _MainScreenState extends State<MainScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
+<<<<<<< Updated upstream
         extendBody: true, // 🔥 body를 네비게이션 바 아래까지 확장
         appBar: AppBar(
           backgroundColor: Colors.white,
@@ -93,6 +94,27 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 );
               },
+=======
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: Color(0xFFFF8126),
+          ),
+          onPressed: () {
+            // 알림 기능 구현
+          },
+        ),
+        title: const AppTitleWidget('할 일 추천'),
+        centerTitle: true,
+        actions: [
+          // 일정표 히스토리 버튼
+          IconButton(
+            icon: const Icon(
+              Icons.calendar_today_outlined,
+              color: Color(0xFFFF8126),
+>>>>>>> Stashed changes
             ),
             const SizedBox(width: 8),
           ],
