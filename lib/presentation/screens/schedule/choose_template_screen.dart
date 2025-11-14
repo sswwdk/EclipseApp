@@ -33,6 +33,25 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 화면 크기에 맞게 비율 계산
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
+    
+    // AppBar 높이와 하단 버튼 영역 고려
+    final appBarHeight = AppBar().preferredSize.height;
+    final bottomBarHeight = 48.0 + 16.0 + 12.0 + 16.0; // 버튼 높이 + 패딩
+    final availableHeight = screenHeight - appBarHeight - bottomBarHeight - MediaQuery.of(context).padding.top;
+    
+    // 카드 너비 계산 (화면 너비 - 좌우 패딩 - 간격) / 2
+    final cardWidth = (screenWidth - 16 * 2 - 16) / 2;
+    
+    // 카드 높이를 화면 비율에 맞게 계산 (적절한 비율 유지)
+    final cardHeight = availableHeight / 2.2; // 약간의 여유 공간 확보
+    
+    // childAspectRatio = 너비 / 높이
+    final aspectRatio = cardWidth / cardHeight;
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
@@ -50,7 +69,7 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.72,
+        childAspectRatio: aspectRatio,
         children: [
           _TemplateTile(
             name: '템플릿 1',
@@ -98,14 +117,20 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                elevation: 3,
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               onPressed: _onConfirm,
-              child: const Text(
-                '템플릿 선택하기',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  '템플릿 선택하기',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ),
