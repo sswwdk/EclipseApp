@@ -27,16 +27,46 @@ class ReportService {
         throw Exception('로그인이 필요합니다.');
       }
       
-      // 신고당한 사용자 ID 결정
+      // type을 정수로 변환 (0: 사용자, 1: 게시글, 2: 댓글, 3: 문의하기)
+      final typeInt = int.tryParse(type) ?? 0;
+      
+      // type 3 (문의하기)인 경우 처리
+      if (typeInt == 3) {
+        // 문의하기: user_id는 null, reported_user는 문의한 사람
+        final response = await HttpInterceptor.post(
+          '/api/report/',
+          baseUrlOverride: communityUrl,
+          body: json.encode({
+            'reported_user': reporterId, // 문의한 사용자 ID (reporter)
+            'user_id': null, // 문의하기는 null
+            'cause_id': targetId, // 문의하기의 경우 빈 값 또는 특정 값
+            'type': typeInt, // 3: 문의하기
+            'cause': reason, // 문의 내용
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          final bodyBytes = response.bodyBytes;
+          if (bodyBytes.isNotEmpty) {
+            try {
+              json.decode(utf8.decode(bodyBytes));
+            } catch (e) {
+              print('응답 파싱 오류 (무시됨): $e');
+            }
+          }
+          return;
+        } else {
+          throw Exception('문의 접수 실패: ${response.statusCode}');
+        }
+      }
+      
+      // 신고당한 사용자 ID 결정 (type 0, 1, 2인 경우)
       // type 0 (사용자 신고): reportedUserId가 신고당한 사용자 ID
       // type 1 (게시글 신고): reportedUserId가 게시글 작성자 ID (필수)
       // type 2 (댓글 신고): reportedUserId가 댓글 작성자 ID (필수)
       if (reportedUserId == null || reportedUserId.isEmpty) {
         throw Exception('신고당한 사용자 정보가 필요합니다.');
       }
-      
-      // type을 정수로 변환 (0: 사용자, 1: 게시글, 2: 댓글)
-      final typeInt = int.tryParse(type) ?? 0;
       
       // cause_id 결정: 타입에 따라 신고 대상 ID
       // type 0 (사용자 신고): targetId (사용자 ID)
