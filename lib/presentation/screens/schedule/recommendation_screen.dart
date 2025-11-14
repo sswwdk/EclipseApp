@@ -462,15 +462,18 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF7A21),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 3,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    elevation: 0,
                   ),
-                  child: const Text(
-                    '일정표 제작하기',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 6),
+                    child: Text(
+                      '일정표 제작하기',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    ),
                   ),
                 ),
               ),
@@ -519,7 +522,8 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: const Color(0xFFFF7A21),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 3,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: const BorderSide(
@@ -527,11 +531,13 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                         width: 2,
                       ),
                     ),
-                    elevation: 0,
                   ),
-                  child: const Text(
-                    '완료하기',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 6),
+                    child: Text(
+                      '완료하기',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    ),
                   ),
                 ),
               ),

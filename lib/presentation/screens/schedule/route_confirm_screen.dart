@@ -110,8 +110,19 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
               );
             },
             onReorder: (oldIndex, newIndex) {
-              // 첫 항목(출발지)은 고정
-              if (oldIndex == 0 || newIndex == 0) return;
+              // 출발지 항목은 고정 (이동 불가)
+              final oldItem = _items[oldIndex];
+              final newItem = newIndex < _items.length ? _items[newIndex] : null;
+              
+              // 출발지를 드래그하거나 출발지 위치로 이동하려는 경우 차단
+              if (oldItem.type == _ItemType.origin || 
+                  (newItem != null && newItem.type == _ItemType.origin)) {
+                return;
+              }
+              
+              // 첫 항목(출발지) 위치로 이동하려는 경우도 차단
+              if (newIndex == 0) return;
+              
               if (newIndex > oldIndex) newIndex -= 1;
               setState(() {
                 final moved = _items.removeAt(oldIndex);
@@ -123,7 +134,16 @@ class _RouteConfirmScreenState extends State<RouteConfirmScreen> {
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
-        color: Colors.white,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
         child: SafeArea(
           child: SizedBox(
             width: double.infinity,
@@ -367,15 +387,21 @@ for (final item in _items) {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF8126),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                elevation: 3,
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                minimumSize: const Size(double.infinity, 52),
               ),
-              child: const Text(
-                '순서 확정하기',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  '순서 확정하기',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
           ),
@@ -549,129 +575,248 @@ class _TimelineRow extends StatelessWidget {
     final double leftInfoWidth = 0;
     final double gapBetween = 0;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: Stack(
         children: [
-          SizedBox(
-            width: leftInfoWidth,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  showDuration ? _formatDuration(item, index) : '',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: gapBetween),
-          Column(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF8126),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-              ),
-              if (!isLast)
-                Container(width: 2, height: 60, color: Colors.grey[300]),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: GestureDetector(
-              onTap: onTap,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+              SizedBox(
+                width: leftInfoWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      showDuration ? _formatDuration(item, index) : '',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
-                  border: Border.all(color: Colors.grey.withOpacity(0.15)),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEFE3),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(item.icon, color: const Color(0xFFFF8126)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.title,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
+              ),
+              SizedBox(width: gapBetween),
+              // 번호 배지 공간 (고정 위치)
+              if (item.type == _ItemType.place || item.type == _ItemType.origin)
+                const SizedBox(width: 36),
+              Expanded(
+                child: onDragHandle != null
+                    ? onDragHandle!(
+                        GestureDetector(
+                          onTap: onTap,
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                              border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFEFE3),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(item.icon, color: const Color(0xFFFF8126), size: 28),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.title,
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      if (item.subtitle.isNotEmpty)
+                                        const SizedBox(height: 6),
+                                      // 출발지 항목이 아닐 때만 주황색 태그로 표시
+                                      if (item.type != _ItemType.origin)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFF8126),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            '# ${item.subtitle}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        )
+                                      else
+                                        // 출발지 항목은 회색 텍스트로 표시
+                                        if (item.subtitle.isNotEmpty)
+                                          Text(
+                                            item.subtitle,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                    ],
+                                  ),
+                                ),
+                                // 매장 카드 드래그 핸들 아이콘 (시각적 표시만)
+                                if (item.type == _ItemType.place)
+                                  const Icon(
+                                    Icons.drag_handle,
+                                    color: Colors.grey,
+                                    size: 30,
+                                  ),
+                              ],
                             ),
                           ),
-                          if (item.subtitle.isNotEmpty)
-                            const SizedBox(height: 4),
-                          // 출발지 항목이 아닐 때만 주황색 태그로 표시
-                          if (item.type != _ItemType.origin)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: onTap,
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF8126),
-                                borderRadius: BorderRadius.circular(12),
+                            ],
+                            border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFEFE3),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(item.icon, color: const Color(0xFFFF8126), size: 28),
                               ),
-                              child: Text(
-                                '# ${item.subtitle}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.title,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    if (item.subtitle.isNotEmpty)
+                                      const SizedBox(height: 6),
+                                    // 출발지 항목이 아닐 때만 주황색 태그로 표시
+                                    if (item.type != _ItemType.origin)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFF8126),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          '# ${item.subtitle}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      // 출발지 항목은 회색 텍스트로 표시
+                                      if (item.subtitle.isNotEmpty)
+                                        Text(
+                                          item.subtitle,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                  ],
                                 ),
                               ),
-                            )
-                          else
-                            // 출발지 항목은 회색 텍스트로 표시
-                            if (item.subtitle.isNotEmpty)
-                              Text(
-                                item.subtitle,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                        ],
-                      ),
-                    ),
-                    if (item.type == _ItemType.place && onDragHandle != null)
-                      onDragHandle!(
-                        const Icon(
-                          Icons.drag_handle,
-                          color: Colors.grey,
-                          size: 18,
+                              // 출발지 연필 아이콘 크기 조절
+                              if (item.type == _ItemType.origin && onTap != null)
+                                const Icon(Icons.edit, color: Colors.grey, size: 25), // 여기서 크기 조절
+                            ],
+                          ),
                         ),
                       ),
-                    if (item.type == _ItemType.origin && onTap != null)
-                      const Icon(Icons.edit, color: Colors.grey, size: 18),
-                  ],
+              ),
+            ],
+          ),
+          // 번호 배지 (고정 위치, 드래그와 별개)
+          if (item.type == _ItemType.place)
+            Positioned(
+              left: 0,
+              top: 8,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF8126),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Center(
+                  child: Text(
+                    '${index}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+          // 출발지 배지
+          if (item.type == _ItemType.origin)
+            Positioned(
+              left: 0,
+              top: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF8126),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  '출발지',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

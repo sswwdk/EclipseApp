@@ -296,7 +296,7 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                       child: OutlinedButton(
                         onPressed: _isSaving ? null : _handleSave,
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           side: const BorderSide(
                             color: Color(0xFFFF8126),
                             width: 2,
@@ -318,11 +318,14 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                                   ),
                                 ),
                               )
-                            : const Text(
-                                '저장하기',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                            : const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 6),
+                                child: Text(
+                                  '저장하기',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                  ),
                                 ),
                               ),
                       ),
@@ -334,7 +337,8 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF8126),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 3,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -351,11 +355,14 @@ class _ScheduleBuilderScreenState extends State<ScheduleBuilderScreen> {
                                   ),
                                 ),
                               )
-                            : const Text(
-                                '공유하기',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                            : const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 6),
+                                child: Text(
+                                  '공유하기',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                  ),
                                 ),
                               ),
                       ),
@@ -1054,17 +1061,21 @@ class _OriginAddressInputScreenState extends State<OriginAddressInputScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF8126),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      elevation: 3,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       minimumSize: const Size(double.infinity, 52),
                     ),
-                    child: const Text(
-                      '저장하기',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 6),
+                      child: Text(
+                        '저장하기',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 17,
+                        ),
                       ),
                     ),
                   ),

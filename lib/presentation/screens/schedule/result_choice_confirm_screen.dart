@@ -7,6 +7,7 @@ import '../../../data/models/restaurant.dart';
 import 'dart:async';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// 선택된 장소만 모아 보여주는 화면
 class SelectedPlacesScreen extends StatefulWidget {
@@ -148,11 +149,11 @@ class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF7A21),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                elevation: 3,
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                elevation: 0,
               ),
               child: _isSaving
                   ? const SizedBox(
@@ -163,11 +164,14 @@ class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text(
-                      '저장하기',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                  : const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 6),
+                      child: Text(
+                        '저장하기',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
             ),
@@ -277,6 +281,11 @@ class _SummaryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
+          // 매장 카드 테두리: border 값 변경
+          border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.4),
+            width: 2.0,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),

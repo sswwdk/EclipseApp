@@ -313,11 +313,11 @@ class _Template3ScreenState extends State<Template3Screen> {
                       child: OutlinedButton(
                         onPressed: _isSaving ? null : _handleSave,
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           side: const BorderSide(color: Color(0xFFFB7C9E), width: 2),
                           foregroundColor: const Color(0xFFFB7C9E),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: _isSaving
@@ -331,11 +331,14 @@ class _Template3ScreenState extends State<Template3Screen> {
                                   ),
                                 ),
                               )
-                            : const Text(
-                                '저장하기',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                            : const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 6),
+                                child: Text(
+                                  '저장하기',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                  ),
                                 ),
                               ),
                       ),
@@ -347,9 +350,10 @@ class _Template3ScreenState extends State<Template3Screen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFB7C9E),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 3,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: _isSharing
@@ -363,11 +367,14 @@ class _Template3ScreenState extends State<Template3Screen> {
                                   ),
                                 ),
                               )
-                            : const Text(
-                                '공유하기',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                            : const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 6),
+                                child: Text(
+                                  '공유하기',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                  ),
                                 ),
                               ),
                       ),
