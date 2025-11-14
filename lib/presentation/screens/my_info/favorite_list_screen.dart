@@ -75,7 +75,7 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
       };
 
       // 서버 응답 형식에 따라 데이터 파싱
-      // responseData는 Map<String, dynamic> 타입이지만 실제로는 List일 수도 있음
+      // ResponseLikeListDTO: { like_list: List[CategoryListItemDTO] }
       dynamic response = responseData;
       List<dynamic>? itemsToProcess;
 
@@ -85,18 +85,17 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
         itemsToProcess = response;
       } else if (response is Map<String, dynamic>) {
         print('응답이 Map 형태입니다. 키 목록: ${response.keys.toList()}');
-        // Map 형태일 경우 categories 키 확인
-        if (response.containsKey('categories')) {
-          final categories = response['categories'];
-          print('categories 값 타입: ${categories.runtimeType}');
-          if (categories is List) {
-            print('categories는 List입니다. 항목 수: ${categories.length}');
-            itemsToProcess = categories;
+        // like_list 키 확인 (서버 DTO: ResponseLikeListDTO)
+        if (response.containsKey('like_list')) {
+          final likeList = response['like_list'];
+          print('like_list 값 타입: ${likeList.runtimeType}');
+          if (likeList is List) {
+            print('like_list는 List입니다. 항목 수: ${likeList.length}');
+            itemsToProcess = likeList;
           }
         } else {
-          // 다른 가능한 키들 확인
-          // data, items, likes 등의 키를 확인
-          final possibleKeys = ['data', 'items', 'likes', 'favorites'];
+          // 다른 가능한 키들 확인 (하위 호환성)
+          final possibleKeys = ['categories', 'data', 'items', 'likes', 'favorites'];
           for (var key in possibleKeys) {
             if (response.containsKey(key)) {
               final value = response[key];
@@ -108,30 +107,13 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
               }
             }
           }
-
-          // 키를 찾지 못한 경우 Map의 값들을 확인
-          if (itemsToProcess == null) {
-            final allValues = <dynamic>[];
-            for (var entry in response.entries) {
-              print('키: ${entry.key}, 값 타입: ${entry.value.runtimeType}');
-              if (entry.value is List) {
-                allValues.addAll(entry.value as List);
-              } else if (entry.value is Map<String, dynamic>) {
-                allValues.add(entry.value);
-              }
-            }
-            if (allValues.isNotEmpty) {
-              print('Map의 값들에서 ${allValues.length}개 항목 발견');
-              itemsToProcess = allValues;
-            }
-          }
         }
       }
 
       print('처리할 항목 수: ${itemsToProcess?.length ?? 0}');
 
       // 데이터 파싱 및 카테고리별 분류
-      // UserLikeDTO 형식: type(int), category_id, category_name, category_image, sub_category, do, si, gu, detail_address, category_address
+      // CategoryListItemDTO 형식: id, title, image_url, detail_address, sub_category, lat, lng, type, review_count, average_stars
       if (itemsToProcess != null && itemsToProcess.isNotEmpty) {
         print('${itemsToProcess.length}개 항목 파싱 시작');
         for (var item in itemsToProcess) {
@@ -139,22 +121,20 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
             try {
               print('항목 데이터: $item');
 
-              // UserLikeDTO 형식에 맞게 Restaurant 객체 생성
+              // CategoryListItemDTO 형식에 맞게 Restaurant 객체 생성
               final restaurant = Restaurant(
-                id: item['category_id']?.toString() ?? '',
-                name: item['category_name']?.toString() ?? '',
-                image: item['category_image']?.toString(),
+                id: item['id']?.toString() ?? '',
+                name: item['title']?.toString() ?? '',
+                image: item['image_url']?.toString(),
                 subCategory: item['sub_category']?.toString(),
-                do_: item['do']?.toString(),
-                si: item['si']?.toString(),
-                gu: item['gu']?.toString(),
                 detailAddress: item['detail_address']?.toString(),
+                latitude: item['lat']?.toString(),
+                longitude: item['lng']?.toString(),
                 type: _mapTypeToCategory(
                   item['type'],
                 ), // type int를 카테고리 문자열로 매핑
-                reviewCount: _parseInt(
-                  item['review_count'] ?? item['reviews_count'],
-                ),
+                reviewCount: _parseInt(item['review_count']),
+                averageStars: _parseDouble(item['average_stars']),
                 isFavorite: true, // 찜 목록이므로 항상 true
               );
 
@@ -406,6 +386,13 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
     if (value is int) return value;
     if (value is double) return value.round();
     return int.tryParse(value.toString());
+  }
+
+  double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 
   // 하드코딩 데이터 제거됨
