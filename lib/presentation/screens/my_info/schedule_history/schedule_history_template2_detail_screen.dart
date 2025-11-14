@@ -79,6 +79,34 @@ class _ScheduleHistoryTemplate2DetailScreenState
     }
   }
 
+  Future<void> _refreshSingleRestaurantRating(String categoryId) async {
+    try {
+      final restaurant = await ApiService.getRestaurant(categoryId);
+
+      if (!mounted) return;
+
+      // 해당 매장의 인덱스 찾기
+      final index = _items.indexWhere((item) => item.categoryId == categoryId);
+
+      if (index != -1) {
+        setState(() {
+          _items[index] = _ScheduleItem(
+            title: _items[index].title,
+            category: _items[index].category,
+            address: _items[index].address,
+            icon: _items[index].icon,
+            categoryId: _items[index].categoryId,
+            rating: restaurant.averageStars ?? restaurant.rating,
+            imageUrl: _items[index].imageUrl ?? restaurant.image,
+          );
+        });
+        print('✅ 평점 업데이트 완료: ${restaurant.averageStars ?? restaurant.rating}');
+      }
+    } catch (e) {
+      print('❌ 평점 업데이트 실패: $e');
+    }
+  }
+
   // 🔥 평점 정보를 API에서 가져오는 메서드
   Future<void> _loadRatings() async {
     if (_items.length <= 1) return; // 출발지만 있으면 리턴
@@ -360,7 +388,8 @@ class _ScheduleHistoryTemplate2DetailScreenState
                           transportType: _transportTypes[index] ?? 0,
                           routeResult: _routeResults[index],
                           originName: originName,
-                          isLoadingRating: _isLoadingRatings, // 🔥 추가
+                          isLoadingRating: _isLoadingRatings,
+                          onRefreshRating: _refreshSingleRestaurantRating,
                         ),
                         const SizedBox(height: 30),
                       ],
@@ -425,7 +454,8 @@ class _PlannerItemCard extends StatelessWidget {
   final int transportType;
   final RouteResult? routeResult;
   final String originName;
-  final bool isLoadingRating; // 🔥 추가
+  final bool isLoadingRating;
+  final Future<void> Function(String categoryId)? onRefreshRating;
 
   const _PlannerItemCard({
     Key? key,
@@ -434,7 +464,8 @@ class _PlannerItemCard extends StatelessWidget {
     required this.transportType,
     this.routeResult,
     required this.originName,
-    this.isLoadingRating = false, // 🔥 추가
+    this.isLoadingRating = false,
+    this.onRefreshRating,
   }) : super(key: key);
 
   @override
@@ -932,19 +963,26 @@ class _PlannerItemCard extends StatelessWidget {
         image: detailedRestaurant.image,
         phone: detailedRestaurant.phone,
         rating: detailedRestaurant.rating,
-        averageStars: detailedRestaurant.averageStars, // 🔥 추가
+        averageStars: detailedRestaurant.averageStars,
         businessHour: detailedRestaurant.businessHour,
       );
 
       print('🏪 Restaurant 객체 생성 완료: image = ${restaurant.image}');
 
-      Navigator.push(
+      // 🔥 수정: Navigator.push의 결과를 받아서 리뷰 작성 여부 확인
+      final shouldRefresh = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
           builder: (context) =>
               RestaurantDetailReviewScreen(restaurant: restaurant),
         ),
       );
+
+      // 🔥 추가: 리뷰가 작성되었으면 해당 매장의 평점만 다시 로드
+      if (shouldRefresh == true && context.mounted && onRefreshRating != null) {
+        print('🔄 리뷰 작성 완료, 평점 업데이트 중...');
+        await onRefreshRating!(item.categoryId!);
+      }
     } catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context);
