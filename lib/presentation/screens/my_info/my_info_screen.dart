@@ -7,6 +7,7 @@ import 'my_review_screen.dart';
 import 'my_posts_screen.dart';
 import 'myinfo_etc/notice_screen.dart';
 import 'myinfo_etc/privacy_policy_screen.dart';
+import 'inquiry_dialog.dart';
 import '../main/main_screen.dart';
 import '../auth/login_screen.dart';
 import '../../../core/theme/app_theme.dart';
@@ -279,7 +280,12 @@ class MyInfoScreen extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.help_outline,
             title: '문의하기',
-            onTap: () {},
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => const InquiryDialog(),
+              );
+            },
           ),
         ],
       ),
