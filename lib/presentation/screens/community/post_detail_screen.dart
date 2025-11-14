@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:characters/characters.dart';
 import 'chat_screen.dart';
 import 'report_reason_screen.dart' show ReportReasonDialog;
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 import '../../../data/services/community_service.dart';
 import '../../../core/theme/app_theme.dart';

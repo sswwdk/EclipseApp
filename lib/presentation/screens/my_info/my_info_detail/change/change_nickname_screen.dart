@@ -1,64 +1,38 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/wave_painter.dart';
-import '../../../../data/services/user_service.dart';
-import '../../../../shared/helpers/token_manager.dart';
-import '../../../widgets/common_dialogs.dart';
+import '../../../../widgets/wave_painter.dart';
+import '../../../../../shared/helpers/token_manager.dart';
+import '../../../../../data/services/user_service.dart';
+import '../../../../widgets/dialogs/common_dialogs.dart';
 
-class ChangeAddressScreen extends StatefulWidget {
-  const ChangeAddressScreen({Key? key}) : super(key: key);
+class ChangeNicknameScreen extends StatefulWidget {
+  const ChangeNicknameScreen({Key? key}) : super(key: key);
 
   @override
-  State<ChangeAddressScreen> createState() => _ChangeAddressScreenState();
+  State<ChangeNicknameScreen> createState() => _ChangeNicknameScreenState();
 }
 
-class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
-  final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _detailAddressController = TextEditingController();
+class _ChangeNicknameScreenState extends State<ChangeNicknameScreen> {
+  final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final FocusNode _detailAddressFocusNode = FocusNode();
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _prefillAddress();
+    // 현재 닉네임을 입력 필드에 미리 채우기
+    _nicknameController.text = TokenManager.userName ?? '';
   }
 
   @override
   void dispose() {
-    _addressController.dispose();
-    _detailAddressController.dispose();
+    _nicknameController.dispose();
     _passwordController.dispose();
-    _detailAddressFocusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _prefillAddress() async {
-    try {
-      final String? userId = TokenManager.userId;
-      if (userId == null || userId.isEmpty) return;
-      final Map<String, dynamic> res = await UserService.getMyInfo(userId);
-
-      // 다양한 응답 형태 지원
-      dynamic root = res;
-      if (root is Map<String, dynamic> && root['data'] is Map<String, dynamic>) {
-        root = root['data'];
-      }
-
-      if (root is Map<String, dynamic>) {
-        final String addr = (root['address'] ?? root['detail_address'] ?? '').toString();
-        if (addr.isNotEmpty) {
-          _addressController.text = addr;
-        }
-      }
-    } catch (_) {
-      // 프리필 실패는 무시
-    }
-  }
-
-  Future<void> _handleChangeAddress() async {
-    if (_addressController.text.trim().isEmpty) {
-      _showSnackBar('주소를 입력해주세요.');
+  Future<void> _handleChangeNickname() async {
+    if (_nicknameController.text.trim().isEmpty) {
+      _showSnackBar('닉네임을 입력해주세요.');
       return;
     }
 
@@ -67,20 +41,28 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
       return;
     }
 
+    if (_nicknameController.text.trim() == TokenManager.userName) {
+      _showSnackBar('현재 닉네임과 동일합니다.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await UserService.changeAddress(
-        password: _passwordController.text,
-        address: _addressController.text.trim(),
-        detailAddress: _detailAddressController.text.trim(),
+      final Map<String, dynamic> res = await UserService.changeNickname(
+        _nicknameController.text.trim(),
+        _passwordController.text,
       );
-      _showSnackBar('주소가 변경되었습니다.');
+      final dynamic direct = res['nickname'];
+      final dynamic nested = (res['data'] is Map<String, dynamic>) ? (res['data']['nickname']) : null;
+      final String updated = (direct ?? nested ?? _nicknameController.text.trim()).toString();
+      TokenManager.setUserName(updated);
+      _showSnackBar('닉네임이 변경되었습니다.');
       Navigator.of(context).pop();
     } catch (e) {
-      _showSnackBar('주소 변경 중 오류가 발생했습니다: $e');
+      _showSnackBar('닉네임 변경 중 오류가 발생했습니다: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -113,7 +95,7 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
               const Padding(
                 padding: EdgeInsets.only(top: 30, bottom: 10),
                 child: Text(
-                  '집주소 변경',
+                  '닉네임 변경',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -124,67 +106,28 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
               
               // 서브 타이틀
               const Text(
-                '새로운 주소를 입력해주세요',
+                '새로운 닉네임을 입력해주세요',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
                 ),
               ),
               
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
               
-              // 주소 입력 필드
+              // 닉네임 입력 필드
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: TextField(
-                  controller: _addressController,
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) {
-                    FocusScope.of(context).requestFocus(_detailAddressFocusNode);
-                  },
-                  decoration: InputDecoration(
-                    hintText: '주소 (예: 서울시 강남구)',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: const Color(0xFFF5F5F5),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
-                    suffixIcon: IconButton(
-                      icon: const Icon(
-                        Icons.location_on,
-                        color: Color(0xFFFF8126),
-                      ),
-                      onPressed: () {
-                        // TODO: 주소 검색 기능 구현
-                        _showSnackBar('주소 검색 기능은 준비 중입니다.');
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 15),
-              
-              // 상세 주소 입력 필드
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: TextField(
-                  controller: _detailAddressController,
-                  focusNode: _detailAddressFocusNode,
+                  controller: _nicknameController,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) {
                     if (!_isLoading) {
-                      _handleChangeAddress();
+                      _handleChangeNickname();
                     }
                   },
                   decoration: InputDecoration(
-                    hintText: '상세 주소 (선택사항)',
+                    hintText: '닉네임',
                     hintStyle: TextStyle(color: Colors.grey[400]),
                     filled: true,
                     fillColor: const Color(0xFFF5F5F5),
@@ -208,6 +151,12 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                 child: TextField(
                   controller: _passwordController,
                   obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    if (!_isLoading) {
+                      _handleChangeNickname();
+                    }
+                  },
                   decoration: InputDecoration(
                     hintText: '현재 비밀번호',
                     hintStyle: TextStyle(color: Colors.grey[400]),
@@ -233,7 +182,7 @@ class _ChangeAddressScreenState extends State<ChangeAddressScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleChangeAddress,
+                    onPressed: _isLoading ? null : _handleChangeNickname,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF8126),
                       padding: const EdgeInsets.symmetric(vertical: 16),

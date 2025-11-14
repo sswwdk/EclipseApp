@@ -20,6 +20,7 @@ class Restaurant {
   final List<Review> reviews;
   final int? reviewCount;
   final List<String> tags;
+  final List<String> menuPreview;
   final bool isFavorite;
 
   Restaurant({
@@ -42,6 +43,7 @@ class Restaurant {
     this.reviewCount,
     this.reviews = const [],
     this.tags = const [],
+    this.menuPreview = const [],
     this.isFavorite = false,
   })  : rating = rating ?? averageStars,
         averageStars = averageStars ?? rating;
@@ -69,6 +71,7 @@ class Restaurant {
           _parseInt(json['review_count']) ?? _safeLength(json['reviews']),
       reviews: reviews,
       tags: _parseStringList(json['tags']),
+      menuPreview: _parseStringList(json['menu_preview']),
       isFavorite: (json['is_like'] == true),
     );
   }
@@ -101,12 +104,28 @@ class Restaurant {
           _safeLength(json['reviews']),
       reviews: reviews,
       tags: _parseStringList(json['tags']),
+      menuPreview: _parseStringList(json['menu_preview']),
       isFavorite: (json['is_like'] == true),
     );
   }
 
   // 기존 코드와의 호환성을 위한 getter들
-  String? get address => detailAddress != null ? '${si ?? ''} ${gu ?? ''} ${detailAddress ?? ''}' : null;
+  String? get address {
+    final parts = <String>[];
+    if (si != null && si!.trim().isNotEmpty) {
+      parts.add(si!.trim());
+    }
+    if (gu != null && gu!.trim().isNotEmpty) {
+      parts.add(gu!.trim());
+    }
+    if (detailAddress != null && detailAddress!.trim().isNotEmpty) {
+      parts.add(detailAddress!.trim());
+    }
+    if (parts.isEmpty) {
+      return null;
+    }
+    return parts.join(' ');
+  }
   String? get imageUrl => image;
   String? get description => subCategory;
 }

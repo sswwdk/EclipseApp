@@ -3,10 +3,10 @@ import '../main/restaurant_detail_screen.dart';
 import '../main/main_screen.dart';
 import 'route_confirm_screen.dart';
 import '../../../data/models/restaurant.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 import 'result_choice_confirm_screen.dart';
-import '../../widgets/store_card.dart';
+import '../../widgets/store/store_card.dart';
 
 /// 추천 결과를 보여주는 화면
 class RecommendationResultScreen extends StatefulWidget {

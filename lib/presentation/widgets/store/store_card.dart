@@ -54,11 +54,15 @@ class StoreCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.3),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withOpacity(0.2),
               spreadRadius: 1,
-              blurRadius: 4,
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
@@ -193,10 +197,10 @@ class StoreCard extends StatelessWidget {
         behavior: HitTestBehavior.translucent,
         onTap: onFavoriteToggle,
         child: Container(
-          width: 40,
-          height: 40,
+          width: 45,
+          height: 45,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color.fromARGB(255, 236, 236, 236).withOpacity(0.8),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -209,7 +213,7 @@ class StoreCard extends StatelessWidget {
           child: Icon(
             isFavorite ? Icons.favorite : Icons.favorite_border,
             color: isFavorite ? Colors.red : Colors.grey[600],
-            size: 22,
+            size: 28,
           ),
         ),
       ),
@@ -268,7 +272,7 @@ class _RatingReviewRow extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          rating.isNaN ? '평점 정보 없음' : '평균 ${rating.toStringAsFixed(1)}점',
+          rating.isNaN ? '평점 정보 없음' :'${rating.toStringAsFixed(1)}점',
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,

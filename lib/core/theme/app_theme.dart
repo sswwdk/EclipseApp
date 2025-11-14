@@ -209,6 +209,13 @@ class AppTheme {
     fontWeight: FontWeight.w600,
     color: Colors.white,
   );
+
+  // 빈 상태 메시지 스타일 (리뷰 없음, 데이터 없음 등)
+  static const TextStyle emptyStateMessage = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.normal,
+    color: Color.fromARGB(203, 117, 117, 117),
+  );
   
   // 박스 그림자 정의
   static List<BoxShadow> get defaultShadow => [

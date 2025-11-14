@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'community_screen.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 import '../../../data/services/community_service.dart';
 

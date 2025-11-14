@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:characters/characters.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import '../../../data/services/chat_service.dart';
 import '../../../data/services/community_service.dart';
 import '../../../shared/helpers/token_manager.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'schedule_chat_screen.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 
 /// 위치 입력 화면
 class LocationInputScreen extends StatefulWidget {
@@ -95,7 +95,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                   Text(
                     '위치를 선택해주세요!',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 30,
                       fontWeight: FontWeight.w800,
                       color: Colors.black87,
                     ),
@@ -103,11 +103,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                   SizedBox(height: 8),
                   Text(
                     '서울특별시의 구를 선택해주세요.\n자동완성 목록에서 선택하시면 편리합니다.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppTheme.emptyStateMessage,
                   ),
                 ],
               ),
@@ -143,7 +139,8 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                           return Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                              // 🔧 수정: 입력 박스 외부 모서리 둥글기 (원래: 12)
+                              borderRadius: BorderRadius.circular(15),
                               boxShadow: const [
                                 BoxShadow(
                                   color: Color(0x14000000),
@@ -159,11 +156,16 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                                 hintText: '예: 강남구, 강동구, 영등포구...',
                                 hintStyle: const TextStyle(
                                   color: Colors.black38,
-                                  fontSize: 14,
+                                  // 🔧 수정: 힌트 텍스트 크기 (원래: 14)
+                                  fontSize: 18,
+                                  // 🔧 수정: 힌트 텍스트 굵기 (기본값: FontWeight.normal, fontWeight 속성 없음)
+                                  fontWeight: FontWeight.w300,
                                 ),
                                 prefixIcon: const Icon(
                                   Icons.location_on,
                                   color: AppTheme.primaryColor,
+                                  // 🔧 수정: 입력 박스 위치 아이콘 크기 (기본값: 24, size 속성 없음)
+                                  size: 25,
                                 ),
                                 suffixIcon: controller.text.isNotEmpty
                                     ? GestureDetector(
@@ -179,7 +181,8 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                                           child: const Icon(
                                             Icons.cancel,
                                             color: Colors.grey,
-                                            size: 20,
+                                            // 🔧 수정: 입력 박스 X 표시(취소 아이콘) 크기 (원래: 20)
+                                            size: 24,
                                           ),
                                         ),
                                       )
@@ -190,13 +193,15 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                                 ),
                                 filled: true,
                                 fillColor: Colors.white,
+                                // 🔧 수정: 입력 박스 내부 여백 (원래: horizontal: 16, vertical: 16)
                                 contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
+                                  horizontal: 20,
+                                  vertical: 20,
                                 ),
                               ),
                               style: const TextStyle(
-                                fontSize: 15,
+                                // 🔧 수정: 입력 텍스트 크기 (원래: 15)
+                                fontSize: 19,
                                 fontWeight: FontWeight.w500,
                               ),
                               onSubmitted: (value) {
@@ -215,7 +220,8 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         width: MediaQuery.of(context).size.width - 48,
-                        constraints: const BoxConstraints(maxHeight: 250),
+                        // 🔧 수정: 자동완성 목록 최대 높이 (원래: 250)
+                        constraints: const BoxConstraints(maxHeight: 400),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
@@ -237,6 +243,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                                 onSelected(option);
                               },
                               child: Padding(
+                                // 🔧 수정: 목록 항목 내부 여백 (원래: horizontal: 16, vertical: 14)
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 14,
@@ -245,6 +252,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                                   children: [
                                     const Icon(
                                       Icons.location_on_outlined,
+                                      // 🔧 수정: 목록 아이콘 크기 (원래: 20)
                                       size: 20,
                                       color: AppTheme.primaryColor,
                                     ),
@@ -252,8 +260,10 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                                     Text(
                                       option,
                                       style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
+                                        // 🔧 수정: 목록 항목 텍스트 크기 (원래: 15)
+                                        fontSize: 18,
+                                        // 🔧 수정: 목록 항목 텍스트 굵기 (원래: FontWeight.w500)
+                                        fontWeight: FontWeight.w300,
                                         color: Colors.black87,
                                       ),
                                     ),
@@ -287,7 +297,7 @@ class _LocationInputScreenState extends State<LocationInputScreen> {
                   onPressed: _proceedToNext,
                   child: const Text(
                     '다음',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -343,43 +353,59 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
       ),
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '총 몇 명이 함께하시나요? (본인 포함)',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '인원 수를 알려주세요.',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _CircleIconButton(icon: Icons.remove, onTap: _decrement),
-                const SizedBox(width: 28),
-                Text(
-                  '$_count',
-                  style: const TextStyle(
-                    color: Color(0xFFFF7A21),
-                    fontSize: 48,
-                    fontWeight: FontWeight.w800,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      '몇 명이 함께 가시나요?',
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 28),
-                _CircleIconButton(icon: Icons.add, onTap: _increment),
-              ],
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      '(본인 포함) 인원 수를 알려주세요.',
+                      style: AppTheme.emptyStateMessage,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _CircleIconButton(icon: Icons.remove, onTap: _decrement),
+                  // 🔧 수정: 버튼과 숫자 사이 간격 (원래: 28)
+                  const SizedBox(width: 28),
+                  Text(
+                    '$_count',
+                    style: const TextStyle(
+                      color: Color(0xFFFF7A21),
+                      // 🔧 수정: 인원 수 숫자 크기 (원래: 48)
+                      fontSize: 60,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  // 🔧 수정: 숫자와 버튼 사이 간격 (원래: 28)
+                  const SizedBox(width: 28),
+                  _CircleIconButton(icon: Icons.add, onTap: _increment),
+                ],
+              ),
             ),
             const Spacer(),
             Padding(
@@ -399,7 +425,7 @@ class _PeopleCountScreenState extends State<PeopleCountScreen> {
                   onPressed: _proceedToNext,
                   child: const Text(
                     '할 일 선택',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -420,10 +446,12 @@ class _CircleIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkResponse(
       onTap: onTap,
-      radius: 28,
+      // 🔧 수정: 버튼 터치 반응 영역 (원래: 28)
+      radius: 30,
       child: Container(
-        width: 48,
-        height: 48,
+        // 🔧 수정: +/- 버튼 크기 (원래: width: 48, height: 48)
+        width: 60,
+        height: 60,
         decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
@@ -435,6 +463,7 @@ class _CircleIconButton extends StatelessWidget {
             ),
           ],
         ),
+        // 🔧 수정: 버튼 아이콘 크기 (기본값: 24, size 속성 없음)
         child: Icon(icon, color: Colors.black54),
       ),
     );
@@ -551,26 +580,22 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                '무엇을 하고 싶으신가요?',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '하고 싶은 일을 골라주세요.',
-                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                    '무엇을 하고 싶으신가요?',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
+                    ),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 8),
                   Text(
-                    '중복 선택도 가능합니다.',
-                    style: TextStyle(fontSize: 13, color: Colors.black38),
+                    '하고 싶은 일을 골라주세요.\n중복 선택도 가능합니다.',
+                    style: AppTheme.emptyStateMessage,
                   ),
                 ],
               ),
@@ -614,7 +639,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
                   onPressed: _canProceed ? _proceedToNext : null,
                   child: const Text(
                     '하루와 할 일 만들러 가기!',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -652,7 +677,7 @@ class _CategoryCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          height: 110,
+          height: 140,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
@@ -672,8 +697,8 @@ class _CategoryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 56,
-                height: 56,
+                width: 70,
+                height: 70,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: selected
@@ -692,11 +717,13 @@ class _CategoryCard extends StatelessWidget {
                   color: selected ? accent : Colors.black38,
                 ),
               ),
-              const SizedBox(height: 10),
+              // 🔧 수정: 아이콘과 텍스트 사이 간격 (원래: 10)
+              const SizedBox(height: 15),
               Text(
                 category.name,
                 style: TextStyle(
-                  fontSize: 13,
+                  // 🔧 수정: 라벨 글자 크기 (원래: 13)
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: selected ? accent : Colors.black54,
                 ),

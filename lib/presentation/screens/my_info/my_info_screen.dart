@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'profile_settings_screen.dart';
-import 'terms_of_service_screen.dart';
+import 'my_info_detail/profile_settings_screen.dart';
+import 'myinfo_etc/terms_of_service_screen.dart';
 import 'favorite_list_screen.dart';
-import 'schedule/schedule_history_screen.dart';
+import 'schedule_history/schedule_history_screen.dart';
 import 'my_review_screen.dart';
 import 'my_posts_screen.dart';
-import 'notice_screen.dart';
-import 'privacy_policy_screen.dart';
+import 'myinfo_etc/notice_screen.dart';
+import 'myinfo_etc/privacy_policy_screen.dart';
 import '../main/main_screen.dart';
 import '../auth/login_screen.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 
 class MyInfoScreen extends StatelessWidget {

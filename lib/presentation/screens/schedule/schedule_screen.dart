@@ -76,10 +76,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               );
                             },
-                            child: const Text(
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            child: Text(
                               '오늘 할 일 만들기',
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                             ),
+                          ),
                           ),
                         ],
                       ),

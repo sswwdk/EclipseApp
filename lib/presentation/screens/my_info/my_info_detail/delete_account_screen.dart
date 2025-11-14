@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../auth/login_screen.dart';
-import '../auth/find_account_screen.dart';
-import '../../widgets/common_dialogs.dart';
-import '../../widgets/app_title_widget.dart';
-import '../../../data/services/user_service.dart';
-import '../../../shared/helpers/token_manager.dart';
+import '../../auth/login_screen.dart';
+import '../../auth/find_account_screen.dart';
+import '../../../widgets/dialogs/common_dialogs.dart';
+import '../../../widgets/app_title_widget.dart';
+import '../../../../data/services/user_service.dart';
+import '../../../../shared/helpers/token_manager.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({Key? key}) : super(key: key);

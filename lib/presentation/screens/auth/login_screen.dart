@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/wave_painter.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import 'signup_screen.dart';
 import 'find_account_screen.dart';
 import '../main/main_screen.dart';

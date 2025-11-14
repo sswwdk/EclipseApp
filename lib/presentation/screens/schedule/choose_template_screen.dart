@@ -3,7 +3,7 @@ import 'template_1_screen.dart';
 import 'template_2_screen.dart'; // 🔥 추가
 import 'template_3_screen.dart'; // TODO(jjaga): remove import when template3 finalized
 import '../../../core/theme/app_theme.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 
 class ChooseTemplateScreen extends StatefulWidget {

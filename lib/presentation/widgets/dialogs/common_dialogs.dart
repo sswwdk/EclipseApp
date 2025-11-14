@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'confirmation_dialog.dart';
+import 'info_dialog.dart';
 
 /// 공통 다이얼로그 위젯들
 class CommonDialogs {
@@ -13,66 +15,15 @@ class CommonDialogs {
     VoidCallback? onConfirm,
     VoidCallback? onCancel,
   }) {
-    return showDialog<bool>(
+    return ConfirmationDialog.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            content,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-                onCancel?.call();
-              },
-              child: Text(
-                cancelText,
-                style: const TextStyle(
-                  color: Colors.black54,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-                onConfirm?.call();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: confirmButtonColor ?? const Color(0xFFFF7A21),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                confirmText,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+      title: title,
+      content: content,
+      cancelText: cancelText,
+      confirmText: confirmText,
+      confirmButtonColor: confirmButtonColor,
+      onConfirm: onConfirm,
+      onCancel: onCancel,
     );
   }
 
@@ -84,52 +35,12 @@ class CommonDialogs {
     String buttonText = '확인',
     VoidCallback? onPressed,
   }) {
-    return showDialog<void>(
+    return InfoDialog.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            content,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                onPressed?.call();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF7A21),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                buttonText,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+      title: title,
+      content: content,
+      buttonText: buttonText,
+      onPressed: onPressed,
     );
   }
 

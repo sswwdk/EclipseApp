@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/user_service.dart';
-import '../../widgets/common_dialogs.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 
 // 회원가입 화면
 class SignUpScreen extends StatefulWidget {
