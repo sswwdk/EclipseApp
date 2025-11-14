@@ -150,16 +150,17 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
               ),
             ),
             
-            // 음식점 정보 섹션
+            // 주소와 평점 카드
             Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.6), /* 매장 정보 박스 그림자 색상 */
+                    color: Colors.grey.withOpacity(0.6),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 2),
@@ -193,33 +194,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                     ],
                   ),
                   
-                  // 전화번호
-                  if (restaurant.phone != null) ...[
-                    const SizedBox(height: 12),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                        const Icon(
-                          Icons.phone,
-                          color: Color(0xFFFF8126),
-                          size: 24,
-                        ),
-                        const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          restaurant.phone!,
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.start,
-                        ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  
                   // 평점 (서버 값만 표시, 없으면 0)
                   const SizedBox(height: 12),
                   Row(
@@ -247,10 +221,59 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+            
+            // 기타 정보 카드 (전화번호, 영업시간, 태그)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.6),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 전화번호
+                  if (restaurant.phone != null) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.phone,
+                          color: Color(0xFFFF8126),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            restaurant.phone!,
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 15,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            textAlign: TextAlign.start,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   
                   // 영업시간
                   if (restaurant.businessHour != null) ...[
-                    const SizedBox(height: 12),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -265,35 +288,32 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                             restaurant.businessHour!,
                             style: TextStyle(
                               color: Colors.grey[700],
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w400,
                               height: 1.4,
                             ),
-                          textAlign: TextAlign.start,
+                            textAlign: TextAlign.start,
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
                   ],
                   
-                  const SizedBox(height: 1),
-                  
                   if (_menuPreview.isNotEmpty) ...[
-                    const SizedBox(),
                     StoreMenuPreview(
                       menus: _menuPreview,
                       title: '관련 태그',
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 13),
                   ],
                   
                   if (_tags.isNotEmpty) ...[
                     StoreMenuPreview(
                       menus: _tags.map((t) => '# $t').toList(growable: false),
-                      title: '리뷰 태그',
+                      title: '',
                       primaryColor: Color.fromARGB(255, 54, 82, 138)
                     ),
-                    const SizedBox(height: 16),
                   ],
                 ],
               ),
@@ -301,7 +321,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
             
             // 리뷰 섹션 (서버 데이터 표시, 없으면 안내)
             Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(left: 16, right: 16, top: 8),
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -323,7 +343,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                   Text(
                     '리뷰 (${_reviews.length})',
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 19,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
