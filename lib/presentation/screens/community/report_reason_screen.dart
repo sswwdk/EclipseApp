@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/services/report_service.dart';
+import '../../../shared/helpers/token_manager.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 
 class ReportReasonDialog extends StatefulWidget {
   final String targetType; // 'user', 'post', 'comment'
   final String targetId;
   final String? targetName; // 사용자 이름 또는 게시글 제목
+  final String? reportedUserId; // 신고당한 사용자 ID (게시글/댓글의 경우 작성자 ID)
 
   const ReportReasonDialog({
     Key? key,
     required this.targetType,
     required this.targetId,
     this.targetName,
+    this.reportedUserId,
   }) : super(key: key);
 
   @override
@@ -20,6 +25,7 @@ class ReportReasonDialog extends StatefulWidget {
 class _ReportReasonDialogState extends State<ReportReasonDialog> {
   String? _selectedReason;
   final TextEditingController _customReasonController = TextEditingController();
+  bool _isSubmitting = false;
 
   final List<Map<String, String>> _reportReasons = [
     {'id': 'spam', 'title': '스팸/광고'},
@@ -28,6 +34,27 @@ class _ReportReasonDialogState extends State<ReportReasonDialog> {
     {'id': 'privacy', 'title': '개인정보 유출'},
     {'id': 'other', 'title': '기타'},
   ];
+
+  /// 신고 사유 ID 반환 ("0": 스팸/광고, "1": 욕설/비방, "2": 음란물, "3": 개인정보 유출, "4": 기타)
+  String _getCauseId(String? reasonId) {
+    if (reasonId == null) return '4';
+    final index = _reportReasons.indexWhere((r) => r['id'] == reasonId);
+    return (index >= 0 ? index : 4).toString();
+  }
+
+  /// 신고 타입을 문자열로 변환 ("0": 사용자, "1": 게시글, "2": 댓글)
+  String _getReportType() {
+    switch (widget.targetType) {
+      case 'user':
+        return '0';
+      case 'post':
+        return '1';
+      case 'comment':
+        return '2';
+      default:
+        return '0';
+    }
+  }
 
   @override
   void dispose() {
@@ -292,9 +319,10 @@ class _ReportReasonDialogState extends State<ReportReasonDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _selectedReason != null &&
+                      onPressed: (_selectedReason != null &&
                               (_selectedReason != 'other' ||
-                                  _customReasonController.text.trim().isNotEmpty)
+                                  _customReasonController.text.trim().isNotEmpty) &&
+                              !_isSubmitting)
                           ? _submitReport
                           : null,
                       style: ElevatedButton.styleFrom(
@@ -306,13 +334,22 @@ class _ReportReasonDialogState extends State<ReportReasonDialog> {
                         ),
                         disabledBackgroundColor: Colors.grey[300],
                       ),
-                      child: const Text(
-                        '신고하기',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              '신고하기',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -324,8 +361,9 @@ class _ReportReasonDialogState extends State<ReportReasonDialog> {
     );
   }
 
-  void _submitReport() {
+  Future<void> _submitReport() async {
     if (_selectedReason == null) return;
+    if (_isSubmitting) return;
     
     String reasonText = _reportReasons
         .firstWhere((r) => r['id'] == _selectedReason)['title']!;
@@ -336,10 +374,77 @@ class _ReportReasonDialogState extends State<ReportReasonDialog> {
       reasonText = customReason;
     }
 
-    Navigator.of(context).pop({
-      'reason': reasonText,
-      'reasonId': _selectedReason,
+    final currentUserId = TokenManager.userId;
+    if (currentUserId == null) {
+      if (!mounted) return;
+      CommonDialogs.showError(
+        context: context,
+        message: '로그인이 필요합니다.',
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
     });
+
+    try {
+      // 모든 타입에 대해 통합된 report 메서드 사용
+      final causeId = _getCauseId(_selectedReason);
+      final reportType = _getReportType();
+      
+      // 신고당한 사용자 ID 결정
+      // type 0 (사용자 신고): targetId가 신고당한 사용자 ID
+      // type 1 (게시글 신고): reportedUserId가 게시글 작성자 ID
+      // type 2 (댓글 신고): reportedUserId가 댓글 작성자 ID
+      String? reportedUserId;
+      if (widget.targetType == 'user') {
+        // 사용자 신고: targetId가 신고당한 사용자 ID
+        reportedUserId = widget.targetId;
+      } else {
+        // 게시글/댓글 신고: reportedUserId가 필수 (작성자 ID)
+        reportedUserId = widget.reportedUserId;
+        if (reportedUserId == null || reportedUserId.isEmpty) {
+          if (!mounted) return;
+          CommonDialogs.showError(
+            context: context,
+            message: '작성자 정보를 찾을 수 없습니다.',
+          );
+          setState(() {
+            _isSubmitting = false;
+          });
+          return;
+        }
+      }
+      
+      await ReportService.report(
+        widget.targetId,
+        reasonText,
+        causeId,
+        reportType,
+        reportedUserId: reportedUserId,
+      );
+      
+      if (!mounted) return;
+      
+      Navigator.of(context).pop(true); // 성공 시 true 반환
+      
+      CommonDialogs.showSuccess(
+        context: context,
+        message: '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() {
+        _isSubmitting = false;
+      });
+      
+      CommonDialogs.showError(
+        context: context,
+        message: '신고에 실패했습니다. 다시 시도해주세요.',
+      );
+    }
   }
 }
 

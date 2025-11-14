@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:characters/characters.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../../data/services/chat_service.dart';
-import '../../../data/services/community_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 import 'report_reason_screen.dart' show ReportReasonDialog;
 
@@ -693,7 +692,7 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    final result = await showDialog(
+    await showDialog(
       context: context,
       builder: (context) => ReportReasonDialog(
         targetType: 'user',
@@ -701,40 +700,6 @@ class _ChatScreenState extends State<ChatScreen> {
         targetName: widget.user['nickname']?.toString() ?? '사용자',
       ),
     );
-
-    if (result != null && result is Map) {
-      final reason = result['reason'] as String?;
-      if (reason != null) {
-        await _submitReport(otherUserId, reason);
-      }
-    }
-  }
-
-  Future<void> _submitReport(String userId, String reason) async {
-    final currentUserId = TokenManager.userId;
-    if (currentUserId == null) {
-      _showSnackBar('로그인이 필요합니다.');
-      return;
-    }
-
-    try {
-      await CommunityService.reportContent(
-        currentUserId,
-        'user',
-        userId,
-        reason,
-      );
-      
-      if (!mounted) return;
-      
-      CommonDialogs.showSuccess(
-        context: context,
-        message: '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
-      );
-    } catch (e) {
-      if (!mounted) return;
-      _showSnackBar('신고에 실패했습니다. 다시 시도해주세요.');
-    }
   }
 
   void _showSnackBar(String message) {

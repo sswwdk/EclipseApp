@@ -776,58 +776,30 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   void _showReportDialog() async {
-    // 게시글 작성자 정보 가져오기
-    final userId = _currentPost?['userId']?.toString() ?? 
-                   _currentPost?['user_id']?.toString();
-    final nickname = _currentPost?['nickname']?.toString() ?? '사용자';
+    // 게시글 ID 가져오기
+    final postId = _resolvePostId();
+    final postTitle = _currentPost?['title']?.toString() ?? 
+                     _currentPost?['content']?.toString() ?? 
+                     '게시글';
     
-    if (userId == null || userId.isEmpty) {
-      _showSnackBar('사용자 정보를 찾을 수 없습니다.');
+    if (postId == null) {
+      _showSnackBar('게시글 정보를 찾을 수 없습니다.');
       return;
     }
 
-    final result = await showDialog(
+    // 게시글 작성자 ID 가져오기
+    final postAuthorId = _currentPost?['userId']?.toString() ?? 
+                        _currentPost?['user_id']?.toString();
+
+    await showDialog(
       context: context,
       builder: (context) => ReportReasonDialog(
-        targetType: 'user',
-        targetId: userId,
-        targetName: nickname,
+        targetType: 'post',
+        targetId: postId.toString(),
+        targetName: postTitle,
+        reportedUserId: postAuthorId,
       ),
     );
-
-    if (result != null && result is Map) {
-      final reason = result['reason'] as String?;
-      if (reason != null) {
-        await _submitUserReport(userId, reason);
-      }
-    }
-  }
-
-  Future<void> _submitUserReport(String userId, String reason) async {
-    final currentUserId = TokenManager.userId;
-    if (currentUserId == null) {
-      _showSnackBar('로그인이 필요합니다.');
-      return;
-    }
-
-    try {
-      await CommunityService.reportContent(
-        currentUserId,
-        'user',
-        userId,
-        reason,
-      );
-      
-      if (!mounted) return;
-      
-      CommonDialogs.showSuccess(
-        context: context,
-        message: '신고가 접수되었습니다. 검토 후 조치하겠습니다.',
-      );
-    } catch (e) {
-      if (!mounted) return;
-      _showSnackBar('신고에 실패했습니다. 다시 시도해주세요.');
-    }
   }
 
   Future<void> _handleSubmitComment() async {
@@ -1275,43 +1247,32 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  void _confirmReportComment(Map<String, dynamic> comment) {
-    CommonDialogs.showReportConfirmation(
-      context: context,
-      title: '댓글 신고하기',
-      content: '해당 댓글을 신고하시겠습니까?',
-      onConfirm: () => _reportComment(comment),
-    );
-  }
-
-  Future<void> _reportComment(Map<String, dynamic> comment) async {
-    final userId = TokenManager.userId;
+  void _confirmReportComment(Map<String, dynamic> comment) async {
     final commentId = _coerceToInt(comment['commentId']);
-
-    if (userId == null) {
-      _showSnackBar('로그인이 필요합니다.');
-      return;
-    }
-
     if (commentId == null) {
       _showSnackBar('댓글 정보를 찾을 수 없습니다.');
       return;
     }
 
-    try {
-      await CommunityService.reportContent(
-        userId,
-        'comment',
-        commentId.toString(),
-        '부적절한 댓글 신고',
-      );
-      if (!mounted) return;
-      CommonDialogs.showSuccess(
-        context: context,
-        message: '신고가 접수되었습니다.',
-      );
-    } catch (e) {
-      _showSnackBar('신고에 실패했습니다. 다시 시도해주세요.');
+    final nickname = comment['nickname']?.toString() ?? '댓글 작성자';
+    
+    // 댓글 작성자 ID 가져오기
+    final commentAuthorId = comment['userId']?.toString() ?? 
+                            comment['user_id']?.toString();
+    
+    final result = await showDialog(
+      context: context,
+      builder: (context) => ReportReasonDialog(
+        targetType: 'comment',
+        targetId: commentId.toString(),
+        targetName: nickname,
+        reportedUserId: commentAuthorId,
+      ),
+    );
+
+    // 다이얼로그에서 이미 신고 처리가 완료되므로 여기서는 추가 작업 불필요
+    if (result == true) {
+      // 신고 성공 (다이얼로그에서 이미 성공 메시지 표시됨)
     }
   }
 
