@@ -54,10 +54,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: const Color(0xFFFF8126),
-          ),
+          child: Container(height: 1, color: const Color(0xFFFF8126)),
         ),
       ),
       body: _buildBody(),
@@ -78,11 +75,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Colors.red[400],
-              ),
+              Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
               const SizedBox(height: 12),
               Text(
                 _errorMessage!,
@@ -131,11 +124,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.task_alt,
-            size: 80,
-            color: Colors.grey[300],
-          ),
+          Icon(Icons.task_alt, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 16),
           Text(
             '아직 생성된 일정표가 없습니다',
@@ -148,10 +137,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
           const SizedBox(height: 8),
           Text(
             '일정표를 먼저 생성해보세요!',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
         ],
       ),
@@ -164,10 +150,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -198,7 +181,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                
+
                 // 제목
                 Text(
                   todo.title,
@@ -209,7 +192,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // 날짜와 시간
                 Row(
                   children: [
@@ -221,15 +204,12 @@ class _TodoListScreenState extends State<TodoListScreen> {
                     const SizedBox(width: 4),
                     Text(
                       todo.dateText,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                
+
                 // 카테고리 (카페, 음식점, 콘텐츠만 표시)
                 Wrap(
                   spacing: 6,
@@ -256,30 +236,32 @@ class _TodoListScreenState extends State<TodoListScreen> {
                           ),
                         ]
                       : todo.categories
-                          .map(
-                            (category) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF8126).withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                category,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFFFF8126),
-                                  fontWeight: FontWeight.w500,
+                            .map(
+                              (category) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFFFF8126,
+                                  ).withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  category,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFFFF8126),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                            ),
-                          )
-                          .toList(),
+                            )
+                            .toList(),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // 일정 정보
                 if (todo.places.isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -359,9 +341,11 @@ class _TodoListScreenState extends State<TodoListScreen> {
       final response = await HistoryService.getMyHistory(userId);
       final historyItems = _extractHistoryItems(response);
 
+      final recentItems = historyItems.take(10).toList();
+
       final List<_ScheduleSummary> schedules = [];
 
-      for (final history in historyItems) {
+      for (final history in recentItems) {
         try {
           final detail = await HistoryService.getHistoryDetail(
             userId,
@@ -389,7 +373,10 @@ class _TodoListScreenState extends State<TodoListScreen> {
     }
   }
 
-  _ScheduleSummary _parseDetail(_HistoryListItem history, Map<String, dynamic> detail) {
+  _ScheduleSummary _parseDetail(
+    _HistoryListItem history,
+    Map<String, dynamic> detail,
+  ) {
     final data = detail['data'] ?? detail;
     final categories = (data['categories'] as List<dynamic>? ?? [])
         .whereType<Map<String, dynamic>>()
@@ -399,11 +386,10 @@ class _TodoListScreenState extends State<TodoListScreen> {
     final categoryTags = <String>{};
 
     for (final category in categories) {
-      final name = (category['category_name'] ??
-              category['name'] ??
-              category['title'])
-          ?.toString()
-          .trim();
+      final name =
+          (category['category_name'] ?? category['name'] ?? category['title'])
+              ?.toString()
+              .trim();
       if (name != null && name.isNotEmpty) {
         places.add({'place': name});
       }
@@ -415,7 +401,10 @@ class _TodoListScreenState extends State<TodoListScreen> {
     }
 
     if (places.isEmpty && history.title.isNotEmpty) {
-      final segments = history.title.split('→').map((e) => e.trim()).where((e) => e.isNotEmpty);
+      final segments = history.title
+          .split('→')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty);
       for (final segment in segments) {
         places.add({'place': segment});
       }
@@ -475,27 +464,23 @@ class _TodoListScreenState extends State<TodoListScreen> {
       if (item is! Map<String, dynamic>) continue;
       final map = item;
 
-      final id = map['id']?.toString() ??
+      final id =
+          map['id']?.toString() ??
           map['history_id']?.toString() ??
           map['merge_history_id']?.toString();
       if (id == null || id.isEmpty) continue;
 
-      final title = map['categories_name']?.toString() ??
+      final title =
+          map['categories_name']?.toString() ??
           map['category_name']?.toString() ??
           map['name']?.toString() ??
           '';
 
       final date = _formatDate(
-        map['visited_at']?.toString() ??
-            map['date']?.toString() ??
-            '',
+        map['visited_at']?.toString() ?? map['date']?.toString() ?? '',
       );
 
-      items.add(_HistoryListItem(
-        historyId: id,
-        title: title,
-        dateText: date,
-      ));
+      items.add(_HistoryListItem(historyId: id, title: title, dateText: date));
     }
 
     return items;
@@ -507,7 +492,8 @@ class _TodoListScreenState extends State<TodoListScreen> {
     final parsed = DateTime.tryParse(raw)?.toLocal();
     if (parsed != null) {
       final hasTimeInfo = _hasTimeComponent(raw);
-      final date = '${parsed.year}-${_padTwo(parsed.month)}-${_padTwo(parsed.day)}';
+      final date =
+          '${parsed.year}-${_padTwo(parsed.month)}-${_padTwo(parsed.day)}';
       if (!hasTimeInfo) {
         return date;
       }
@@ -550,10 +536,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
         ordered.add(name);
       }
     }
-    final others = categories
-        .where((c) => !order.contains(c))
-        .toList()
-      ..sort();
+    final others = categories.where((c) => !order.contains(c)).toList()..sort();
     return [...ordered, ...others];
   }
 
