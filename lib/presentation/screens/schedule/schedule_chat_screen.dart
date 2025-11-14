@@ -418,8 +418,19 @@ class _ChatScreenState extends State<ChatScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
+              // 사용자 메시지 박스 테두리 강조: border 값 변경
+              border: Border.all(
+                color: const Color(0xFFFF7A21).withOpacity(0.6),
+                width: 1.5,
+              ),
+              // 사용자 메시지 박스 그림자 강조: boxShadow 값 변경
               boxShadow: const [
-                BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
+                BoxShadow(
+                  color: Color(0x29000000),
+                  blurRadius: 16,
+                  offset: Offset(0, 8),
+                  spreadRadius: 0,
+                ),
               ],
             ),
             child: Column(
@@ -448,13 +459,28 @@ class _ChatScreenState extends State<ChatScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFFFF7A21),
               borderRadius: BorderRadius.circular(12),
+              // 사용자 메시지 박스 테두리 강조: border 값 변경
+              border: Border.all(
+                color: Colors.white.withOpacity(0.6),
+                width: 1.5,
+              ),
+              // 사용자 메시지 박스 그림자 강조: boxShadow 값 변경
               boxShadow: const [
-                BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 4)),
+                BoxShadow(
+                  color: Color(0x29000000),
+                  blurRadius: 16,
+                  offset: Offset(0, 8),
+                  spreadRadius: 0,
+                ),
               ],
             ),
             child: Text(
               message.text,
-              style: const TextStyle(color: Colors.white, height: 1.4),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                height: 1.4,
+              ),
             ),
           ),
         );
@@ -471,8 +497,19 @@ class _ChatScreenState extends State<ChatScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
+              // AI 메시지 박스 테두리 강조: border 값 변경
+              border: Border.all(
+                color: const Color(0xFFFF7A21).withOpacity(0.6),
+                width: 1.5,
+              ),
+              // AI 메시지 박스 그림자 강조: boxShadow 값 변경
               boxShadow: const [
-                BoxShadow(color: Color(0x19000000), blurRadius: 12, offset: Offset(0, 6)),
+                BoxShadow(
+                  color: Color(0x29000000),
+                  blurRadius: 16,
+                  offset: Offset(0, 8),
+                  spreadRadius: 0,
+                ),
               ],
             ),
             child: Column(
@@ -491,6 +528,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   style: const TextStyle(
                     color: Color(0xFFFF7A21),
                     fontWeight: FontWeight.w700,
+                    fontSize: 15,
                     height: 1.4,
                   ),
                 ),
@@ -641,12 +679,16 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     final bool isTagAction = originalUserMessage?.startsWith(TAG_ACTION_PREFIX) ?? false;
+    final bool isAddingCategory = originalUserMessage == "추가하기";
 
     String? nextCategory = _activeCategory;
     List<String> nextTags = _activeTags;
 
     if (stage != 'collecting_details') {
-      nextTags = [];
+      // "추가하기" 처리 중에는 기존 태그를 유지
+      if (!isAddingCategory) {
+        nextTags = [];
+      }
       if (currentCategory != null) {
         nextCategory = currentCategory;
       }
@@ -961,11 +1003,23 @@ class _ChatInputField extends StatelessWidget {
     final isDisabled = isLoading || isCompleted;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(25),
+          // 채팅 입력창 테두리 강조: border 값 변경
+          border: Border.all(
+            color: const Color.fromARGB(255, 112, 112, 112).withOpacity(0.6),
+            width: 1.5,
+          ),
+          boxShadow: const [
+            BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
               child: Theme(
                 data: Theme.of(context).copyWith(
                   inputDecorationTheme: const InputDecorationTheme(
@@ -977,31 +1031,26 @@ class _ChatInputField extends StatelessWidget {
                     focusedErrorBorder: InputBorder.none,
                   ),
                 ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
-                    ],
-                  ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
                     controller: controller,
                     focusNode: focusNode,
                     enabled: !isDisabled,
-                    style: const TextStyle(color: Colors.black87),
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 15,
+                    ),
                     decoration: const InputDecoration(
                       hintText: '메시지를 입력하세요...',
-                      hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
+                      hintStyle: TextStyle(color: Colors.black38, fontSize: 15),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       disabledBorder: InputBorder.none,
                       errorBorder: InputBorder.none,
                       focusedErrorBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(vertical: 14),
                       isDense: true,
                     ),
                     onSubmitted: (_) => onSend(),
@@ -1009,24 +1058,27 @@ class _ChatInputField extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: isDisabled ? null : onSend,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: isDisabled ? Colors.grey : const Color(0xFFFF7A21),
-                shape: BoxShape.circle,
-                boxShadow: const [
-                  BoxShadow(color: Color(0x19000000), blurRadius: 8, offset: Offset(0, 4)),
-                ],
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: isDisabled ? null : onSend,
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: isDisabled ? Colors.grey : const Color(0xFFFF7A21),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_upward_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
               ),
-              child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1060,8 +1112,19 @@ class _ChatBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        // AI 메시지 박스 테두리 강조: border 값 변경
+        border: Border.all(
+          color: const Color(0xFFFF7A21).withOpacity(0.6),
+          width: 1.5,
+        ),
+        // AI 메시지 박스 그림자 강조: boxShadow 값 변경
         boxShadow: const [
-          BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 6)),
+          BoxShadow(
+            color: Color(0x29000000),
+            blurRadius: 16,
+            offset: Offset(0, 8),
+            spreadRadius: 0,
+          ),
         ],
       ),
       child: Column(
@@ -1072,6 +1135,7 @@ class _ChatBubble extends StatelessWidget {
             style: const TextStyle(
               color: Color(0xFFFF7A21),
               fontWeight: FontWeight.w700,
+              fontSize: 15,
               height: 1.4,
             ),
           ),
@@ -1082,7 +1146,7 @@ class _ChatBubble extends StatelessWidget {
               style: const TextStyle(
                 color: Color(0xFFFF7A21),
                 fontWeight: FontWeight.w600,
-                fontSize: 13,
+                fontSize: 15,
               ),
             ),
             const SizedBox(height: 8),
@@ -1205,7 +1269,7 @@ class _ActiveTagPanel extends StatelessWidget {
 
     const accent = Color(0xFFFF7A21);
     final canModify = onTagRemove != null && !isLoading;
-    final canClearAll = onClearAll != null && !isLoading && tags.isNotEmpty;
+    final shouldShowClearAll = onClearAll != null && tags.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1225,10 +1289,10 @@ class _ActiveTagPanel extends StatelessWidget {
             style: const TextStyle(
               color: Color(0xFFFF7A21),
               fontWeight: FontWeight.w700,
-              fontSize: 14,
+              fontSize: 16,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -1238,17 +1302,25 @@ class _ActiveTagPanel extends StatelessWidget {
                   onRemove: canModify ? () => onTagRemove?.call(tag) : null,
                 )).toList(),
           ),
-          if (canClearAll) ...[
+          if (shouldShowClearAll) ...[
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton.icon(
-                onPressed: onClearAll,
-                icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFFF7A21)),
-                label: const Text(
+                onPressed: isLoading ? null : onClearAll,
+                icon: Icon(
+                  Icons.delete_outline,
+                  size: 20,
+                  color: isLoading
+                      ? accent.withOpacity(0.4)
+                      : const Color(0xFFFF7A21),
+                ),
+                label: Text(
                   '전체 삭제',
                   style: TextStyle(
-                    color: Color(0xFFFF7A21),
+                    color: isLoading
+                        ? accent.withOpacity(0.4)
+                        : const Color(0xFFFF7A21),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1281,10 +1353,12 @@ class _TagChip extends StatelessWidget {
   Widget build(BuildContext context) {
     const accent = Color(0xFFFF7A21);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      // 태그 크기 조절: padding 값 변경 (horizontal, vertical)
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF8F2),
-        borderRadius: BorderRadius.circular(18),
+        // 태그 모서리 둥글기 조절: borderRadius 값 변경
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: accent.withOpacity(0.6), width: 1),
       ),
       child: Row(
@@ -1292,17 +1366,20 @@ class _TagChip extends StatelessWidget {
         children: [
           Text(
             label,
+            // 태그 텍스트 크기 조절: fontSize 값 변경
             style: const TextStyle(
               color: Color(0xFF4A4A4A),
               fontWeight: FontWeight.w600,
-              fontSize: 12,
+              fontSize: 14,
             ),
           ),
+          // 태그 텍스트와 삭제 아이콘 사이 간격 조절: width 값 변경
           const SizedBox(width: 6),
           GestureDetector(
             onTap: canModify ? onRemove : null,
             child: Icon(
               Icons.close,
+              // 태그 삭제 아이콘 크기 조절: size 값 변경
               size: 16,
               color: canModify ? accent : accent.withOpacity(0.3),
             ),
@@ -1322,9 +1399,11 @@ class _ChipTag extends StatelessWidget {
   Widget build(BuildContext context) {
     const Color accent = Color(0xFFFF7A21);
     return Container(
+      // 카테고리 태그 크기 조절: padding 값 변경 (horizontal, vertical)
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
+        // 카테고리 태그 모서리 둥글기 조절: borderRadius 값 변경
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: accent, 
@@ -1341,10 +1420,13 @@ class _ChipTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 카테고리 태그 아이콘 크기 조절: size 값 변경
           Icon(_getCategoryIcon(label), color: accent, size: 18),
+          // 카테고리 태그 아이콘과 텍스트 사이 간격 조절: width 값 변경
           const SizedBox(width: 6),
           Text(
             label, 
+            // 카테고리 태그 텍스트 크기 조절: fontSize 값 변경
             style: const TextStyle(
               color: accent, 
               fontWeight: FontWeight.w700,
