@@ -20,55 +20,62 @@ class MyInfoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        // 뒤로 가기 시 항상 홈 화면으로 돌아가기
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+          (route) => false,
+        );
+      },
+      child: Scaffold(
         backgroundColor: AppTheme.backgroundColor,
-        elevation: 0,
-        title: const AppTitleWidget('내 정보'),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: AppTheme.textPrimaryColor,
+        appBar: AppBar(
+          backgroundColor: AppTheme.backgroundColor,
+          elevation: 0,
+          title: const AppTitleWidget('내 정보'),
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back,
+              color: AppTheme.textPrimaryColor,
+            ),
+            onPressed: () {
+              // 뒤로 가기 시 항상 홈 화면으로 돌아가기
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const MainScreen()),
+                (route) => false, // 모든 이전 화면 제거
+              );
+            },
           ),
-          onPressed: () {
-            // 뒤로 가기 시 항상 홈 화면으로 돌아가기
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (context) => const MainScreen(),
-              ),
-              (route) => false, // 모든 이전 화면 제거
-            );
-          },
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-             color: AppTheme.primaryColor,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(height: 1, color: AppTheme.primaryColor),
           ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // 프로필 정보 섹션
-            _buildProfileSection(context),
-            const SizedBox(height: 20),
-            
-            // 활동 섹션
-            _buildActivitySection(context),
-            const SizedBox(height: 20),
-            
-            // 고객지원 섹션
-            _buildSupportSection(context),
-            const SizedBox(height: 20),
-            
-            // 로그아웃 섹션
-            _buildLogoutSection(context),
-          ],
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // 프로필 정보 섹션
+              _buildProfileSection(context),
+              const SizedBox(height: 20),
+
+              // 활동 섹션
+              _buildActivitySection(context),
+              const SizedBox(height: 20),
+
+              // 고객지원 섹션
+              _buildSupportSection(context),
+              const SizedBox(height: 20),
+
+              // 로그아웃 섹션
+              _buildLogoutSection(context),
+            ],
+          ),
         ),
       ),
     );
@@ -79,10 +86,7 @@ class MyInfoScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -105,7 +109,7 @@ class MyInfoScreen extends StatelessWidget {
                 color: AppTheme.primaryColor,
               ),
               const SizedBox(width: 12),
-              
+
               // 닉네임
               Expanded(
                 child: GestureDetector(
@@ -126,25 +130,25 @@ class MyInfoScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            
-            // 화살표 아이콘
-            GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileSettingsScreen(),
-                  ),
-                );
-              },
-              child: const Icon(
-                Icons.chevron_right,
-                color: Color(0xFFFF8126),
-                size: 24,
+
+              // 화살표 아이콘
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileSettingsScreen(),
+                    ),
+                  );
+                },
+                child: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFFFF8126),
+                  size: 24,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -154,10 +158,7 @@ class MyInfoScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -198,9 +199,7 @@ class MyInfoScreen extends StatelessWidget {
             title: '내가 쓴 리뷰',
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const MyReviewScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const MyReviewScreen()),
               );
             },
           ),
@@ -210,9 +209,7 @@ class MyInfoScreen extends StatelessWidget {
             title: '내가 쓴 게시글',
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const MyPostsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const MyPostsScreen()),
               );
             },
           ),
@@ -226,10 +223,7 @@ class MyInfoScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -270,9 +264,7 @@ class MyInfoScreen extends StatelessWidget {
             title: '공지사항',
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const NoticeScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const NoticeScreen()),
               );
             },
           ),
@@ -317,7 +309,9 @@ class MyInfoScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   color: isDestructive ? Colors.red : AppTheme.textPrimaryColor,
-                  fontWeight: isDestructive ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: isDestructive
+                      ? FontWeight.w600
+                      : FontWeight.normal,
                 ),
               ),
             ),
@@ -345,10 +339,7 @@ class MyInfoScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -360,25 +351,25 @@ class MyInfoScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-            _buildMenuItem(
-              icon: Icons.logout,
-              title: '로그아웃',
-              onTap: () {
-                CommonDialogs.showLogoutConfirmation(
-                  context: context,
-                  onConfirm: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      (route) => false,
-                    );
-                  },
-                );
-              },
-            ),
+          _buildMenuItem(
+            icon: Icons.logout,
+            title: '로그아웃',
+            onTap: () {
+              CommonDialogs.showLogoutConfirmation(
+                context: context,
+                onConfirm: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
   }
-
-
 }
