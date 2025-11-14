@@ -338,14 +338,12 @@ class _TodoListScreenState extends State<TodoListScreen> {
     });
 
     try {
-      final response = await HistoryService.getMyHistory(userId);
+      final response = await HistoryService.getMyHistory_post(userId);
       final historyItems = _extractHistoryItems(response);
-
-      final recentItems = historyItems.take(10).toList();
 
       final List<_ScheduleSummary> schedules = [];
 
-      for (final history in recentItems) {
+      for (final history in historyItems) {
         try {
           final detail = await HistoryService.getHistoryDetail(
             userId,
