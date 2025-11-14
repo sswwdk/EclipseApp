@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../widgets/bottom_navigation_widget.dart';
 import '../../widgets/user_avatar.dart';
 import '../../widgets/app_title_widget.dart';
+import '../../widgets/dialogs/common_dialogs.dart';
 import 'choose_schedule_screen.dart';
 import 'post_detail_screen.dart';
 import 'chat_list_screen.dart';
@@ -34,61 +36,71 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white, // 🔥 흰색 배경으로 변경 (네비게이션 바 주변)
-      extendBody: true, // 🔥 body를 네비게이션 바 아래까지 확장
-      appBar: AppBar(
-        backgroundColor: Colors.white, // 🔥 흰색으로 변경
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: const AppTitleWidget('커뮤니티'),
-        centerTitle: true,
-        actions: [
-          Transform.rotate(
-            angle: -0.5, // 오른쪽 위를 가리키도록 회전
-            child: IconButton(
-              icon: Icon(
-                Icons.send,
-                color: AppTheme.textSecondaryColor,
-                size: 20,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        final shouldPop = await CommonDialogs.showConfirmation(
+          context: context,
+          title: '앱 종료',
+          content: '앱을 종료하시겠습니까?',
+          confirmText: '종료',
+          cancelText: '취소',
+        );
+
+        if (shouldPop == true) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white, // 🔥 흰색 배경으로 변경 (네비게이션 바 주변)
+        extendBody: true, // 🔥 body를 네비게이션 바 아래까지 확장
+        appBar: AppBar(
+          backgroundColor: Colors.white, // 🔥 흰색으로 변경
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          title: const AppTitleWidget('커뮤니티'),
+          centerTitle: true,
+          actions: [
+            Transform.rotate(
+              angle: -0.5, // 오른쪽 위를 가리키도록 회전
+              child: IconButton(
+                icon: Icon(
+                  Icons.send,
+                  color: AppTheme.textSecondaryColor,
+                  size: 20,
+                ),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const MessageScreen(),
+                    ),
+                  );
+                },
               ),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const MessageScreen(),
-                  ),
-                );
-              },
             ),
-          ),
-          const SizedBox(width: 8),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: AppTheme.primaryColor,
+            const SizedBox(width: 8),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(height: 1, color: AppTheme.primaryColor),
           ),
         ),
-      ),
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const TodoListScreen(),
-            ),
-          );
-        },
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(
-          Icons.edit,
-          color: Colors.white,
+        body: _buildBody(),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const TodoListScreen()),
+            );
+          },
+          backgroundColor: AppTheme.primaryColor,
+          child: const Icon(Icons.edit, color: Colors.white),
         ),
-      ),
-      bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: _selectedIndex,
-        fromScreen: 'community',
+        bottomNavigationBar: BottomNavigationWidget(
+          currentIndex: _selectedIndex,
+          fromScreen: 'community',
+        ),
       ),
     );
   }
@@ -238,9 +250,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              AppTheme.primaryColor,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
           ),
         ),
       );
@@ -278,7 +288,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Map<String, dynamic> _normalizePost(Map<String, dynamic> raw) {
-    final userData = raw['user'] ??
+    final userData =
+        raw['user'] ??
         raw['author'] ??
         raw['writer'] ??
         raw['member'] ??
@@ -303,7 +314,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
     nickname ??= '익명 사용자';
 
-    final title = _firstNonEmptyString([
+    final title =
+        _firstNonEmptyString([
           raw['title'],
           raw['postTitle'],
           raw['subject'],
@@ -311,7 +323,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ]) ??
         '';
 
-    final content = _firstNonEmptyString([
+    final content =
+        _firstNonEmptyString([
           raw['content'],
           raw['body'],
           raw['description'],
@@ -320,7 +333,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ]) ??
         '';
 
-    final createdAt = raw['createdAt'] ??
+    final createdAt =
+        raw['createdAt'] ??
         raw['created_at'] ??
         raw['createdTime'] ??
         raw['created_time'] ??
@@ -328,7 +342,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
         raw['regDate'] ??
         raw['uploaded_at'];
 
-    final timeDisplay = _firstNonEmptyString([
+    final timeDisplay =
+        _firstNonEmptyString([
           raw['timeAgo'],
           raw['time_ago'],
           raw['displayTime'],
@@ -460,11 +475,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              color: AppTheme.primaryColor,
-              size: 48,
-            ),
+            Icon(Icons.error_outline, color: AppTheme.primaryColor, size: 48),
             const SizedBox(height: 12),
             const Text(
               '게시글을 불러오지 못했습니다.',
@@ -546,7 +557,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
     final profileImageUrl = post['profileImageUrl'] as String?;
     final scheduleTitle = post['scheduleTitle'] as String?;
-    final schedulePlaces = (post['schedulePlaces'] as List?)?.cast<String>() ?? const [];
+    final schedulePlaces =
+        (post['schedulePlaces'] as List?)?.cast<String>() ?? const [];
     final scheduleTime = post['scheduleTime'] as String?;
 
     return Material(
@@ -582,96 +594,95 @@ class _CommunityScreenState extends State<CommunityScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 사용자 정보
-          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 프로필 이미지
-              UserAvatar(
-                imageUrl: profileImageUrl,
-                displayName: nickname,
-                radius: 20,
-              ),
-              const SizedBox(width: 12),
-              // 닉네임과 위치, 시간
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      nickname,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+              // 사용자 정보
+              Row(
+                children: [
+                  // 프로필 이미지
+                  UserAvatar(
+                    imageUrl: profileImageUrl,
+                    displayName: nickname,
+                    radius: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  // 닉네임과 위치, 시간
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          nickname,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          timeAgo.isEmpty ? '방금 전' : timeAgo,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      timeAgo.isEmpty ? '방금 전' : timeAgo,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondaryColor,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // 포스트 제목
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 6),
-          
-          // 포스트 내용
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
-          if (scheduleTitle != null || schedulePlaces.isNotEmpty || scheduleTime != null) ...[
-            const SizedBox(height: 12),
-            _buildSchedulePreview(
-              title: scheduleTitle,
-              places: schedulePlaces,
-              timeText: scheduleTime,
-            ),
-            const SizedBox(height: 12),
-          ] else
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-          // 댓글 버튼
-          Row(
-            children: [
-              Icon(
-                Icons.chat_bubble_outline,
-                size: 16,
-                color: AppTheme.textSecondaryColor,
-              ),
-              const SizedBox(width: 4),
+              // 포스트 제목
               Text(
-                '댓글',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.textSecondaryColor,
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
+              ),
+              const SizedBox(height: 6),
+
+              // 포스트 내용
+              Text(
+                content,
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+              if (scheduleTitle != null ||
+                  schedulePlaces.isNotEmpty ||
+                  scheduleTime != null) ...[
+                const SizedBox(height: 12),
+                _buildSchedulePreview(
+                  title: scheduleTitle,
+                  places: schedulePlaces,
+                  timeText: scheduleTime,
+                ),
+                const SizedBox(height: 12),
+              ] else
+                const SizedBox(height: 12),
+
+              // 댓글 버튼
+              Row(
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline,
+                    size: 16,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '댓글',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textSecondaryColor,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
         ),
       ),
     );
@@ -715,11 +726,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.article,
-                  size: 16,
-                  color: Color(0xFFFF8126),
-                ),
+                const Icon(Icons.article, size: 16, color: Color(0xFFFF8126)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -730,22 +737,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
               ],
             ),
-          if (routeWidgets.isNotEmpty || timeText != null)
+            if (routeWidgets.isNotEmpty || timeText != null)
               const SizedBox(height: 6),
           ],
           if (timeText != null)
             Row(
               children: [
-                const Icon(
-                  Icons.schedule,
-                  size: 14,
-                  color: Color(0xFFFF8126),
-                ),
+                const Icon(Icons.schedule, size: 14, color: Color(0xFFFF8126)),
                 const SizedBox(width: 4),
-                Text(
-                  timeText,
-                  style: textStyle,
-                ),
+                Text(timeText, style: textStyle),
               ],
             ),
           if (routeWidgets.isNotEmpty)
@@ -758,10 +758,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           else if (title == null || title.trim().isEmpty)
             const Text(
               '일정 정보가 없습니다.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Color(0xFFFF8126),
-              ),
+              style: TextStyle(fontSize: 12, color: Color(0xFFFF8126)),
             ),
         ],
       ),
@@ -819,7 +816,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             .map((segment) => segment.trim())
             .where((segment) => segment.isNotEmpty),
       );
-    } 
+    }
 
     final seen = <String>{};
     final deduped = <String>[];
@@ -881,10 +878,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Widget _buildDivider() {
-    return Container(
-      height: 1,
-      color: AppTheme.dividerColor,
-    );
+    return Container(height: 1, color: AppTheme.dividerColor);
   }
 
   String? _extractScheduleTitle(Map<String, dynamic>? schedule) {
@@ -913,4 +907,3 @@ class _CommunityScreenState extends State<CommunityScreen> {
     super.dispose();
   }
 }
-
