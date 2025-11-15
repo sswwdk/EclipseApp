@@ -121,3 +121,4 @@ app.*.symbols
 # IDE
 .vscode
 .idea
+lib/core/config/server_config.dart
