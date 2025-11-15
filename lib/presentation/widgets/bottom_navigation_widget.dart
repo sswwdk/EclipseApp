@@ -33,7 +33,7 @@ class BottomNavigationWidget extends StatelessWidget {
             label: '홈',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
+            icon: Icon(Icons.store),
             label: '매장 추천',
           ),
           BottomNavigationBarItem(
