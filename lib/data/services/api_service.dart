@@ -37,6 +37,41 @@ class ApiService {
     }
   }
 
+  static Future<List<Restaurant>> getRestaurantsBatch(List<String> ids) async {
+    try {
+      debugPrint('🔍 일괄 조회 시작: ${ids.length}개 매장');
+
+      final headers = {
+        'Content-Type': 'application/json',
+        ...TokenManager.jwtHeader,
+      };
+
+      final response = await HttpInterceptor.post(
+        '/api/categories/batch',
+        headers: headers,
+        body: json.encode(ids), // category_ids 리스트 전송
+      );
+
+      debugPrint('📡 일괄 조회 응답: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data =
+            json.decode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+
+        debugPrint('✅ 일괄 조회 성공: ${data.length}개');
+
+        return data
+            .map((json) => Restaurant.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('일괄 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ 일괄 조회 오류: $e');
+      rethrow;
+    }
+  }
+
   // 특정 레스토랑 조회
   static Future<Restaurant> getRestaurant(String id) async {
     try {
@@ -141,35 +176,24 @@ class ApiService {
 
           final categoryId = review['category_id'] ?? '';
           final categoryName = review['category_name'] ?? '';
-
-          // 🔥 주소는 comment 필드에서, 방문 횟수는 stars 필드에서 가져옴
           final address = review['comment'] ?? '주소 정보 없음';
           final visitCount = review['stars'] ?? 0;
 
-          // 기본 정보로 ReviewableStore 생성
-          var store = ReviewableStore(
-            categoryId: categoryId,
-            categoryName: categoryName,
-            categoryType: review['category_type'] ?? '',
-            imageUrl: null,
-            address: address, // 🔥 주소 추가
-            visitCount: visitCount is int ? visitCount : 0,
-            reviewCount: 0, // 사용하지 않음
-            lastVisitDate: review['created_at'] != null
-                ? DateTime.parse(review['created_at'])
-                : DateTime.now(),
+          // 🔥 백엔드 응답에서 제공하는 정보만 사용 (개별 조회 제거!)
+          stores.add(
+            ReviewableStore(
+              categoryId: categoryId,
+              categoryName: categoryName,
+              categoryType: review['category_type'] ?? '',
+              imageUrl: null, // 🔥 일단 null로 설정 (batch 조회에서 채움)
+              address: address,
+              visitCount: visitCount is int ? visitCount : 0,
+              reviewCount: 0,
+              lastVisitDate: review['created_at'] != null
+                  ? DateTime.parse(review['created_at'])
+                  : DateTime.now(),
+            ),
           );
-
-          // 이미지 정보 조회 시도
-          try {
-            final restaurant = await getRestaurant(categoryId);
-            store = store.copyWith(imageUrl: restaurant.image);
-            debugPrint('✅ ${categoryName} 이미지 조회 완료');
-          } catch (e) {
-            debugPrint('⚠️ ${categoryName} 이미지 조회 실패: $e');
-          }
-
-          stores.add(store);
         }
 
         debugPrint('✅ 리뷰 작성 가능한 매장 ${stores.length}개 조회 완료');
