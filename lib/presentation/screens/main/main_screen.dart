@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../my_info/schedule_history/schedule_history_screen.dart';
 import '../../../data/services/api_service.dart';
-import '../../../data/services/reviewable_store_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../data/models/reviewable_store.dart';
 import 'restaurant_detail_screen.dart';
@@ -11,6 +10,9 @@ import '../../widgets/store/store_card.dart';
 import '../../widgets/app_title_widget.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/bottom_navigation_widget.dart';
+import '../../widgets/review_notification_icon_button.dart';
+import '../../widgets/schedule_history_icon_button.dart';
+import '../../widgets/reviewable_stores_dropdown.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -135,9 +137,13 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                     ],
                   ),
-                  child: stores.isEmpty
-                      ? _buildEmptyState()
-                      : _buildStoreList(stores),
+                  child: ReviewableStoresDropdown(
+                    stores: stores,
+                    onStoreTap: (store) {
+                      _removeDropdown();
+                      _navigateToStoreDetail(store);
+                    },
+                  ),
                 ),
               ),
             ),
@@ -202,154 +208,6 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _isDropdownOpen = true);
   }
 
-  /// 빈 상태 위젯
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey[400]),
-          const SizedBox(height: 12),
-          Text(
-            '리뷰 작성 가능한\n매장이 없습니다',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '매장을 방문하고\n리뷰를 작성해보세요!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
-              height: 1.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 매장 목록 위젯
-  Widget _buildStoreList(List<ReviewableStore> stores) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 헤더
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF8126).withOpacity(0.1),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(12),
-              topRight: Radius.circular(12),
-            ),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.rate_review, color: Color(0xFFFF8126), size: 20),
-              const SizedBox(width: 8),
-              const Text(
-                '리뷰 작성 가능한 매장',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF8126),
-                ),
-              ),
-            ],
-          ),
-        ),
-        // 매장 목록
-        Flexible(
-          child: ListView.separated(
-            shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: stores.length,
-            separatorBuilder: (_, __) =>
-                Divider(height: 1, color: Colors.grey[200]),
-            itemBuilder: (context, index) {
-              final store = stores[index];
-              return _buildStoreItem(store);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 매장 아이템 위젯
-  Widget _buildStoreItem(ReviewableStore store) {
-    return InkWell(
-      onTap: () {
-        _removeDropdown();
-        _navigateToStoreDetail(store);
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            // 🔥 이미지 제거하고 아이콘으로 대체
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF8126).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.rate_review,
-                color: Color(0xFFFF8126),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            // 매장 정보
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    store.categoryName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    store.address,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 이미지 플레이스홀더 위젯
-  Widget _buildPlaceholderImage() {
-    return Container(
-      width: 50,
-      height: 50,
-      color: Colors.grey[200],
-      child: Icon(Icons.restaurant, color: Colors.grey[400], size: 24),
-    );
-  }
 
   /// 드롭다운 제거
   void _removeDropdown() {
@@ -415,24 +273,15 @@ class _MainScreenState extends State<MainScreen> {
           backgroundColor: Colors.white,
           elevation: 0,
           automaticallyImplyLeading: false,
-          leading: IconButton(
-            key: _notificationKey,
-            icon: Icon(
-              _isDropdownOpen
-                  ? Icons.notifications
-                  : Icons.notifications_outlined,
-              color: const Color(0xFFFF8126),
-            ),
+          leading: ReviewNotificationIconButton(
+            iconKey: _notificationKey,
+            isDropdownOpen: _isDropdownOpen,
             onPressed: _toggleNotificationDropdown,
           ),
           title: const AppTitleWidget('할 일 추천'),
           centerTitle: true,
           actions: [
-            IconButton(
-              icon: const Icon(
-                Icons.calendar_today_outlined,
-                color: Color(0xFFFF8126),
-              ),
+            ScheduleHistoryIconButton(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -533,55 +382,9 @@ class _MainScreenState extends State<MainScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: _RoundedTopNavBar(
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            currentIndex: _selectedIndex,
-            selectedItemColor: const Color(0xFFFF7A21),
-            unselectedItemColor: Colors.black54,
-            onTap: (i) {
-              if (i == 0) {
-                setState(() => _selectedIndex = i);
-              } else if (i == 1) {
-                setState(() => _selectedIndex = i);
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
-                );
-              } else if (i == 2) {
-                setState(() => _selectedIndex = i);
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const CommunityScreen()),
-                );
-              } else if (i == 3) {
-                setState(() => _selectedIndex = i);
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => MyInfoScreen(fromScreen: 'home'),
-                  ),
-                );
-              }
-            },
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_rounded),
-                label: '홈',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.add_circle_outline),
-                label: '할 일 생성',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.chat_bubble_outline),
-                label: '커뮤니티',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                label: '내 정보',
-              ),
-            ],
-          ),
+        bottomNavigationBar: BottomNavigationWidget(
+          currentIndex: _selectedIndex,
+          fromScreen: 'home',
         ),
       ),
     );

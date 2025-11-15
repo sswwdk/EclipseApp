@@ -4,7 +4,7 @@ import '../../widgets/wave_painter.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import 'signup_screen.dart';
 import 'find_account_screen.dart';
-import '../main/main_screen.dart';
+import '../schedule/schedule_screen.dart';
 import '../../../data/services/user_service.dart';
 import '../../../shared/helpers/token_manager.dart';
 
@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } else {
         // 🔥 에러 메시지 (빨간색)

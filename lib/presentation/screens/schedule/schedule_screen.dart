@@ -6,11 +6,13 @@ import 'schedule_select_screen.dart';
 import '../../widgets/bottom_navigation_widget.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
+import '../../widgets/review_notification_icon_button.dart';
+import '../../widgets/schedule_history_icon_button.dart';
+import '../../widgets/reviewable_stores_dropdown.dart';
 import '../../../data/services/history_service.dart';
 import '../main/main_screen.dart';
 import '../my_info/schedule_history/schedule_history_screen.dart';
 import '../../../data/services/api_service.dart';
-import '../../../data/models/restaurant.dart';
 import '../../../data/models/reviewable_store.dart';
 import '../main/restaurant_detail_review_screen.dart';
 
@@ -31,8 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
   OverlayEntry? _overlayEntry;
   bool _isDropdownOpen = false;
 
-  // 매장 정보 캐시 (일괄 조회 결과 저장)
-  Map<String, Restaurant> _restaurantCache = {};
 
   @override
   void initState() {
@@ -136,25 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // 리뷰 작성 가능한 매장 조회
       final stores = await ApiService.getReviewableStores(limit: 6);
 
-      // 모든 매장 정보를 한 번에 조회 (일괄 조회)
-      if (stores.isNotEmpty) {
-        final ids = stores.map((s) => s.categoryId).toList();
-
-        try {
-          // 일괄 조회 API 호출
-          final restaurants = await ApiService.getRestaurantsBatch(ids);
-
-          // 캐시에 저장
-          _restaurantCache.clear();
-          for (var restaurant in restaurants) {
-            _restaurantCache[restaurant.id] = restaurant;
-          }
-
-          debugPrint('✅ ${restaurants.length}개 매장 정보 일괄 조회 완료');
-        } catch (e) {
-          debugPrint('⚠️ 일괄 조회 실패: $e');
-        }
-      }
+      // 매장 정보는 필요할 때 개별 조회 (일괄 조회 API 없음)
 
       // 로딩 오버레이 제거
       _removeDropdown();
@@ -211,9 +193,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                    child: stores.isEmpty
-                        ? _buildEmptyState()
-                        : _buildStoreList(stores),
+                    child: ReviewableStoresDropdown(
+                      stores: stores,
+                      onStoreTap: (store) {
+                        _removeDropdown();
+                        _navigateToStoreDetail(store);
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -278,157 +264,6 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isDropdownOpen = true);
   }
 
-  /// 빈 상태 위젯
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey[400]),
-          const SizedBox(height: 12),
-          Text(
-            '리뷰 작성 가능한\n매장이 없습니다',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '매장을 방문하고\n리뷰를 작성해보세요!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
-              height: 1.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 매장 목록 위젯
-  Widget _buildStoreList(List<ReviewableStore> stores) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 헤더
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF8126).withOpacity(0.1),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(12),
-              topRight: Radius.circular(12),
-            ),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.rate_review, color: Color(0xFFFF8126), size: 20),
-              const SizedBox(width: 8),
-              const Text(
-                '리뷰 작성 가능한 매장',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF8126),
-                ),
-              ),
-            ],
-          ),
-        ),
-        // 매장 목록
-        Flexible(
-          child: ListView.separated(
-            shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: stores.length,
-            separatorBuilder: (_, __) =>
-                Divider(height: 1, color: Colors.grey[200]),
-            itemBuilder: (context, index) {
-              final store = stores[index];
-              return _buildStoreItem(store);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 매장 아이템 위젯
-  Widget _buildStoreItem(ReviewableStore store) {
-    return InkWell(
-      onTap: () {
-        _removeDropdown();
-        _navigateToStoreDetail(store);
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            // 매장 이미지
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: store.imageUrl != null && store.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      store.imageUrl!,
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return _buildPlaceholderImage();
-                      },
-                    )
-                  : _buildPlaceholderImage(),
-            ),
-            const SizedBox(width: 12),
-            // 매장 정보
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    store.categoryName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    store.address,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 이미지 플레이스홀더 위젯
-  Widget _buildPlaceholderImage() {
-    return Container(
-      width: 50,
-      height: 50,
-      color: Colors.grey[200],
-      child: Icon(Icons.restaurant, color: Colors.grey[400], size: 24),
-    );
-  }
 
   /// 드롭다운 제거
   void _removeDropdown() {
@@ -442,26 +277,21 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 매장 상세 페이지로 이동
   void _navigateToStoreDetail(ReviewableStore store) async {
     try {
-      // 캐시에서 먼저 찾기 (일괄 조회로 이미 가져온 데이터)
-      Restaurant? restaurant = _restaurantCache[store.categoryId];
-
-      // 캐시에 없으면 개별 조회 (로딩 표시)
-      if (restaurant == null) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
-            ),
+      // 로딩 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
           ),
-        );
+        ),
+      );
 
-        restaurant = await ApiService.getRestaurant(store.categoryId);
+      final restaurant = await ApiService.getRestaurant(store.categoryId);
 
-        if (!mounted) return;
-        Navigator.pop(context); // 로딩 다이얼로그 닫기
-      }
+      if (!mounted) return;
+      Navigator.pop(context); // 로딩 다이얼로그 닫기
 
       if (!mounted) return;
 
@@ -470,13 +300,14 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => RestaurantDetailReviewScreen(
-            restaurant: restaurant!,
+            restaurant: restaurant,
             showReviewButton: true,
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
+      Navigator.pop(context); // 로딩 다이얼로그 닫기 (에러 시)
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('매장 정보를 불러올 수 없습니다: $e')));
@@ -509,24 +340,15 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: Colors.white,
           elevation: 0,
           automaticallyImplyLeading: false,
-          leading: IconButton(
-            key: _notificationKey,
-            icon: Icon(
-              _isDropdownOpen
-                  ? Icons.notifications
-                  : Icons.notifications_outlined,
-              color: const Color(0xFFFF8126),
-            ),
+          leading: ReviewNotificationIconButton(
+            iconKey: _notificationKey,
+            isDropdownOpen: _isDropdownOpen,
             onPressed: _toggleNotificationDropdown,
           ),
           title: const AppTitleWidget('일정표 생성'),
           centerTitle: true,
           actions: [
-            IconButton(
-              icon: const Icon(
-                Icons.calendar_today_outlined,
-                color: Color(0xFFFF8126),
-              ),
+            ScheduleHistoryIconButton(
               onPressed: () {
                 Navigator.push(
                   context,
