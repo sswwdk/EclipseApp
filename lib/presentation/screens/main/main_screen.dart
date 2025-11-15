@@ -5,8 +5,11 @@ import '../my_info/my_info_screen.dart';
 import '../my_info/schedule_history/schedule_history_screen.dart';
 import '../community/community_screen.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/reviewable_store_service.dart';
 import '../../../data/models/restaurant.dart';
+import '../../../data/models/reviewable_store.dart';
 import 'restaurant_detail_screen.dart';
+import 'restaurant_detail_review_screen.dart';
 import '../../widgets/store/store_card.dart';
 import '../../widgets/app_title_widget.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
@@ -24,10 +27,21 @@ class _MainScreenState extends State<MainScreen> {
   bool isLoading = true;
   String? errorMessage;
 
+  // 알림 드롭다운 상태
+  final GlobalKey _notificationKey = GlobalKey();
+  OverlayEntry? _overlayEntry;
+  bool _isDropdownOpen = false;
+
   @override
   void initState() {
     super.initState();
     _loadRestaurants();
+  }
+
+  @override
+  void dispose() {
+    _removeDropdown();
+    super.dispose();
   }
 
   Future<void> _loadRestaurants() async {
@@ -47,6 +61,337 @@ class _MainScreenState extends State<MainScreen> {
         errorMessage = e.toString();
         isLoading = false;
       });
+    }
+  }
+
+  /// 알림 드롭다운 토글
+  void _toggleNotificationDropdown() {
+    if (_isDropdownOpen) {
+      _removeDropdown();
+    } else {
+      _showDropdown();
+    }
+  }
+
+  /// 알림 드롭다운 표시
+  void _showDropdown() async {
+    // 로딩 오버레이 먼저 표시
+    _showLoadingOverlay();
+
+    // 리뷰 작성 가능한 매장 조회
+    final stores = await ApiService.getReviewableStores(limit: 6);
+
+    // 로딩 오버레이 제거
+    _removeDropdown();
+
+    if (!mounted) return;
+
+    final renderBox =
+        _notificationKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    // 🔥 드롭다운 너비
+    const dropdownWidth = 360.0;
+
+    // 🔥 화면 너비 가져오기
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // 🔥 위치 계산: 알림 아이콘 기준 오른쪽 정렬
+    // 화면 왼쪽 끝을 넘지 않도록 조정
+    double leftPosition = offset.dx + size.width - dropdownWidth;
+    if (leftPosition < 16) {
+      leftPosition = 16; // 최소 16px 여백
+    }
+
+    // 화면 오른쪽 끝을 넘지 않도록 조정
+    if (leftPosition + dropdownWidth > screenWidth - 16) {
+      leftPosition = screenWidth - dropdownWidth - 16;
+    }
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => GestureDetector(
+        onTap: _removeDropdown,
+        behavior: HitTestBehavior.translucent,
+        child: Stack(
+          children: [
+            Positioned(
+              left: leftPosition, // 🔥 수정된 위치
+              top: offset.dy + size.height + 8,
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: dropdownWidth,
+                  constraints: const BoxConstraints(maxHeight: 400),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: stores.isEmpty
+                      ? _buildEmptyState()
+                      : _buildStoreList(stores),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() => _isDropdownOpen = true);
+  }
+
+  /// 로딩 오버레이 표시
+  void _showLoadingOverlay() {
+    final renderBox =
+        _notificationKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    // 🔥 드롭다운 너비
+    const dropdownWidth = 280.0;
+
+    // 🔥 화면 너비 가져오기
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // 🔥 위치 계산
+    double leftPosition = offset.dx + size.width - dropdownWidth;
+    if (leftPosition < 16) {
+      leftPosition = 16;
+    }
+    if (leftPosition + dropdownWidth > screenWidth - 16) {
+      leftPosition = screenWidth - dropdownWidth - 16;
+    }
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: leftPosition, // 🔥 수정된 위치
+        top: offset.dy + size.height + 8,
+        child: Material(
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: dropdownWidth,
+            padding: const EdgeInsets.all(40),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() => _isDropdownOpen = true);
+  }
+
+  /// 빈 상태 위젯
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey[400]),
+          const SizedBox(height: 12),
+          Text(
+            '리뷰 작성 가능한\n매장이 없습니다',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '매장을 방문하고\n리뷰를 작성해보세요!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[500],
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 매장 목록 위젯
+  Widget _buildStoreList(List<ReviewableStore> stores) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 헤더
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFF8126).withOpacity(0.1),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.rate_review, color: Color(0xFFFF8126), size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                '리뷰 작성 가능한 매장',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFFF8126),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 매장 목록
+        Flexible(
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: stores.length,
+            separatorBuilder: (_, __) =>
+                Divider(height: 1, color: Colors.grey[200]),
+            itemBuilder: (context, index) {
+              final store = stores[index];
+              return _buildStoreItem(store);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 매장 아이템 위젯
+  Widget _buildStoreItem(ReviewableStore store) {
+    return InkWell(
+      onTap: () {
+        _removeDropdown();
+        _navigateToStoreDetail(store);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // 매장 이미지
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: store.imageUrl != null && store.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      store.imageUrl!,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return _buildPlaceholderImage();
+                      },
+                    )
+                  : _buildPlaceholderImage(),
+            ),
+            const SizedBox(width: 12),
+            // 매장 정보
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    store.categoryName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  // 🔥 주소 표시로 변경
+                  Text(
+                    store.address,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 이미지 플레이스홀더 위젯
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: 50,
+      height: 50,
+      color: Colors.grey[200],
+      child: Icon(Icons.restaurant, color: Colors.grey[400], size: 24),
+    );
+  }
+
+  /// 드롭다운 제거
+  void _removeDropdown() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (mounted) {
+      setState(() => _isDropdownOpen = false);
+    }
+  }
+
+  /// 매장 상세 페이지로 이동
+  void _navigateToStoreDetail(ReviewableStore store) async {
+    try {
+      final restaurant = await ApiService.getRestaurant(store.categoryId);
+      if (!mounted) return;
+
+      // 🔥 RestaurantDetailReviewScreen으로 변경
+      final shouldRefresh = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RestaurantDetailReviewScreen(
+            restaurant: restaurant,
+            showReviewButton: true, // 리뷰 작성 버튼 표시
+          ),
+        ),
+      );
+
+      // 리뷰 작성 후 돌아온 경우 레스토랑 목록 새로고침
+      if (shouldRefresh == true) {
+        _loadRestaurants();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('매장 정보를 불러올 수 없습니다: $e')));
     }
   }
 
@@ -71,24 +416,24 @@ class _MainScreenState extends State<MainScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-        extendBody: true, // 🔥 body를 네비게이션 바 아래까지 확장
+        extendBody: true,
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
           automaticallyImplyLeading: false,
           leading: IconButton(
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: Color(0xFFFF8126),
+            key: _notificationKey,
+            icon: Icon(
+              _isDropdownOpen
+                  ? Icons.notifications
+                  : Icons.notifications_outlined,
+              color: const Color(0xFFFF8126),
             ),
-            onPressed: () {
-              // 알림 기능 구현
-            },
+            onPressed: _toggleNotificationDropdown,
           ),
           title: const AppTitleWidget('할 일 추천'),
           centerTitle: true,
           actions: [
-            // 일정표 히스토리 버튼
             IconButton(
               icon: const Icon(
                 Icons.calendar_today_outlined,
@@ -116,7 +461,7 @@ class _MainScreenState extends State<MainScreen> {
             right: 16,
             top: 16,
             bottom: 100,
-          ), // 🔥 하단 패딩 추가 (네비게이션 바 공간)
+          ),
           child: Column(
             children: [
               if (isLoading)
@@ -142,9 +487,9 @@ class _MainScreenState extends State<MainScreen> {
                           color: Colors.red,
                         ),
                         const SizedBox(height: 16),
-                        Text(
+                        const Text(
                           '데이터를 불러올 수 없습니다',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.red,
@@ -204,22 +549,18 @@ class _MainScreenState extends State<MainScreen> {
             unselectedItemColor: Colors.black54,
             onTap: (i) {
               if (i == 0) {
-                // 홈 버튼 - 현재 화면 유지 (아무것도 하지 않음)
                 setState(() => _selectedIndex = i);
               } else if (i == 1) {
-                // 할 일 생성 버튼을 누르면 make_do_start.dart의 HomeScreen으로 이동 (화면 이동용)
                 setState(() => _selectedIndex = i);
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const HomeScreen()),
                 );
               } else if (i == 2) {
-                // 커뮤니티 버튼을 누르면 CommunityScreen으로 이동
                 setState(() => _selectedIndex = i);
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => const CommunityScreen()),
                 );
               } else if (i == 3) {
-                // 내 정보 버튼을 누르면 MyInfoScreen으로 이동
                 setState(() => _selectedIndex = i);
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
@@ -283,13 +624,10 @@ class _RoundedTopNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ), // 🔥 좌우, 하단 여백 추가
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85), // 🔥 반투명 배경 (블러 효과)
-        borderRadius: BorderRadius.circular(24), // 🔥 모든 모서리를 둥글게
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: const [
           BoxShadow(
             color: Color(0x1A000000),
@@ -301,7 +639,7 @@ class _RoundedTopNavBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8), // 🔥 상하 패딩만
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: child,
         ),
       ),
