@@ -29,12 +29,12 @@ class BottomNavigationWidget extends StatelessWidget {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: '홈',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline),
             label: '할 일 생성',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_rounded),
+            label: '홈',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
