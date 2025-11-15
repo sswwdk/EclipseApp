@@ -5,6 +5,7 @@ import '../my_info/my_info_screen.dart';
 import '../my_info/schedule_history/schedule_history_screen.dart';
 import '../community/community_screen.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/reviewable_store_service.dart';
 import '../../../data/models/restaurant.dart';
 import '../../../data/models/reviewable_store.dart';
 import 'restaurant_detail_screen.dart';
@@ -25,9 +26,6 @@ class _MainScreenState extends State<MainScreen> {
   List<Restaurant> restaurants = [];
   bool isLoading = true;
   String? errorMessage;
-
-  // 🔥 매장 정보 캐시 (일괄 조회 결과 저장)
-  Map<String, Restaurant> _restaurantCache = {};
 
   // 알림 드롭다운 상태
   final GlobalKey _notificationKey = GlobalKey();
@@ -80,104 +78,78 @@ class _MainScreenState extends State<MainScreen> {
     // 로딩 오버레이 먼저 표시
     _showLoadingOverlay();
 
-    try {
-      // 리뷰 작성 가능한 매장 조회
-      final stores = await ApiService.getReviewableStores(limit: 6);
+    // 리뷰 작성 가능한 매장 조회
+    final stores = await ApiService.getReviewableStores(limit: 6);
 
-      // 🔥 모든 매장 정보를 한 번에 조회 (일괄 조회)
-      if (stores.isNotEmpty) {
-        final ids = stores.map((s) => s.categoryId).toList();
+    // 로딩 오버레이 제거
+    _removeDropdown();
 
-        try {
-          // 일괄 조회 API 호출
-          final restaurants = await ApiService.getRestaurantsBatch(ids);
+    if (!mounted) return;
 
-          // 캐시에 저장
-          _restaurantCache.clear();
-          for (var restaurant in restaurants) {
-            _restaurantCache[restaurant.id] = restaurant;
-          }
+    final renderBox =
+        _notificationKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
 
-          debugPrint('✅ ${restaurants.length}개 매장 정보 일괄 조회 완료');
-        } catch (e) {
-          debugPrint('⚠️ 일괄 조회 실패: $e');
-          // 일괄 조회 실패 시 개별 조회로 폴백하지 않고 진행
-          // (클릭 시점에 개별 조회)
-        }
-      }
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
 
-      // 로딩 오버레이 제거
-      _removeDropdown();
+    // 🔥 드롭다운 너비
+    const dropdownWidth = 360.0;
 
-      if (!mounted) return;
+    // 🔥 화면 너비 가져오기
+    final screenWidth = MediaQuery.of(context).size.width;
 
-      final renderBox =
-          _notificationKey.currentContext?.findRenderObject() as RenderBox?;
-      if (renderBox == null) return;
+    // 🔥 위치 계산: 알림 아이콘 기준 오른쪽 정렬
+    // 화면 왼쪽 끝을 넘지 않도록 조정
+    double leftPosition = offset.dx + size.width - dropdownWidth;
+    if (leftPosition < 16) {
+      leftPosition = 16; // 최소 16px 여백
+    }
 
-      final offset = renderBox.localToGlobal(Offset.zero);
-      final size = renderBox.size;
+    // 화면 오른쪽 끝을 넘지 않도록 조정
+    if (leftPosition + dropdownWidth > screenWidth - 16) {
+      leftPosition = screenWidth - dropdownWidth - 16;
+    }
 
-      // 드롭다운 너비
-      const dropdownWidth = 360.0;
-
-      // 화면 너비 가져오기
-      final screenWidth = MediaQuery.of(context).size.width;
-
-      // 위치 계산: 알림 아이콘 기준 오른쪽 정렬
-      double leftPosition = offset.dx + size.width - dropdownWidth;
-      if (leftPosition < 16) {
-        leftPosition = 16; // 최소 16px 여백
-      }
-
-      // 화면 오른쪽 끝을 넘지 않도록 조정
-      if (leftPosition + dropdownWidth > screenWidth - 16) {
-        leftPosition = screenWidth - dropdownWidth - 16;
-      }
-
-      _overlayEntry = OverlayEntry(
-        builder: (context) => GestureDetector(
-          onTap: _removeDropdown,
-          behavior: HitTestBehavior.translucent,
-          child: Stack(
-            children: [
-              Positioned(
-                left: leftPosition,
-                top: offset.dy + size.height + 8,
-                child: Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: dropdownWidth,
-                    constraints: const BoxConstraints(maxHeight: 400),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: stores.isEmpty
-                        ? _buildEmptyState()
-                        : _buildStoreList(stores),
+    _overlayEntry = OverlayEntry(
+      builder: (context) => GestureDetector(
+        onTap: _removeDropdown,
+        behavior: HitTestBehavior.translucent,
+        child: Stack(
+          children: [
+            Positioned(
+              left: leftPosition, // 🔥 수정된 위치
+              top: offset.dy + size.height + 8,
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: dropdownWidth,
+                  constraints: const BoxConstraints(maxHeight: 400),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  child: stores.isEmpty
+                      ? _buildEmptyState()
+                      : _buildStoreList(stores),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
 
-      Overlay.of(context).insert(_overlayEntry!);
-      setState(() => _isDropdownOpen = true);
-    } catch (e) {
-      debugPrint('❌ 드롭다운 표시 오류: $e');
-      _removeDropdown();
-    }
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() => _isDropdownOpen = true);
   }
 
   /// 로딩 오버레이 표시
@@ -189,9 +161,13 @@ class _MainScreenState extends State<MainScreen> {
     final offset = renderBox.localToGlobal(Offset.zero);
     final size = renderBox.size;
 
+    // 🔥 드롭다운 너비
     const dropdownWidth = 360.0;
+
+    // 🔥 화면 너비 가져오기
     final screenWidth = MediaQuery.of(context).size.width;
 
+    // 🔥 위치 계산
     double leftPosition = offset.dx + size.width - dropdownWidth;
     if (leftPosition < 16) {
       leftPosition = 16;
@@ -202,7 +178,7 @@ class _MainScreenState extends State<MainScreen> {
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        left: leftPosition,
+        left: leftPosition, // 🔥 수정된 위치
         top: offset.dy + size.height + 8,
         child: Material(
           elevation: 8,
@@ -320,22 +296,19 @@ class _MainScreenState extends State<MainScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // 매장 이미지
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: store.imageUrl != null && store.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      store.imageUrl!,
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return _buildPlaceholderImage();
-                      },
-                    )
-                  : _buildPlaceholderImage(),
+            // 🔥 이미지 제거하고 아이콘으로 대체
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF8126).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.rate_review,
+                color: Color(0xFFFF8126),
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             // 매장 정보
@@ -392,36 +365,16 @@ class _MainScreenState extends State<MainScreen> {
   /// 매장 상세 페이지로 이동
   void _navigateToStoreDetail(ReviewableStore store) async {
     try {
-      // 🔥 캐시에서 먼저 찾기 (일괄 조회로 이미 가져온 데이터)
-      Restaurant? restaurant = _restaurantCache[store.categoryId];
-
-      // 🔥 캐시에 없으면 개별 조회 (로딩 표시)
-      if (restaurant == null) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
-            ),
-          ),
-        );
-
-        restaurant = await ApiService.getRestaurant(store.categoryId);
-
-        if (!mounted) return;
-        Navigator.pop(context); // 로딩 다이얼로그 닫기
-      }
-
+      final restaurant = await ApiService.getRestaurant(store.categoryId);
       if (!mounted) return;
 
-      // 리뷰 작성 화면으로 이동
+      // 🔥 RestaurantDetailReviewScreen으로 변경
       final shouldRefresh = await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => RestaurantDetailReviewScreen(
-            restaurant: restaurant!,
-            showReviewButton: true,
+            restaurant: restaurant,
+            showReviewButton: true, // 리뷰 작성 버튼 표시
           ),
         ),
       );
@@ -429,8 +382,6 @@ class _MainScreenState extends State<MainScreen> {
       // 리뷰 작성 후 돌아온 경우 레스토랑 목록 새로고침
       if (shouldRefresh == true) {
         _loadRestaurants();
-        // 캐시도 초기화
-        _restaurantCache.clear();
       }
     } catch (e) {
       if (!mounted) return;
@@ -616,12 +567,12 @@ class _MainScreenState extends State<MainScreen> {
             },
             items: const [
               BottomNavigationBarItem(
-                icon: Icon(Icons.add_circle_outline),
-                label: '할 일 생성',
-              ),
-              BottomNavigationBarItem(
                 icon: Icon(Icons.home_rounded),
                 label: '홈',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.add_circle_outline),
+                label: '할 일 생성',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.chat_bubble_outline),

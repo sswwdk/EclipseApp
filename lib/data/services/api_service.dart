@@ -37,41 +37,6 @@ class ApiService {
     }
   }
 
-  static Future<List<Restaurant>> getRestaurantsBatch(List<String> ids) async {
-    try {
-      debugPrint('🔍 일괄 조회 시작: ${ids.length}개 매장');
-
-      final headers = {
-        'Content-Type': 'application/json',
-        ...TokenManager.jwtHeader,
-      };
-
-      final response = await HttpInterceptor.post(
-        '/api/categories/batch',
-        headers: headers,
-        body: json.encode(ids), // category_ids 리스트 전송
-      );
-
-      debugPrint('📡 일괄 조회 응답: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data =
-            json.decode(utf8.decode(response.bodyBytes)) as List<dynamic>;
-
-        debugPrint('✅ 일괄 조회 성공: ${data.length}개');
-
-        return data
-            .map((json) => Restaurant.fromJson(json as Map<String, dynamic>))
-            .toList();
-      } else {
-        throw Exception('일괄 조회 실패: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('❌ 일괄 조회 오류: $e');
-      rethrow;
-    }
-  }
-
   // 특정 레스토랑 조회
   static Future<Restaurant> getRestaurant(String id) async {
     try {
@@ -179,13 +144,13 @@ class ApiService {
           final address = review['comment'] ?? '주소 정보 없음';
           final visitCount = review['stars'] ?? 0;
 
-          // 🔥 백엔드 응답에서 제공하는 정보만 사용 (개별 조회 제거!)
+          // 🔥 이미지 조회 없이 바로 객체 생성
           stores.add(
             ReviewableStore(
               categoryId: categoryId,
               categoryName: categoryName,
               categoryType: review['category_type'] ?? '',
-              imageUrl: null, // 🔥 일단 null로 설정 (batch 조회에서 채움)
+              imageUrl: null, // 🔥 이미지 없음
               address: address,
               visitCount: visitCount is int ? visitCount : 0,
               reviewCount: 0,
@@ -194,6 +159,8 @@ class ApiService {
                   : DateTime.now(),
             ),
           );
+
+          debugPrint('✅ ${categoryName} 추가 완료 (이미지 조회 생략)');
         }
 
         debugPrint('✅ 리뷰 작성 가능한 매장 ${stores.length}개 조회 완료');
