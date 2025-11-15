@@ -76,6 +76,15 @@ class _MainScreenState extends State<MainScreen> {
           backgroundColor: Colors.white,
           elevation: 0,
           automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: Color(0xFFFF8126),
+            ),
+            onPressed: () {
+              // 알림 기능 구현
+            },
+          ),
           title: const AppTitleWidget('할 일 추천'),
           centerTitle: true,
           actions: [
