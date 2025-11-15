@@ -365,67 +365,90 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Container(height: 1, color: const Color(0xFFFF8126)),
           ),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: 100,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 24),
-              // 인사말
-              Text(
-                '안녕하세요 ${TokenManager.userName ?? '사용자'}님!',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textPrimaryColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '새로운 하루를 만들어봐요!',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.textSecondaryColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              // 비버 캐릭터 이미지
-              Image.asset(
-                'assets/images/image.png',
-                width: 200,
-                height: 200,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const SizedBox(
-                    width: 200,
-                    height: 200,
-                    child: Icon(
-                      Icons.image_not_supported,
-                      size: 80,
-                      color: AppTheme.textSecondaryColor,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = constraints.maxHeight;
+            final screenWidth = constraints.maxWidth;
+            
+            return Stack(
+              children: [
+                // 배경 이미지 (z-index 낮음)
+                Positioned.fill(
+                  child: Align(
+                    alignment: const Alignment(0, -1.3), // 위로 올림 (0은 수평 중앙, -0.3은 위로 30%)
+                    child: Image.asset(
+                      'assets/images/image.png',
+                      width: screenWidth * 1.2,
+                      height: screenHeight * 0.8,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return SizedBox(
+                          width: screenWidth * 1.2,
+                          height: screenHeight * 0.8,
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            size: 160,
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 24),
-              // 오늘의 추천 카드
-              _buildRecommendationCard(),
-              const SizedBox(height: 16),
-              // 최근 일정 카드
-              _buildRecentScheduleCard(),
-              const SizedBox(height: 24),
-              // 메인 버튼
-              _buildMainButton(),
-            ],
-          ),
+                  ),
+                ),
+                // 컨텐츠 레이어
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: 100,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 24),
+                      // 인사말
+                      Text(
+                        '안녕하세요 ${TokenManager.userName ?? '사용자'}님!',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.textPrimaryColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '새로운 하루를 만들어봐요!',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textSecondaryColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // 오늘의 추천 카드 (이미지 위에 겹치게)
+                            _buildRecommendationCard(),
+                            const SizedBox(height: 16),
+                            // 최근 일정 카드 (이미지 위에 겹치게)
+                            _buildRecentScheduleCard(),
+                            const SizedBox(height: 24),
+                            // 메인 버튼
+                            _buildMainButton(),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         bottomNavigationBar: BottomNavigationWidget(
           currentIndex: _selectedIndex,
@@ -440,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.85), // 투명도 적용
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: AppTheme.dividerColor,
@@ -508,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withOpacity(0.85), // 투명도 적용
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: AppTheme.dividerColor,
@@ -529,7 +552,7 @@ class _HomeScreenState extends State<HomeScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withOpacity(0.85), // 투명도 적용
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: AppTheme.dividerColor,
@@ -571,7 +594,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.85), // 투명도 적용
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: AppTheme.dividerColor,
