@@ -2,12 +2,40 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../shared/helpers/token_manager.dart';
 import '../../core/config/server_config.dart';
+import '../models/history.dart'; // 🔥 History 모델 import 추가
 import 'route_service.dart';
 
 class HistoryService {
   static String get baseUrl => ServerConfig.baseUrl;
 
-  // 내 히스토리 보기
+  // 🔥 추가: 방문 기록 목록 조회 (History 객체 리스트 반환)
+  static Future<List<History>> getHistories() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/users/me/histories'),
+        headers: {
+          'Content-Type': 'application/json',
+          ...TokenManager.jwtHeader,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        final historyList = data['history_list'] as List<dynamic>? ?? [];
+
+        return historyList
+            .map((item) => History.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('히스토리 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('히스토리 조회 오류: $e');
+      return []; // 🔥 오류 시 빈 리스트 반환
+    }
+  }
+
+  // 내 히스토리 보기 (원시 데이터 반환)
   static Future<Map<String, dynamic>> getMyHistory(String userId) async {
     try {
       final response = await http.get(
@@ -441,16 +469,16 @@ class HistoryService {
         String icon = '';
         switch (step.type) {
           case 'walk':
-            icon = '';
+            icon = '🚶';
             break;
           case 'transit':
-            icon = '';
+            icon = '🚇';
             break;
           case 'drive':
-            icon = '';
+            icon = '🚗';
             break;
           default:
-            icon = '';
+            icon = '📍';
         }
 
         // 설명과 시간
@@ -574,6 +602,7 @@ class HistoryService {
     }
   }
 
+  // 🔥 방문 횟수 조회
   static Future<int> getVisitCount(String categoryId) async {
     try {
       final response = await http.get(

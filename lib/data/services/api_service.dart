@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../../shared/helpers/http_interceptor.dart';
 import '../../shared/helpers/token_manager.dart';
 import '../../core/config/server_config.dart';
 import '../../data/models/restaurant.dart';
 import '../../data/models/review.dart';
+import '../../data/models/reviewable_store.dart'; // 🔥 추가
 
 class ApiService {
   static String get baseUrl => ServerConfig.baseUrl;
@@ -32,6 +34,41 @@ class ApiService {
     } catch (e) {
       print('API 호출 오류: $e');
       throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  static Future<List<Restaurant>> getRestaurantsBatch(List<String> ids) async {
+    try {
+      debugPrint('🔍 일괄 조회 시작: ${ids.length}개 매장');
+
+      final headers = {
+        'Content-Type': 'application/json',
+        ...TokenManager.jwtHeader,
+      };
+
+      final response = await HttpInterceptor.post(
+        '/api/categories/batch',
+        headers: headers,
+        body: json.encode(ids), // category_ids 리스트 전송
+      );
+
+      debugPrint('📡 일괄 조회 응답: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data =
+            json.decode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+
+        debugPrint('✅ 일괄 조회 성공: ${data.length}개');
+
+        return data
+            .map((json) => Restaurant.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('일괄 조회 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ 일괄 조회 오류: $e');
+      rethrow;
     }
   }
 
@@ -71,13 +108,16 @@ class ApiService {
         // 이 API에서는 태그/리뷰만 사용한다. 나머지는 기본값으로 반환
         return Restaurant(
           id: id,
-          name: obj['title'] as String? ?? '', // 🔥 추가
-          image: obj['image_url'] as String?, // 🔥 추가
-          subCategory: obj['sub_category'] as String?, // 🔥 추가
-          detailAddress: obj['detail_address'] as String?, // 🔥 추가
-          phone: obj['phone'] as String?, // 🔥 추가
-          businessHour: obj['business_hour'] as String?, // 🔥 추가
-          rating: _parseDouble(obj['rating']) ?? _parseDouble(obj['average_stars']) ?? 0.0,
+          name: obj['title'] as String? ?? '',
+          image: obj['image_url'] as String?,
+          subCategory: obj['sub_category'] as String?,
+          detailAddress: obj['detail_address'] as String?,
+          phone: obj['phone'] as String?,
+          businessHour: obj['business_hour'] as String?,
+          rating:
+              _parseDouble(obj['rating']) ??
+              _parseDouble(obj['average_stars']) ??
+              0.0,
           averageStars: _parseDouble(obj['average_stars']),
           reviewCount:
               _parseInt(obj['review_count'] ?? obj['reviews_count']) ??
@@ -95,6 +135,76 @@ class ApiService {
     } catch (e) {
       print('API 호출 오류: $e');
       throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  // 🔥 추가: 리뷰 작성 가능한 매장 목록 조회
+  static Future<List<ReviewableStore>> getReviewableStores({
+    int limit = 6,
+  }) async {
+    try {
+      debugPrint('🔍 리뷰 작성 가능한 매장 조회 시작...');
+
+      final headers = {
+        'Content-Type': 'application/json; charset=UTF-8',
+        ...TokenManager.jwtHeader,
+      };
+
+      final response = await HttpInterceptor.get(
+        '/api/users/me/reviews/reviewable?limit=$limit',
+        headers: headers,
+      );
+
+      debugPrint('📡 응답 상태 코드: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        debugPrint('📦 응답 데이터: $data');
+
+        final reviewList = data['review_list'] as List<dynamic>? ?? [];
+        debugPrint('📝 리뷰 가능 매장 개수: ${reviewList.length}');
+
+        if (reviewList.isEmpty) {
+          debugPrint('❌ 리뷰 작성 가능한 매장이 없습니다');
+          return [];
+        }
+
+        final stores = <ReviewableStore>[];
+
+        for (final item in reviewList) {
+          final review = item as Map<String, dynamic>;
+
+          final categoryId = review['category_id'] ?? '';
+          final categoryName = review['category_name'] ?? '';
+          final address = review['comment'] ?? '주소 정보 없음';
+          final visitCount = review['stars'] ?? 0;
+
+          // 🔥 백엔드 응답에서 제공하는 정보만 사용 (개별 조회 제거!)
+          stores.add(
+            ReviewableStore(
+              categoryId: categoryId,
+              categoryName: categoryName,
+              categoryType: review['category_type'] ?? '',
+              imageUrl: null, // 🔥 일단 null로 설정 (batch 조회에서 채움)
+              address: address,
+              visitCount: visitCount is int ? visitCount : 0,
+              reviewCount: 0,
+              lastVisitDate: review['created_at'] != null
+                  ? DateTime.parse(review['created_at'])
+                  : DateTime.now(),
+            ),
+          );
+        }
+
+        debugPrint('✅ 리뷰 작성 가능한 매장 ${stores.length}개 조회 완료');
+        return stores;
+      } else {
+        debugPrint('❌ 응답 오류: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      debugPrint('❌ 리뷰 작성 가능한 매장 조회 오류: $e');
+      return [];
     }
   }
 }
