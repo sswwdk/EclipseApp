@@ -162,7 +162,7 @@ class _MainScreenState extends State<MainScreen> {
     final size = renderBox.size;
 
     // 🔥 드롭다운 너비
-    const dropdownWidth = 280.0;
+    const dropdownWidth = 360.0;
 
     // 🔥 화면 너비 가져오기
     final screenWidth = MediaQuery.of(context).size.width;
