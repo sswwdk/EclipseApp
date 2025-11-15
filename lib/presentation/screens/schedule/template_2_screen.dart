@@ -4,7 +4,7 @@ import '../../../data/services/service_api.dart';
 import '../../../shared/helpers/token_manager.dart';
 import '../../../data/services/route_service.dart';
 import '../../../data/services/api_service.dart';
-import '../main/main_screen.dart';
+import 'schedule_screen.dart';
 import 'dart:async';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/transportation_selector_widget.dart';
@@ -548,7 +548,7 @@ Widget _buildHeader() {
       );
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainScreen()),
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
         (route) => false,
       );
     } catch (e) {

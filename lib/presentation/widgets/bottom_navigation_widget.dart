@@ -29,12 +29,12 @@ class BottomNavigationWidget extends StatelessWidget {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: '할 일 생성',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),
             label: '홈',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle_outline),
+            label: '매장 추천',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
@@ -51,33 +51,35 @@ class BottomNavigationWidget extends StatelessWidget {
 
   void _handleNavigation(BuildContext context, int index) {
     if (index == 0) {
-      // 홈 버튼을 누르면 홈 화면으로 이동
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const MainScreen(),
-        ),
-      );
+      // 홈 버튼 - HomeScreen (schedule_screen.dart)으로 이동
+      if (currentIndex != 0) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
     } else if (index == 1) {
-      // 할 일 생성 버튼을 누르면 할 일 생성 화면으로 이동
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
-        ),
-      );
+      // 매장 추천 버튼 - MainScreen으로 이동
+      if (currentIndex != 1) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+        );
+      }
     } else if (index == 2) {
-      // 커뮤니티 버튼을 누르면 커뮤니티 화면으로 이동
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const CommunityScreen(),
-        ),
-      );
+      // 커뮤니티 버튼 - CommunityScreen으로 이동
+      if (currentIndex != 2) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const CommunityScreen()),
+        );
+      }
     } else if (index == 3) {
-      // 내 정보 버튼을 누르면 내 정보 화면으로 이동
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => MyInfoScreen(fromScreen: fromScreen),
-        ),
-      );
+      // 내 정보 버튼 - MyInfoScreen으로 이동
+      if (currentIndex != 3) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => MyInfoScreen(fromScreen: fromScreen ?? 'home'),
+          ),
+        );
+      }
     }
   }
 }

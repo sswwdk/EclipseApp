@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/route_service.dart';
-import '../main/main_screen.dart';
+import 'schedule_screen.dart';
 
 /// 템플릿 화면들에서 사용하는 공통 유틸리티 함수들
 class TemplateUtils {
@@ -210,7 +210,7 @@ class TemplateUtils {
     if (result == true && context.mounted) {
       // 모든 이전 화면을 제거하고 홈 화면으로 이동
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainScreen()),
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
         (route) => false,
       );
     }

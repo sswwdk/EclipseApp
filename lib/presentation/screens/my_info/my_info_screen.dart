@@ -8,7 +8,7 @@ import 'my_posts_screen.dart';
 import 'myinfo_etc/notice_screen.dart';
 import 'myinfo_etc/privacy_policy_screen.dart';
 import 'inquiry_dialog.dart';
-import '../main/main_screen.dart';
+import '../schedule/schedule_screen.dart';
 import '../auth/login_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
@@ -27,7 +27,7 @@ class MyInfoScreen extends StatelessWidget {
 
         // 뒤로 가기 시 항상 홈 화면으로 돌아가기
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
           (route) => false,
         );
       },
@@ -46,7 +46,7 @@ class MyInfoScreen extends StatelessWidget {
             onPressed: () {
               // 뒤로 가기 시 항상 홈 화면으로 돌아가기
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const MainScreen()),
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
                 (route) => false, // 모든 이전 화면 제거
               );
             },

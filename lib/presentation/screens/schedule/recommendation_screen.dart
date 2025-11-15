@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../main/restaurant_detail_screen.dart';
-import '../main/main_screen.dart';
+import 'schedule_screen.dart';
 import 'route_confirm_screen.dart';
 import '../../../data/models/restaurant.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
@@ -290,7 +290,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
               onConfirm: () {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (context) => const MainScreen()),
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
                   (route) => false,
                 );
               },

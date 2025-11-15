@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../main/main_screen.dart';
+import 'schedule_screen.dart';
 import '../main/restaurant_detail_screen.dart';
 import '../../../data/services/history_service.dart';
-import '../../../data/services/api_service.dart';
 import '../../../data/models/restaurant.dart';
 import 'dart:async';
 import '../../widgets/dialogs/common_dialogs.dart';
@@ -199,7 +198,7 @@ class _SelectedPlacesScreenState extends State<SelectedPlacesScreen> {
       );
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainScreen()),
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
         (route) => false,
       );
     } catch (e) {

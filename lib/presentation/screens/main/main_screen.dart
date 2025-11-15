@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../schedule/schedule_screen.dart';
-import '../my_info/my_info_screen.dart';
 import '../my_info/schedule_history/schedule_history_screen.dart';
-import '../community/community_screen.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/reviewable_store_service.dart';
 import '../../../data/models/restaurant.dart';
@@ -13,6 +10,7 @@ import 'restaurant_detail_review_screen.dart';
 import '../../widgets/store/store_card.dart';
 import '../../widgets/app_title_widget.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
+import '../../widgets/bottom_navigation_widget.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -22,7 +20,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1; // 매장 추천 화면
   List<Restaurant> restaurants = [];
   bool isLoading = true;
   String? errorMessage;
@@ -613,32 +611,3 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class _RoundedTopNavBar extends StatelessWidget {
-  final Widget child;
-  const _RoundedTopNavBar({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 8,
-            offset: Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
