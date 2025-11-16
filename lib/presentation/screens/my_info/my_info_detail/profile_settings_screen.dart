@@ -8,6 +8,7 @@ import 'change/change_address_screen.dart';
 import 'change/change_phone_screen.dart';
 import '../../../../shared/helpers/token_manager.dart';
 import '../../../widgets/app_title_widget.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({Key? key}) : super(key: key);
@@ -22,17 +23,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
         elevation: 0,
-        title: const AppTitleWidget('프로필 설정'),
+        title: const AppTitleWidget('프로필 설정', color: Colors.white),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: const Color(0xFFFF8126)),
+          child: Container(height: 1, color: Colors.white.withOpacity(0.3)),
         ),
       ),
       body: SingleChildScrollView(

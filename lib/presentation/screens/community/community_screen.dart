@@ -57,34 +57,44 @@ class _CommunityScreenState extends State<CommunityScreen> {
         backgroundColor: Colors.white, // 🔥 흰색 배경으로 변경 (네비게이션 바 주변)
         extendBody: true, // 🔥 body를 네비게이션 바 아래까지 확장
         appBar: AppBar(
-          backgroundColor: Colors.white, // 🔥 흰색으로 변경
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
           elevation: 0,
           automaticallyImplyLeading: false,
-          title: const AppTitleWidget('커뮤니티'),
+          title: const AppTitleWidget('커뮤니티', color: Colors.white),
           centerTitle: true,
           actions: [
-            Transform.rotate(
-              angle: -0.5, // 오른쪽 위를 가리키도록 회전
-              child: IconButton(
-                icon: Icon(
-                  Icons.send,
-                  color: AppTheme.textSecondaryColor,
-                  size: 20,
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
                 ),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const MessageScreen(),
+                child: Transform.rotate(
+                  angle: -0.5, // 오른쪽 위를 가리키도록 회전
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.send,
+                      color: AppTheme.primaryColor,
+                      size: 20,
                     ),
-                  );
-                },
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const MessageScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 8),
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
-            child: Container(height: 1, color: AppTheme.primaryColor),
+            child: Container(height: 1, color: Colors.white.withOpacity(0.3)),
           ),
         ),
         body: _buildBody(),
