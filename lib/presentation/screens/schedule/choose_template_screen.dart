@@ -73,8 +73,8 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
         children: [
           _TemplateTile(
             name: '템플릿 1',
-            description: '심플하게 볼 수 있는 일정표 템플릿 입니다.',
-            emoji: '🚀',
+            description: '심플하게 볼 수 있는 템플릿',
+            imageAsset: 'assets/images/temp1.png',
             checked: _selectedName == '템플릿 1',
             onToggle: () {
               setState(() {
@@ -84,8 +84,8 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
           ),
           _TemplateTile(
             name: '템플릿 2',
-            description: '설훈님의 디자인적 감각이 들어간 템플릿 입니다.',
-            emoji: '🌿',
+            description: '커피 무드 템플릿',
+            imageAsset: 'assets/images/temp2.png',
             checked: _selectedName == '템플릿 2',
             onToggle: () {
               setState(() {
@@ -95,8 +95,8 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
           ),
           _TemplateTile(
             name: '템플릿 3',
-            description: '핑크핑크한 귀여운 템플릿 입니다.\n선택한 매장을 좌우로 스크롤하면서 볼 수 있습니다.',
-            emoji: '✨',
+            description: '핑크핑크한 귀여운 템플릿',
+            imageAsset: 'assets/images/temp3.png',
             checked: _selectedName == '템플릿 3',
             onToggle: () {
               setState(() {
@@ -225,7 +225,7 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
 class _TemplateTile extends StatelessWidget {
   final String name;
   final String description;
-  final String emoji;
+  final String imageAsset;
   final bool checked;
   final VoidCallback onToggle;
 
@@ -233,7 +233,7 @@ class _TemplateTile extends StatelessWidget {
     Key? key,
     required this.name,
     required this.description,
-    required this.emoji,
+    required this.imageAsset,
     required this.checked,
     required this.onToggle,
   }) : super(key: key);
@@ -265,8 +265,11 @@ class _TemplateTile extends StatelessWidget {
                   color: const Color(0xFFF2F4F6),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                alignment: Alignment.center,
-                child: Text(emoji, style: const TextStyle(fontSize: 36)),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  imageAsset,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(height: 12),
