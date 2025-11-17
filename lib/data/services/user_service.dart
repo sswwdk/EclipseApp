@@ -172,11 +172,29 @@ class UserService {
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
       } else {
-        throw Exception('회원가입 실패: ${response.statusCode}');
+        // 🔥 서버에서 반환한 에러 메시지 파싱
+        Map<String, dynamic> errorBody;
+        try {
+          errorBody = json.decode(utf8.decode(response.bodyBytes));
+        } catch (e) {
+          errorBody = {};
+        }
+
+        final String errorMessage =
+            errorBody['message'] ??
+            errorBody['error'] ??
+            _getDefaultErrorMessage(response.statusCode);
+
+        throw Exception(errorMessage);
       }
     } catch (e) {
       print('회원가입 오류: $e');
-      throw Exception('네트워크 오류: $e');
+
+      if (e is Exception) {
+        rethrow;
+      }
+
+      throw Exception('네트워크 연결을 확인해주세요.');
     }
   }
 
