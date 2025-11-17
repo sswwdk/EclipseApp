@@ -7,11 +7,14 @@ import '../../widgets/bottom_navigation_widget.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 import '../../widgets/reviewable_stores_dropdown.dart';
-import '../../../data/services/history_service.dart';
 import '../main/main_screen.dart';
 import '../my_info/schedule_history/schedule_history_screen.dart';
+import '../my_info/schedule_history/schedule_history_template1_detail_screen.dart';
+import '../my_info/schedule_history/schedule_history_template2_detail_screen.dart';
+import '../my_info/schedule_history/schedule_history_template3_detail_screen.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/reviewable_store.dart';
+import '../../../data/models/restaurant.dart';
 import '../main/restaurant_detail_review_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _recentSchedule;
   bool _isLoadingHistory = false;
 
+  // 오늘의 추천 데이터
+  List<Restaurant> _recommendations = [];
+  bool _isLoadingRecommendations = false;
+
   // 알림 드롭다운 상태
   final GlobalKey _notificationKey = GlobalKey();
   OverlayEntry? _overlayEntry;
@@ -36,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadRecentSchedule();
+    _loadTodayRecommendations();
   }
 
   @override
@@ -45,74 +53,163 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadRecentSchedule() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoadingHistory = true;
     });
 
     try {
-      final userId = TokenManager.userId;
-      if (userId == null) {
-        setState(() {
-          _isLoadingHistory = false;
-        });
-        return;
+      // /today-recommendations API에서 히스토리 리스트 가져오기
+      // 응답 형식: [히스토리 리스트, 추천 데이터]
+      final response = await ApiService.getTodayRecommendations();
+      
+      if (!mounted) return;
+      
+      final List<dynamic> histories =
+          (response['histories'] as List<dynamic>?) ?? [];
+      
+      debugPrint('═══════════════════════════════════════════════════════');
+      debugPrint('🖥️ [최근 일정] 화면 데이터 처리 시작');
+      debugPrint('📝 [최근 일정] 받은 히스토리 개수: ${histories.length}');
+      
+      if (histories.isNotEmpty) {
+        debugPrint('📝 [최근 일정] 첫 번째 히스토리 데이터:');
+        debugPrint('   ${histories[0]}');
       }
 
-      final response = await HistoryService.getMyHistory(userId);
-      final List<dynamic> data =
-          response['data'] as List<dynamic>? ??
-          response['histories'] as List<dynamic>? ??
-          response['items'] as List<dynamic>? ??
-          [];
-
-      if (data.isNotEmpty && mounted) {
-        final firstItem = data[0] as Map<String, dynamic>;
-        final categoriesName =
-            firstItem['categories_name']?.toString() ??
-            firstItem['category_name']?.toString() ??
-            firstItem['name']?.toString() ??
+      if (histories.isNotEmpty) {
+        final firstHistory = histories[0] as Map<String, dynamic>;
+        
+        // 히스토리에서 일정 제목 추출
+        final scheduleTitle =
+            firstHistory['schedule_title']?.toString() ??
+            firstHistory['title']?.toString() ??
             '';
         
-        String dateText = '어제';
-        if (firstItem['visited_at'] != null) {
-          final visitedAt = firstItem['visited_at'];
-          if (visitedAt is String) {
-            try {
-              final date = DateTime.parse(visitedAt);
-              final now = DateTime.now();
-              final diff = now.difference(date).inDays;
-              if (diff == 0) {
-                dateText = '오늘';
-              } else if (diff == 1) {
-                dateText = '어제';
-              } else {
-                dateText = '${diff}일 전';
-              }
-            } catch (e) {
-              dateText = '어제';
-            }
-          }
-        }
+        // categories_name 추출 (날짜 대신 표시할 텍스트)
+        final categoriesName =
+            firstHistory['categories_name']?.toString() ??
+            firstHistory['category_name']?.toString() ??
+            '';
+        
+        // 히스토리 ID 추출
+        final historyId =
+            firstHistory['id']?.toString() ??
+            firstHistory['history_id']?.toString() ??
+            firstHistory['merge_history_id']?.toString() ??
+            '';
+        
+        // template_type 추출 (상세 화면 이동 시 필요)
+        final templateType = firstHistory['template_type'] is int
+            ? firstHistory['template_type'] as int
+            : (firstHistory['template_type'] is String
+                ? int.tryParse(firstHistory['template_type'] as String) ?? 0
+                : 0);
 
+        debugPrint('🖥️ [최근 일정] 화면에 표시할 데이터:');
+        debugPrint('   - 제목: $scheduleTitle');
+        debugPrint('   - categories_name: $categoriesName');
+        debugPrint('   - ID: $historyId');
+        debugPrint('   - template_type: $templateType');
+        debugPrint('✅ [최근 일정] 화면 데이터 처리 완료');
+        debugPrint('═══════════════════════════════════════════════════════');
+
+        if (!mounted) return;
+        
         setState(() {
           _recentSchedule = {
-            'title': categoriesName,
-            'date': dateText,
-            'id': firstItem['id']?.toString() ??
-                firstItem['history_id']?.toString() ??
-                '',
+            'title': scheduleTitle,
+            'date': categoriesName, // categories_name을 date 필드에 저장
+            'id': historyId,
+            'template_type': templateType, // template_type 추가
           };
           _isLoadingHistory = false;
         });
       } else {
+        if (!mounted) return;
         setState(() {
           _isLoadingHistory = false;
         });
       }
     } catch (e) {
+      debugPrint('❌ 최근 일정 로드 오류: $e');
+      if (!mounted) return;
       setState(() {
         _isLoadingHistory = false;
       });
+    }
+  }
+
+  /// 오늘의 추천 데이터 로드
+  Future<void> _loadTodayRecommendations() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoadingRecommendations = true;
+    });
+
+    try {
+      final response = await ApiService.getTodayRecommendations();
+      
+      if (!mounted) return;
+
+      final recommendations = response['recommendations'] as List<dynamic>? ?? [];
+      
+      debugPrint('═══════════════════════════════════════════════════════');
+      debugPrint('🖥️ [오늘의 추천] 화면 데이터 처리 시작');
+      debugPrint('📝 [오늘의 추천] 받은 추천 데이터 개수: ${recommendations.length}');
+      
+      if (recommendations.isNotEmpty) {
+        debugPrint('📝 [오늘의 추천] 첫 번째 추천 데이터:');
+        debugPrint('   ${recommendations[0]}');
+      }
+      
+      // 추천 데이터를 Restaurant 객체로 변환
+      final restaurants = <Restaurant>[];
+      for (final item in recommendations) {
+        if (item is Map<String, dynamic>) {
+          try {
+            // Restaurant.fromMainScreenJson 사용 (메인 화면 형식과 동일)
+            final restaurant = Restaurant.fromMainScreenJson(item);
+            restaurants.add(restaurant);
+            debugPrint('✅ [오늘의 추천] 데이터 파싱 성공: ${restaurant.name} (ID: ${restaurant.id})');
+          } catch (e) {
+            debugPrint('⚠️ [오늘의 추천] 데이터 파싱 오류: $e');
+            debugPrint('   데이터: $item');
+          }
+        } else {
+          debugPrint('⚠️ [오늘의 추천] 데이터가 Map 형식이 아님: ${item.runtimeType}');
+        }
+      }
+
+      debugPrint('📊 [오늘의 추천] 최종 Restaurant 개수: ${restaurants.length}');
+      
+      if (restaurants.isNotEmpty) {
+        debugPrint('🖥️ [오늘의 추천] 화면에 표시할 데이터:');
+        debugPrint('   - 첫 번째 추천: ${restaurants[0].name}');
+        debugPrint('   - ID: ${restaurants[0].id}');
+        debugPrint('   - 평점: ${restaurants[0].rating ?? restaurants[0].averageStars ?? "없음"}');
+      } else {
+        debugPrint('⚠️ [오늘의 추천] 표시할 데이터가 없습니다');
+      }
+      
+      debugPrint('✅ [오늘의 추천] 화면 데이터 처리 완료');
+      debugPrint('═══════════════════════════════════════════════════════');
+
+      if (!mounted) return;
+      
+      setState(() {
+        _recommendations = restaurants;
+        _isLoadingRecommendations = false;
+      });
+    } catch (e) {
+      debugPrint('❌ 오늘의 추천 데이터 로드 오류: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingRecommendations = false;
+        });
+      }
     }
   }
 
@@ -207,7 +304,9 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       Overlay.of(context).insert(_overlayEntry!);
-      setState(() => _isDropdownOpen = true);
+      if (mounted) {
+        setState(() => _isDropdownOpen = true);
+      }
     } catch (e) {
       debugPrint('❌ 드롭다운 표시 오류: $e');
       _removeDropdown();
@@ -259,7 +358,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     Overlay.of(context).insert(_overlayEntry!);
-    setState(() => _isDropdownOpen = true);
+    if (mounted) {
+      setState(() => _isDropdownOpen = true);
+    }
   }
 
 
@@ -461,6 +562,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecommendationCard() {
+    // 화면 렌더링 시점 로그
+    debugPrint('🖼️ [오늘의 추천] 카드 렌더링');
+    debugPrint('   - 로딩 중: $_isLoadingRecommendations');
+    debugPrint('   - 추천 개수: ${_recommendations.length}');
+    if (_recommendations.isNotEmpty) {
+      debugPrint('   - 표시할 이름: ${_recommendations[0].name}');
+    } else {
+      debugPrint('   - 표시할 텍스트: "내 위치 기반 추천 할 일"');
+    }
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -488,13 +599,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  '내 위치 기반 추천 할 일',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textPrimaryColor,
-                  ),
-                ),
+                _isLoadingRecommendations
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+                        ),
+                      )
+                    : _recommendations.isNotEmpty
+                        ? Text(
+                            _recommendations[0].name,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textPrimaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : const Text(
+                            '내 위치 기반 추천 할 일',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textPrimaryColor,
+                            ),
+                          ),
               ],
             ),
           ),
@@ -528,6 +659,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecentScheduleCard() {
+    // 화면 렌더링 시점 로그
+    debugPrint('🖼️ [최근 일정] 카드 렌더링');
+    debugPrint('   - 로딩 중: $_isLoadingHistory');
+    debugPrint('   - 일정 데이터: $_recentSchedule');
+    if (_recentSchedule != null) {
+      debugPrint('   - 표시할 제목: ${_recentSchedule!['title']}');
+      debugPrint('   - 표시할 날짜: ${_recentSchedule!['date']}');
+    } else {
+      debugPrint('   - 표시할 텍스트: "일정이 없습니다"');
+    }
+    
     if (_isLoadingHistory) {
       return Container(
         width: double.infinity,
@@ -620,23 +762,51 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${_recentSchedule!['title']} ${_recentSchedule!['date']}',
+                  _recentSchedule!['date']?.toString() ?? '', // categories_name 표시
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppTheme.textPrimaryColor,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
           TextButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ScheduleHistoryScreen(),
-                ),
-              );
+              final historyId = _recentSchedule!['id']?.toString() ?? '';
+              final templateType = _recentSchedule!['template_type'] as int? ?? 0;
+              
+              // template_type에 따라 다른 상세 화면으로 이동
+              if (templateType == 2) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScheduleHistoryTemplate2DetailScreen(
+                      historyId: historyId,
+                    ),
+                  ),
+                );
+              } else if (templateType == 3) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScheduleHistoryTemplate3DetailScreen(
+                      historyId: historyId,
+                    ),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScheduleHistoryDetailScreen(
+                      historyId: historyId,
+                    ),
+                  ),
+                );
+              }
             },
             style: TextButton.styleFrom(
               backgroundColor: AppTheme.primaryColorWithOpacity10,
@@ -710,3 +880,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
