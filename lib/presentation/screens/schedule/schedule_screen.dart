@@ -13,9 +13,10 @@ import '../my_info/schedule_history/schedule_history_template1_detail_screen.dar
 import '../my_info/schedule_history/schedule_history_template2_detail_screen.dart';
 import '../my_info/schedule_history/schedule_history_template3_detail_screen.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/history_service.dart';
 import '../../../data/models/reviewable_store.dart';
 import '../../../data/models/restaurant.dart';
-import '../main/restaurant_detail_review_screen.dart';
+import '../main/restaurant_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -60,40 +61,48 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      // /today-recommendations API에서 히스토리 리스트 가져오기
-      // 응답 형식: [히스토리 리스트, 추천 데이터]
-      final response = await ApiService.getTodayRecommendations();
+      // schedule_history_screen.dart와 동일한 API 사용
+      final userId = TokenManager.userId;
+      if (userId == null) {
+        if (!mounted) return;
+        setState(() {
+          _isLoadingHistory = false;
+        });
+        return;
+      }
+
+      final response = await HistoryService.getMyHistory(userId);
       
       if (!mounted) return;
       
-      final List<dynamic> histories =
-          (response['histories'] as List<dynamic>?) ?? [];
-      
-      debugPrint('═══════════════════════════════════════════════════════');
-      debugPrint('🖥️ [최근 일정] 화면 데이터 처리 시작');
-      debugPrint('📝 [최근 일정] 받은 히스토리 개수: ${histories.length}');
-      
-      if (histories.isNotEmpty) {
-        debugPrint('📝 [최근 일정] 첫 번째 히스토리 데이터:');
-        debugPrint('   ${histories[0]}');
+      // schedule_history_screen.dart와 동일한 방식으로 데이터 추출
+      List<dynamic> data = [];
+      data =
+          response['data'] as List<dynamic>? ??
+          response['histories'] as List<dynamic>? ??
+          response['items'] as List<dynamic>? ??
+          response['history'] as List<dynamic>? ??
+          [];
+
+      if (data.isEmpty) {
+        for (final value in response.values) {
+          if (value is List && value.isNotEmpty) {
+            data = value;
+            break;
+          }
+        }
       }
 
-      if (histories.isNotEmpty) {
-        final firstHistory = histories[0] as Map<String, dynamic>;
+      if (data.isNotEmpty) {
+        final firstHistory = data[0] as Map<String, dynamic>;
         
-        // 히스토리에서 일정 제목 추출
-        final scheduleTitle =
-            firstHistory['schedule_title']?.toString() ??
-            firstHistory['title']?.toString() ??
-            '';
-        
-        // categories_name 추출 (날짜 대신 표시할 텍스트)
+        // categories_name 추출 (merge_history 테이블의 categories_name)
         final categoriesName =
             firstHistory['categories_name']?.toString() ??
             firstHistory['category_name']?.toString() ??
             '';
         
-        // 히스토리 ID 추출
+        // 히스토리 ID 추출 (상세 화면 이동 시 사용)
         final historyId =
             firstHistory['id']?.toString() ??
             firstHistory['history_id']?.toString() ??
@@ -101,28 +110,23 @@ class _HomeScreenState extends State<HomeScreen> {
             '';
         
         // template_type 추출 (상세 화면 이동 시 필요)
-        final templateType = firstHistory['template_type'] is int
-            ? firstHistory['template_type'] as int
-            : (firstHistory['template_type'] is String
-                ? int.tryParse(firstHistory['template_type'] as String) ?? 0
-                : 0);
-
-        debugPrint('🖥️ [최근 일정] 화면에 표시할 데이터:');
-        debugPrint('   - 제목: $scheduleTitle');
-        debugPrint('   - categories_name: $categoriesName');
-        debugPrint('   - ID: $historyId');
-        debugPrint('   - template_type: $templateType');
-        debugPrint('✅ [최근 일정] 화면 데이터 처리 완료');
-        debugPrint('═══════════════════════════════════════════════════════');
+        int templateType = 0;
+        final templateTypeValue = firstHistory['template_type'] ?? firstHistory['templateType'];
+        if (templateTypeValue != null) {
+          if (templateTypeValue is int) {
+            templateType = templateTypeValue;
+          } else if (templateTypeValue is String) {
+            templateType = int.tryParse(templateTypeValue) ?? 0;
+          }
+        }
 
         if (!mounted) return;
         
         setState(() {
           _recentSchedule = {
-            'title': scheduleTitle,
             'date': categoriesName, // categories_name을 date 필드에 저장
             'id': historyId,
-            'template_type': templateType, // template_type 추가
+            'template_type': templateType,
           };
           _isLoadingHistory = false;
         });
@@ -156,46 +160,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final recommendations = response['recommendations'] as List<dynamic>? ?? [];
       
-      debugPrint('═══════════════════════════════════════════════════════');
-      debugPrint('🖥️ [오늘의 추천] 화면 데이터 처리 시작');
-      debugPrint('📝 [오늘의 추천] 받은 추천 데이터 개수: ${recommendations.length}');
-      
-      if (recommendations.isNotEmpty) {
-        debugPrint('📝 [오늘의 추천] 첫 번째 추천 데이터:');
-        debugPrint('   ${recommendations[0]}');
-      }
-      
       // 추천 데이터를 Restaurant 객체로 변환
       final restaurants = <Restaurant>[];
       for (final item in recommendations) {
         if (item is Map<String, dynamic>) {
           try {
-            // Restaurant.fromMainScreenJson 사용 (메인 화면 형식과 동일)
             final restaurant = Restaurant.fromMainScreenJson(item);
             restaurants.add(restaurant);
-            debugPrint('✅ [오늘의 추천] 데이터 파싱 성공: ${restaurant.name} (ID: ${restaurant.id})');
           } catch (e) {
             debugPrint('⚠️ [오늘의 추천] 데이터 파싱 오류: $e');
-            debugPrint('   데이터: $item');
           }
-        } else {
-          debugPrint('⚠️ [오늘의 추천] 데이터가 Map 형식이 아님: ${item.runtimeType}');
         }
       }
-
-      debugPrint('📊 [오늘의 추천] 최종 Restaurant 개수: ${restaurants.length}');
-      
-      if (restaurants.isNotEmpty) {
-        debugPrint('🖥️ [오늘의 추천] 화면에 표시할 데이터:');
-        debugPrint('   - 첫 번째 추천: ${restaurants[0].name}');
-        debugPrint('   - ID: ${restaurants[0].id}');
-        debugPrint('   - 평점: ${restaurants[0].rating ?? restaurants[0].averageStars ?? "없음"}');
-      } else {
-        debugPrint('⚠️ [오늘의 추천] 표시할 데이터가 없습니다');
-      }
-      
-      debugPrint('✅ [오늘의 추천] 화면 데이터 처리 완료');
-      debugPrint('═══════════════════════════════════════════════════════');
 
       if (!mounted) return;
       
@@ -394,13 +370,52 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!mounted) return;
 
-      // 리뷰 작성 화면으로 이동
+      // 매장 상세 화면으로 이동
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RestaurantDetailReviewScreen(
+          builder: (context) => RestaurantDetailScreen(
             restaurant: restaurant,
-            showReviewButton: true,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // 로딩 다이얼로그 닫기 (에러 시)
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('매장 정보를 불러올 수 없습니다: $e')));
+    }
+  }
+
+  /// 추천 매장 상세 페이지로 이동
+  void _navigateToRecommendationDetail(Restaurant recommendation) async {
+    try {
+      // 로딩 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+          ),
+        ),
+      );
+
+      // GET /api/categories/{id} 요청으로 매장 상세 정보 조회
+      final restaurant = await ApiService.getRestaurant(recommendation.id);
+
+      if (!mounted) return;
+      Navigator.pop(context); // 로딩 다이얼로그 닫기
+
+      if (!mounted) return;
+
+      // 매장 상세 화면으로 이동
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RestaurantDetailScreen(
+            restaurant: restaurant,
           ),
         ),
       );
@@ -562,16 +577,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecommendationCard() {
-    // 화면 렌더링 시점 로그
-    debugPrint('🖼️ [오늘의 추천] 카드 렌더링');
-    debugPrint('   - 로딩 중: $_isLoadingRecommendations');
-    debugPrint('   - 추천 개수: ${_recommendations.length}');
-    if (_recommendations.isNotEmpty) {
-      debugPrint('   - 표시할 이름: ${_recommendations[0].name}');
-    } else {
-      debugPrint('   - 표시할 텍스트: "내 위치 기반 추천 할 일"');
-    }
-    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -590,12 +595,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '오늘의 추천',
+                Text(
+                  '오늘의 추천 매장',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFFF8126),
+                    color: const Color(0xFFFF8126).withOpacity(0.9), // 옅은 주황색
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -612,9 +617,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ? Text(
                             _recommendations[0].name,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 18,
                               color: AppTheme.textPrimaryColor,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w700, // 강조: w500 -> w700
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -630,26 +635,28 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => const MainScreen(),
-                ),
-              );
-            },
+            onPressed: _recommendations.isNotEmpty
+                ? () => _navigateToRecommendationDetail(_recommendations[0])
+                : () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => const MainScreen(),
+                      ),
+                    );
+                  },
             style: TextButton.styleFrom(
-              backgroundColor: AppTheme.primaryColorWithOpacity10,
-              foregroundColor: AppTheme.primaryColor,
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: const Color.fromARGB(255, 255, 255, 255),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text(
-              '추천 보기',
+              '매장 상세 보기',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
@@ -659,17 +666,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecentScheduleCard() {
-    // 화면 렌더링 시점 로그
-    debugPrint('🖼️ [최근 일정] 카드 렌더링');
-    debugPrint('   - 로딩 중: $_isLoadingHistory');
-    debugPrint('   - 일정 데이터: $_recentSchedule');
-    if (_recentSchedule != null) {
-      debugPrint('   - 표시할 제목: ${_recentSchedule!['title']}');
-      debugPrint('   - 표시할 날짜: ${_recentSchedule!['date']}');
-    } else {
-      debugPrint('   - 표시할 텍스트: "일정이 없습니다"');
-    }
-    
     if (_isLoadingHistory) {
       return Container(
         width: double.infinity,
@@ -710,12 +706,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '최근 일정',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFFF8126),
+                      color: const Color(0xFFFF8126).withOpacity(0.6), // 옅은 주황색
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -752,20 +748,21 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '최근 일정',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFFF8126),
+                    color: const Color(0xFFFF8126).withOpacity(0.9), // 옅은 주황색
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   _recentSchedule!['date']?.toString() ?? '', // categories_name 표시
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     color: AppTheme.textPrimaryColor,
+                    fontWeight: FontWeight.w700, // 강조: 기본 -> w700
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -809,8 +806,8 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             style: TextButton.styleFrom(
-              backgroundColor: AppTheme.primaryColorWithOpacity10,
-              foregroundColor: AppTheme.primaryColor,
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: const Color.fromARGB(255, 255, 255, 255),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -820,7 +817,7 @@ class _HomeScreenState extends State<HomeScreen> {
               '일정 열기',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),

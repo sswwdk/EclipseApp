@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import '../../shared/helpers/http_interceptor.dart';
 import '../../shared/helpers/token_manager.dart';
 import '../../core/config/server_config.dart';
@@ -32,7 +31,6 @@ class ApiService {
           .map((json) => Restaurant.fromMainScreenJson(json))
           .toList();
     } catch (e) {
-      print('API 호출 오류: $e');
       throw Exception('네트워크 오류: $e');
     }
   }
@@ -58,16 +56,6 @@ class ApiService {
         final Map<String, dynamic> obj = (root['data'] is Map<String, dynamic>)
             ? Map<String, dynamic>.from(root['data'])
             : root;
-        try {
-          final rawReviews = obj['reviews'];
-          print(
-            '🧾 getRestaurant($id) raw reviews: '
-            '${rawReviews is List ? json.encode(rawReviews) : rawReviews}',
-          );
-        } catch (e) {
-          print('🧾 getRestaurant($id) raw reviews 로그 실패: $e');
-        }
-
         final reviews = Review.fromList(obj['reviews']);
 
         // 이 API에서는 태그/리뷰만 사용한다. 나머지는 기본값으로 반환
@@ -98,7 +86,6 @@ class ApiService {
         throw Exception('HTTP 오류: ${response.statusCode}');
       }
     } catch (e) {
-      print('API 호출 오류: $e');
       throw Exception('네트워크 오류: $e');
     }
   }
@@ -106,10 +93,6 @@ class ApiService {
   // "오늘의 추천" 카드 
   static Future<Map<String, dynamic>> getTodayRecommendations() async {
     try {
-      debugPrint('═══════════════════════════════════════════════════════');
-      debugPrint('🔍 [오늘의 추천] API 호출 시작');
-      debugPrint('📍 엔드포인트: /api/categories/today-recommendations');
-
       final headers = {
         'Content-Type': 'application/json; charset=UTF-8',
         ...TokenManager.jwtHeader,
@@ -120,12 +103,8 @@ class ApiService {
         headers: headers,
       );
 
-      debugPrint('📡 [오늘의 추천] 응답 상태 코드: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
-        debugPrint('📦 [오늘의 추천] 응답 데이터 타입: ${data.runtimeType}');
-        debugPrint('📦 [오늘의 추천] 응답 데이터 전체: $data');
 
         // 응답은 배열: [히스토리 리스트, 추천 데이터]
         // data[0] = 히스토리 리스트
@@ -133,9 +112,6 @@ class ApiService {
         if (data is List && data.length >= 2) {
           // 첫 번째 요소: 히스토리 리스트
           final firstItem = data[0];
-          debugPrint('📋 [오늘의 추천] 첫 번째 요소 타입: ${firstItem.runtimeType}');
-          debugPrint('📋 [오늘의 추천] 첫 번째 요소 내용: $firstItem');
-          
           final historyList = (firstItem is List) 
               ? firstItem 
               : (firstItem is Map) 
@@ -144,17 +120,11 @@ class ApiService {
           
           // 두 번째 요소: 추천 데이터 (ResponseCategoryListDTO 형식)
           final secondItem = data[1];
-          debugPrint('📋 [오늘의 추천] 두 번째 요소 타입: ${secondItem.runtimeType}');
-          debugPrint('📋 [오늘의 추천] 두 번째 요소 내용: $secondItem');
-          
           List<dynamic> recommendations = [];
           
           if (secondItem is Map<String, dynamic>) {
             // ResponseCategoryListDTO 형식: { categories: [...] }
             final categories = secondItem['categories'];
-            debugPrint('📋 [오늘의 추천] categories 필드 타입: ${categories.runtimeType}');
-            debugPrint('📋 [오늘의 추천] categories 필드 내용: $categories');
-            
             if (categories is List) {
               recommendations = categories;
             } else if (categories != null) {
@@ -164,27 +134,12 @@ class ApiService {
             recommendations = secondItem;
           }
 
-          debugPrint('📊 [오늘의 추천] 파싱 결과:');
-          debugPrint('   - 히스토리 개수: ${historyList.length}');
-          debugPrint('   - 추천 데이터 개수: ${recommendations.length}');
-          
-          if (recommendations.isNotEmpty) {
-            debugPrint('📊 [오늘의 추천] 추천 데이터 첫 번째 항목:');
-            debugPrint('   ${recommendations[0]}');
-          }
-
-          final result = {
+          return {
             'histories': historyList,  // data[0] = 히스토리 리스트
             'recommendations': recommendations,  // data[1] = 추천 데이터
           };
-          
-          debugPrint('✅ [오늘의 추천] API 호출 성공');
-          debugPrint('═══════════════════════════════════════════════════════');
-          
-          return result;
         } else if (data is Map<String, dynamic>) {
           // Map 형식 응답 처리 (하위 호환성)
-          debugPrint('⚠️ [오늘의 추천] 응답이 Map 형식입니다. Map 형식으로 처리합니다.');
           final historyList = (data['histories'] is List) 
               ? data['histories'] as List<dynamic>
               : [];
@@ -192,33 +147,23 @@ class ApiService {
               ? data['recommendations'] as List<dynamic>
               : [];
           
-          debugPrint('📊 [오늘의 추천] Map 형식 파싱 결과:');
-          debugPrint('   - 히스토리 개수: ${historyList.length}');
-          debugPrint('   - 추천 데이터 개수: ${recommendations.length}');
-          
           return {
             'histories': recommendations,
             'recommendations': historyList,
           };
         } else {
-          debugPrint('⚠️ [오늘의 추천] 응답 형식이 예상과 다릅니다: ${data.runtimeType}');
-          debugPrint('═══════════════════════════════════════════════════════');
           return {
             'histories': [],
             'recommendations': [],
           };
         }
       } else {
-        debugPrint('❌ [오늘의 추천] 응답 오류: ${response.statusCode}');
-        debugPrint('═══════════════════════════════════════════════════════');
         return {
           'recommendations': [],
           'histories': []
         };
       }
     } catch (e) {
-      debugPrint('❌ [오늘의 추천] 데이터 조회 오류: $e');
-      debugPrint('═══════════════════════════════════════════════════════');
       return {
         'recommendations': [],
         'histories': [],
@@ -231,11 +176,6 @@ class ApiService {
     int limit = 10,
   }) async {
     try {
-      debugPrint('═══════════════════════════════════════════════════════');
-      debugPrint('🔍 [최근 일정] API 호출 시작');
-      debugPrint('📍 엔드포인트: /api/categories');
-      debugPrint('📋 limit 파라미터: $limit');
-
       final headers = {
         'Content-Type': 'application/json; charset=UTF-8',
         ...TokenManager.jwtHeader,
@@ -246,12 +186,8 @@ class ApiService {
         headers: headers,
       );
 
-      debugPrint('📡 [최근 일정] 응답 상태 코드: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
-        debugPrint('📦 [최근 일정] 응답 데이터 타입: ${data.runtimeType}');
-        debugPrint('📦 [최근 일정] 응답 데이터 전체: $data');
 
         // ResponseCategoryListDTO 형식: { categories: [...] }
         final Map<String, dynamic> responseData = 
@@ -259,30 +195,15 @@ class ApiService {
         final List<dynamic> categories = 
             (responseData['categories'] as List<dynamic>?) ?? [];
 
-        debugPrint('📊 [최근 일정] 파싱 결과:');
-        debugPrint('   - 카테고리 개수: ${categories.length}');
-        
-        if (categories.isNotEmpty) {
-          debugPrint('📊 [최근 일정] 첫 번째 카테고리:');
-          debugPrint('   ${categories[0]}');
-        }
-
-        debugPrint('✅ [최근 일정] API 호출 성공');
-        debugPrint('═══════════════════════════════════════════════════════');
-
         return {
           'categories': categories,
         };
       } else {
-        debugPrint('❌ [최근 일정] 응답 오류: ${response.statusCode}');
-        debugPrint('═══════════════════════════════════════════════════════');
         return {
           'categories': [],
         };
       }
     } catch (e) {
-      debugPrint('❌ [최근 일정] 카테고리 조회 오류: $e');
-      debugPrint('═══════════════════════════════════════════════════════');
       return {
         'categories': [],
       };
@@ -294,8 +215,6 @@ class ApiService {
     int limit = 6,
   }) async {
     try {
-      debugPrint('🔍 리뷰 작성 가능한 매장 조회 시작...');
-
       final headers = {
         'Content-Type': 'application/json; charset=UTF-8',
         ...TokenManager.jwtHeader,
@@ -306,17 +225,12 @@ class ApiService {
         headers: headers,
       );
 
-      debugPrint('📡 응답 상태 코드: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
-        debugPrint('📦 응답 데이터: $data');
 
         final reviewList = data['review_list'] as List<dynamic>? ?? [];
-        debugPrint('📝 리뷰 가능 매장 개수: ${reviewList.length}');
 
         if (reviewList.isEmpty) {
-          debugPrint('❌ 리뷰 작성 가능한 매장이 없습니다');
           return [];
         }
 
@@ -330,13 +244,12 @@ class ApiService {
           final address = review['comment'] ?? '주소 정보 없음';
           final visitCount = review['stars'] ?? 0;
 
-          // 🔥 이미지 조회 없이 바로 객체 생성
           stores.add(
             ReviewableStore(
               categoryId: categoryId,
               categoryName: categoryName,
               categoryType: review['category_type'] ?? '',
-              imageUrl: null, // 🔥 이미지 없음
+              imageUrl: null,
               address: address,
               visitCount: visitCount is int ? visitCount : 0,
               reviewCount: 0,
@@ -345,18 +258,13 @@ class ApiService {
                   : DateTime.now(),
             ),
           );
-
-          debugPrint('✅ ${categoryName} 추가 완료 (이미지 조회 생략)');
         }
 
-        debugPrint('✅ 리뷰 작성 가능한 매장 ${stores.length}개 조회 완료');
         return stores;
       } else {
-        debugPrint('❌ 응답 오류: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      debugPrint('❌ 리뷰 작성 가능한 매장 조회 오류: $e');
       return [];
     }
   }
