@@ -349,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             onPressed: _toggleNotificationDropdown,
           ),
-          title: const AppTitleWidget('일정표 생성', color: Colors.white),
+          title: const AppTitleWidget('오늘 뭐하지?', color: Colors.white),
           centerTitle: true,
           actions: [
             IconButton(
@@ -427,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        '새로운 하루를 만들어봐요!',
+                        '특별한 하루를 만들어봐요!',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
