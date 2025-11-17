@@ -80,22 +80,49 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: AppTitleWidget(
           restaurant.name,
-          color: Colors.black,
+          color: Colors.white,
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: _isFavorite ? Colors.red : const Color(0xFFFF8126),
-                size: 28),
+            icon: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(139, 209, 209, 209),
+                shape: BoxShape.circle,
+              ),
+              child: _isFavorite
+                  ? Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          Icons.favorite_border,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                        Icon(
+                          Icons.favorite,
+                          color: Colors.red,
+                          size: 32,
+                        ),
+                      ],
+                    )
+                  : Icon(
+                      Icons.favorite_border,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+            ),
             onPressed: () async {
               final next = !_isFavorite;
               setState(() => _isFavorite = next);

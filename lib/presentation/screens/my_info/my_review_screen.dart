@@ -210,12 +210,13 @@ class _MyReviewScreenState extends State<MyReviewScreen>
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
         elevation: 0,
-        title: const AppTitleWidget('내가 쓴 리뷰'),
+        title: const AppTitleWidget('내가 쓴 리뷰', color: Colors.white),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimaryColor),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: (_categories.isNotEmpty && _tabController != null)
@@ -224,10 +225,10 @@ class _MyReviewScreenState extends State<MyReviewScreen>
                 child: TabBar(
                   controller: _tabController,
                   isScrollable: false,
-                  labelColor: const Color(0xFFFF7A21),
-                  unselectedLabelColor: Colors.grey[600],
-                  indicatorColor: const Color(0xFFFF7A21),
-                  dividerColor: const Color(0xFFFF7A21),
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white.withOpacity(0.7),
+                  indicatorColor: Colors.white,
+                  dividerColor: Colors.white.withOpacity(0.3),
                   labelStyle: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
