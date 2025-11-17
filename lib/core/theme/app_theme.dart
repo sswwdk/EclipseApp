@@ -10,6 +10,10 @@ class AppTheme {
   static const Color secondaryLightColor = Color(0xFF4DB6AC);
   static const Color secondaryDarkColor = Color(0xFF00695C);
   
+  static const Color subColor = Color(0xFF152036);
+  static const Color subLightColor = Color(0xFF2A3D5C);
+  static const Color subDarkColor = Color(0xFF0A1524);
+  
   static const Color backgroundColor = Colors.white;
   static const Color surfaceColor = Colors.white;
   static const Color cardColor = Colors.white;
@@ -37,12 +41,23 @@ class AppTheme {
     Color(0xFF4DB6AC),
   ];
   
+  static const List<Color> subGradient = [
+    Color(0xFF152036),
+    Color(0xFF2A3D5C),
+  ];
+  
   // 투명도가 적용된 색상들
   static Color get primaryColorWithOpacity10 => primaryColor.withValues(alpha: 0.1);
   static Color get primaryColorWithOpacity20 => primaryColor.withValues(alpha: 0.2);
   static Color get primaryColorWithOpacity30 => primaryColor.withValues(alpha: 0.3);
   static Color get primaryColorWithOpacity50 => primaryColor.withValues(alpha: 0.5);
   static Color get primaryColorWithOpacity70 => primaryColor.withValues(alpha: 0.7);
+  
+  static Color get subColorWithOpacity10 => subColor.withValues(alpha: 0.1);
+  static Color get subColorWithOpacity20 => subColor.withValues(alpha: 0.2);
+  static Color get subColorWithOpacity30 => subColor.withValues(alpha: 0.3);
+  static Color get subColorWithOpacity50 => subColor.withValues(alpha: 0.5);
+  static Color get subColorWithOpacity70 => subColor.withValues(alpha: 0.7);
   
   static Color get backgroundColorWithOpacity50 => backgroundColor.withValues(alpha: 0.5);
   static Color get backgroundColorWithOpacity80 => backgroundColor.withValues(alpha: 0.8);
@@ -162,6 +177,14 @@ class AppTheme {
   static LinearGradient getSecondaryGradient() {
     return const LinearGradient(
       colors: secondaryGradient,
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+  }
+  
+  static LinearGradient getSubGradient() {
+    return const LinearGradient(
+      colors: subGradient,
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     );

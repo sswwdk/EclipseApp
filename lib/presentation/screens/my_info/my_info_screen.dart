@@ -34,14 +34,15 @@ class MyInfoScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: AppTheme.backgroundColor,
         appBar: AppBar(
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
           elevation: 0,
-          title: const AppTitleWidget('내 정보'),
+          title: const AppTitleWidget('내 정보', color: Colors.white),
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(
               Icons.arrow_back,
-              color: AppTheme.textPrimaryColor,
+              color: Colors.white,
             ),
             onPressed: () {
               // 뒤로 가기 시 항상 홈 화면으로 돌아가기
@@ -53,7 +54,7 @@ class MyInfoScreen extends StatelessWidget {
           ),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
-            child: Container(height: 1, color: AppTheme.primaryColor),
+            child: Container(height: 1, color: Colors.white.withOpacity(0.3)),
           ),
         ),
         body: SingleChildScrollView(

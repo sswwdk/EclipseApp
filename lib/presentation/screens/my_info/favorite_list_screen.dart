@@ -6,6 +6,7 @@ import '../main/restaurant_detail_screen.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/store/store_card.dart';
 import '../../widgets/app_title_widget.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// 찜목록을 보여주는 화면
 class FavoriteListScreen extends StatefulWidget {
@@ -402,32 +403,33 @@ class _FavoriteListScreenState extends State<FavoriteListScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             if (!mounted) return;
             Navigator.pop(context);
           },
         ),
-        title: const AppTitleWidget('찜 목록'),
+        title: const AppTitleWidget('찜 목록', color: Colors.white),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: TabBar(
             controller: _tabController!,
             isScrollable: false,
-            labelColor: const Color(0xFFFF7A21),
-            unselectedLabelColor: Colors.grey[600],
-            indicatorColor: const Color(0xFFFF7A21),
-            dividerColor: const Color(0xFFFF7A21),
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white.withOpacity(0.7),
+            indicatorColor: Colors.white,
+            dividerColor: Colors.white.withOpacity(0.3),
             labelStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
             ),
             unselectedLabelStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.normal,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
             ),
             tabs: _categories.map((category) {
               return Tab(

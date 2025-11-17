@@ -6,8 +6,6 @@ import 'schedule_select_screen.dart';
 import '../../widgets/bottom_navigation_widget.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
-import '../../widgets/review_notification_icon_button.dart';
-import '../../widgets/schedule_history_icon_button.dart';
 import '../../widgets/reviewable_stores_dropdown.dart';
 import '../../../data/services/history_service.dart';
 import '../main/main_screen.dart';
@@ -334,21 +332,31 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFFF5E6), // 연한 크림/피치 톤 (이미지와 조화로운 색상)
         extendBody: true,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
           elevation: 0,
           automaticallyImplyLeading: false,
-          leading: ReviewNotificationIconButton(
-            iconKey: _notificationKey,
-            isDropdownOpen: _isDropdownOpen,
+          leading: IconButton(
+            key: _notificationKey,
+            icon: Icon(
+              _isDropdownOpen
+                  ? Icons.rate_review
+                  : Icons.rate_review_outlined,
+              color: Colors.white,
+            ),
             onPressed: _toggleNotificationDropdown,
           ),
-          title: const AppTitleWidget('일정표 생성'),
+          title: const AppTitleWidget('일정표 생성', color: Colors.white),
           centerTitle: true,
           actions: [
-            ScheduleHistoryIconButton(
+            IconButton(
+              icon: const Icon(
+                Icons.calendar_today_outlined,
+                color: Colors.white,
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -362,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
-            child: Container(height: 1, color: const Color(0xFFFF8126)),
+            child: Container(height: 1, color: Colors.white.withOpacity(0.3)),
           ),
         ),
         body: LayoutBuilder(
@@ -375,16 +383,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 // 배경 이미지 (z-index 낮음)
                 Positioned.fill(
                   child: Align(
-                    alignment: const Alignment(0, -1.3), // 위로 올림 (0은 수평 중앙, -0.3은 위로 30%)
+                    alignment: const Alignment(0, -0.5), // 이미지를 중앙 위쪽에 배치
                     child: Image.asset(
                       'assets/images/image.png',
-                      width: screenWidth * 1.2,
-                      height: screenHeight * 0.8,
-                      fit: BoxFit.contain,
+                      width: screenWidth * 1.0,
+                      height: screenHeight * 0.6,
+                      fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return SizedBox(
                           width: screenWidth * 1.2,
-                          height: screenHeight * 0.8,
+                          height: screenHeight * 0.9,
                           child: const Icon(
                             Icons.image_not_supported,
                             size: 160,
@@ -427,22 +435,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            // 오늘의 추천 카드 (이미지 위에 겹치게)
-                            _buildRecommendationCard(),
-                            const SizedBox(height: 16),
-                            // 최근 일정 카드 (이미지 위에 겹치게)
-                            _buildRecentScheduleCard(),
-                            const SizedBox(height: 24),
-                            // 메인 버튼
-                            _buildMainButton(),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
-                      ),
+                      const Spacer(), // 남은 공간을 모두 차지하여 카드들을 하단으로 밀어냄
+                      // 오늘의 추천 카드 (이미지 위에 겹치게)
+                      _buildRecommendationCard(),
+                      const SizedBox(height: 16),
+                      // 최근 일정 카드 (이미지 위에 겹치게)
+                      _buildRecentScheduleCard(),
+                      const SizedBox(height: 24),
+                      // 메인 버튼
+                      _buildMainButton(),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),

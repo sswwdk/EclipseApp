@@ -238,33 +238,51 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen>
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
         elevation: 0,
-        title: const AppTitleWidget('일정표 히스토리'),
+        title: const AppTitleWidget('일정표 히스토리', color: Colors.white),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimaryColor),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(49),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TabBar(
-                controller: _tabController,
-                labelColor: AppTheme.primaryColor,
-                unselectedLabelColor: AppTheme.textSecondaryColor,
-                indicatorColor: AppTheme.primaryColor,
-                indicatorWeight: 2,
-                dividerColor: Colors.transparent,
-                tabs: const [
-                  Tab(text: '템플릿 일정표'),
-                  Tab(text: '일반 일정표'),
-                ],
+          preferredSize: const Size.fromHeight(48),
+          child: SizedBox(
+            height: 48,
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: false,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.7),
+              indicatorColor: Colors.white,
+              dividerColor: Colors.white.withOpacity(0.3),
+              labelStyle: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                height: 1.0, // 줄 간격 제거
               ),
-              Container(height: 1, color: AppTheme.primaryColor),
-            ],
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                height: 1.0, // 줄 간격 제거
+              ),
+              tabs: const [
+                Tab(
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Text('템플릿 일정표'),
+                  ),
+                ),
+                Tab(
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Text('일반 일정표'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -10,9 +10,8 @@ import '../../widgets/store/store_card.dart';
 import '../../widgets/app_title_widget.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/bottom_navigation_widget.dart';
-import '../../widgets/review_notification_icon_button.dart';
-import '../../widgets/schedule_history_icon_button.dart';
 import '../../widgets/reviewable_stores_dropdown.dart';
+import '../../../core/theme/app_theme.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -270,18 +269,28 @@ class _MainScreenState extends State<MainScreen> {
         backgroundColor: Colors.white,
         extendBody: true,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
           elevation: 0,
           automaticallyImplyLeading: false,
-          leading: ReviewNotificationIconButton(
-            iconKey: _notificationKey,
-            isDropdownOpen: _isDropdownOpen,
+          leading: IconButton(
+            key: _notificationKey,
+            icon: Icon(
+              _isDropdownOpen
+                  ? Icons.rate_review
+                  : Icons.rate_review_outlined,
+              color: Colors.white,
+            ),
             onPressed: _toggleNotificationDropdown,
           ),
-          title: const AppTitleWidget('할 일 추천'),
+          title: const AppTitleWidget('매장 추천', color: Colors.white),
           centerTitle: true,
           actions: [
-            ScheduleHistoryIconButton(
+            IconButton(
+              icon: const Icon(
+                Icons.calendar_today_outlined,
+                color: Colors.white,
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -295,7 +304,7 @@ class _MainScreenState extends State<MainScreen> {
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
-            child: Container(height: 1, color: const Color(0xFFFF8126)),
+            child: Container(height: 1, color: Colors.white.withOpacity(0.3)),
           ),
         ),
         body: SingleChildScrollView(
