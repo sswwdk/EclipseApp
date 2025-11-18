@@ -36,22 +36,16 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
     // 화면 크기에 맞게 비율 계산
     final screenSize = MediaQuery.of(context).size;
     final screenWidth = screenSize.width;
-    final screenHeight = screenSize.height;
-    
-    // AppBar 높이와 하단 버튼 영역 고려
-    final appBarHeight = AppBar().preferredSize.height;
-    final bottomBarHeight = 48.0 + 16.0 + 12.0 + 16.0; // 버튼 높이 + 패딩
-    final availableHeight = screenHeight - appBarHeight - bottomBarHeight - MediaQuery.of(context).padding.top;
-    
+
     // 카드 너비 계산 (화면 너비 - 좌우 패딩 - 간격) / 2
     final cardWidth = (screenWidth - 16 * 2 - 16) / 2;
-    
-    // 카드 높이를 화면 비율에 맞게 계산 (적절한 비율 유지)
-    final cardHeight = availableHeight / 2.2; // 약간의 여유 공간 확보
-    
+
+    // 카드 높이를 고정값으로 설정 (적절한 비율 유지)
+    final cardHeight = cardWidth * 1.4; // 1:1.4 비율 유지
+
     // childAspectRatio = 너비 / 높이
     final aspectRatio = cardWidth / cardHeight;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
@@ -64,87 +58,93 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
         title: const AppTitleWidget('템플릿 선택'),
         centerTitle: true,
       ),
-      body: GridView.count(
-        padding: const EdgeInsets.all(16),
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: aspectRatio,
+      body: Column(
         children: [
-          _TemplateTile(
-            name: '템플릿 1',
-            description: '심플하게 볼 수 있는 템플릿',
-            imageAsset: 'assets/images/temp1.png',
-            checked: _selectedName == '템플릿 1',
-            onToggle: () {
-              setState(() {
-                _selectedName = _selectedName == '템플릿 1' ? null : '템플릿 1';
-              });
-            },
-          ),
-          _TemplateTile(
-            name: '템플릿 2',
-            description: '커피 무드 템플릿',
-            imageAsset: 'assets/images/temp2.png',
-            checked: _selectedName == '템플릿 2',
-            onToggle: () {
-              setState(() {
-                _selectedName = _selectedName == '템플릿 2' ? null : '템플릿 2';
-              });
-            },
-          ),
-          _TemplateTile(
-            name: '템플릿 3',
-            description: '핑크핑크한 귀여운 템플릿',
-            imageAsset: 'assets/images/temp3.png',
-            checked: _selectedName == '템플릿 3',
-            onToggle: () {
-              setState(() {
-                _selectedName = _selectedName == '템플릿 3' ? null : '템플릿 3';
-              });
-            },
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          color: Colors.white,
-          child: SizedBox(
-            height: 48,
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                elevation: 3,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Expanded(
+            child: GridView.count(
+              padding: const EdgeInsets.all(16),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: aspectRatio,
+              children: [
+                _TemplateTile(
+                  name: '템플릿 1',
+                  description: '심플하게 볼 수 있는 템플릿',
+                  imageAsset: 'assets/images/temp1.png',
+                  checked: _selectedName == '템플릿 1',
+                  onToggle: () {
+                    setState(() {
+                      _selectedName = _selectedName == '템플릿 1' ? null : '템플릿 1';
+                    });
+                  },
                 ),
-              ),
-              onPressed: _onConfirm,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 6),
-                child: Text(
-                  '템플릿 선택하기',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                _TemplateTile(
+                  name: '템플릿 2',
+                  description: '커피 무드 템플릿',
+                  imageAsset: 'assets/images/temp2.png',
+                  checked: _selectedName == '템플릿 2',
+                  onToggle: () {
+                    setState(() {
+                      _selectedName = _selectedName == '템플릿 2' ? null : '템플릿 2';
+                    });
+                  },
+                ),
+                _TemplateTile(
+                  name: '템플릿 3',
+                  description: '핑크핑크한 귀여운 템플릿',
+                  imageAsset: 'assets/images/temp3.png',
+                  checked: _selectedName == '템플릿 3',
+                  onToggle: () {
+                    setState(() {
+                      _selectedName = _selectedName == '템플릿 3' ? null : '템플릿 3';
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              color: Colors.white,
+              child: SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    elevation: 3,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _onConfirm,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 6),
+                    child: Text(
+                      '템플릿 선택하기',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   void _onConfirm() {
     if (_selectedName == null) {
-      CommonDialogs.showError(
-        context: context,
-        message: '템플릿을 선택해 주세요.',
-      );
+      CommonDialogs.showError(context: context, message: '템플릿을 선택해 주세요.');
       return;
     }
 
@@ -266,10 +266,7 @@ class _TemplateTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  imageAsset,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.asset(imageAsset, fit: BoxFit.cover),
               ),
             ),
             const SizedBox(height: 12),
