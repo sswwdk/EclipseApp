@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'template_1_screen.dart';
-import 'template_2_screen.dart'; // 🔥 추가
-import 'template_3_screen.dart'; // TODO(jjaga): remove import when template3 finalized
+import 'template_2_screen.dart'; // 
+import 'template_3_screen.dart'; // 
 import '../../../core/theme/app_theme.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
@@ -110,13 +110,20 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
           color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
           child: SizedBox(
-            height: 48,
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -133,7 +140,7 @@ class _ChooseTemplateScreenState extends State<ChooseTemplateScreen> {
                 padding: EdgeInsets.symmetric(vertical: 6),
                 child: Text(
                   '템플릿 선택하기',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                 ),
               ),
             ),
