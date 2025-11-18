@@ -241,8 +241,34 @@ class ApiService {
 
           final categoryId = review['category_id'] ?? '';
           final categoryName = review['category_name'] ?? '';
-          final address = review['comment'] ?? '주소 정보 없음';
           final visitCount = review['stars'] ?? 0;
+          
+          // 전체 주소 가져오기 (다른 곳에서처럼 getRestaurant 사용)
+          String address = '주소 정보 없음';
+          if (categoryId.isNotEmpty) {
+            try {
+              final restaurant = await getRestaurant(categoryId);
+              // detailAddress 우선, 없으면 address getter 사용
+              final rawAddress = restaurant.detailAddress ?? restaurant.address;
+              if (rawAddress != null && rawAddress.trim().isNotEmpty) {
+                address = rawAddress.trim(); // 앞뒤 공백 제거
+              } else {
+                address = '주소 정보 없음';
+              }
+            } catch (e) {
+              // 실패 시 comment 필드 사용 (fallback)
+              final comment = review['comment']?.toString();
+              address = (comment != null && comment.trim().isNotEmpty) 
+                  ? comment.trim() 
+                  : '주소 정보 없음';
+            }
+          } else {
+            // category_id가 없으면 comment 필드 사용
+            final comment = review['comment']?.toString();
+            address = (comment != null && comment.trim().isNotEmpty) 
+                ? comment.trim() 
+                : '주소 정보 없음';
+          }
 
           stores.add(
             ReviewableStore(
