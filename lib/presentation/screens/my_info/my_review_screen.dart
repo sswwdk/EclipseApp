@@ -452,8 +452,8 @@ class _MyReviewScreenState extends State<MyReviewScreen>
                             TextSpan(
                               text: review.restaurantName,
                               style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
                                 color: AppTheme.textPrimaryColor,
                               ),
                             ),
@@ -462,7 +462,7 @@ class _MyReviewScreenState extends State<MyReviewScreen>
                               TextSpan(
                                 text: displayAddress,
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 13,
                                   color: AppTheme.textSecondaryColor
                                       .withOpacity(0.9),
                                 ),

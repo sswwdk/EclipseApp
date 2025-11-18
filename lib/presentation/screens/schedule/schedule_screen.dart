@@ -7,12 +7,16 @@ import '../../widgets/bottom_navigation_widget.dart';
 import '../../widgets/dialogs/common_dialogs.dart';
 import '../../widgets/app_title_widget.dart';
 import '../../widgets/reviewable_stores_dropdown.dart';
-import '../../../data/services/history_service.dart';
 import '../main/main_screen.dart';
 import '../my_info/schedule_history/schedule_history_screen.dart';
+import '../my_info/schedule_history/schedule_history_template1_detail_screen.dart';
+import '../my_info/schedule_history/schedule_history_template2_detail_screen.dart';
+import '../my_info/schedule_history/schedule_history_template3_detail_screen.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/history_service.dart';
 import '../../../data/models/reviewable_store.dart';
-import '../main/restaurant_detail_review_screen.dart';
+import '../../../data/models/restaurant.dart';
+import '../main/restaurant_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +30,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _recentSchedule;
   bool _isLoadingHistory = false;
 
+  // 오늘의 추천 데이터
+  List<Restaurant> _recommendations = [];
+  bool _isLoadingRecommendations = false;
+
   // 알림 드롭다운 상태
   final GlobalKey _notificationKey = GlobalKey();
   OverlayEntry? _overlayEntry;
@@ -36,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadRecentSchedule();
+    _loadTodayRecommendations();
   }
 
   @override
@@ -45,13 +54,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadRecentSchedule() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoadingHistory = true;
     });
 
     try {
+      // schedule_history_screen.dart와 동일한 API 사용
       final userId = TokenManager.userId;
       if (userId == null) {
+        if (!mounted) return;
         setState(() {
           _isLoadingHistory = false;
         });
@@ -59,60 +72,120 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       final response = await HistoryService.getMyHistory(userId);
-      final List<dynamic> data =
+      
+      if (!mounted) return;
+      
+      // schedule_history_screen.dart와 동일한 방식으로 데이터 추출
+      List<dynamic> data = [];
+      data =
           response['data'] as List<dynamic>? ??
           response['histories'] as List<dynamic>? ??
           response['items'] as List<dynamic>? ??
+          response['history'] as List<dynamic>? ??
           [];
 
-      if (data.isNotEmpty && mounted) {
-        final firstItem = data[0] as Map<String, dynamic>;
+      if (data.isEmpty) {
+        for (final value in response.values) {
+          if (value is List && value.isNotEmpty) {
+            data = value;
+            break;
+          }
+        }
+      }
+
+      if (data.isNotEmpty) {
+        final firstHistory = data[0] as Map<String, dynamic>;
+        
+        // categories_name 추출 (merge_history 테이블의 categories_name)
         final categoriesName =
-            firstItem['categories_name']?.toString() ??
-            firstItem['category_name']?.toString() ??
-            firstItem['name']?.toString() ??
+            firstHistory['categories_name']?.toString() ??
+            firstHistory['category_name']?.toString() ??
             '';
         
-        String dateText = '어제';
-        if (firstItem['visited_at'] != null) {
-          final visitedAt = firstItem['visited_at'];
-          if (visitedAt is String) {
-            try {
-              final date = DateTime.parse(visitedAt);
-              final now = DateTime.now();
-              final diff = now.difference(date).inDays;
-              if (diff == 0) {
-                dateText = '오늘';
-              } else if (diff == 1) {
-                dateText = '어제';
-              } else {
-                dateText = '${diff}일 전';
-              }
-            } catch (e) {
-              dateText = '어제';
-            }
+        // 히스토리 ID 추출 (상세 화면 이동 시 사용)
+        final historyId =
+            firstHistory['id']?.toString() ??
+            firstHistory['history_id']?.toString() ??
+            firstHistory['merge_history_id']?.toString() ??
+            '';
+        
+        // template_type 추출 (상세 화면 이동 시 필요)
+        int templateType = 0;
+        final templateTypeValue = firstHistory['template_type'] ?? firstHistory['templateType'];
+        if (templateTypeValue != null) {
+          if (templateTypeValue is int) {
+            templateType = templateTypeValue;
+          } else if (templateTypeValue is String) {
+            templateType = int.tryParse(templateTypeValue) ?? 0;
           }
         }
 
+        if (!mounted) return;
+        
         setState(() {
           _recentSchedule = {
-            'title': categoriesName,
-            'date': dateText,
-            'id': firstItem['id']?.toString() ??
-                firstItem['history_id']?.toString() ??
-                '',
+            'date': categoriesName, // categories_name을 date 필드에 저장
+            'id': historyId,
+            'template_type': templateType,
           };
           _isLoadingHistory = false;
         });
       } else {
+        if (!mounted) return;
         setState(() {
           _isLoadingHistory = false;
         });
       }
     } catch (e) {
+      debugPrint('❌ 최근 일정 로드 오류: $e');
+      if (!mounted) return;
       setState(() {
         _isLoadingHistory = false;
       });
+    }
+  }
+
+  /// 오늘의 추천 데이터 로드
+  Future<void> _loadTodayRecommendations() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoadingRecommendations = true;
+    });
+
+    try {
+      final response = await ApiService.getTodayRecommendations();
+      
+      if (!mounted) return;
+
+      final recommendations = response['recommendations'] as List<dynamic>? ?? [];
+      
+      // 추천 데이터를 Restaurant 객체로 변환
+      final restaurants = <Restaurant>[];
+      for (final item in recommendations) {
+        if (item is Map<String, dynamic>) {
+          try {
+            final restaurant = Restaurant.fromMainScreenJson(item);
+            restaurants.add(restaurant);
+          } catch (e) {
+            debugPrint('⚠️ [오늘의 추천] 데이터 파싱 오류: $e');
+          }
+        }
+      }
+
+      if (!mounted) return;
+      
+      setState(() {
+        _recommendations = restaurants;
+        _isLoadingRecommendations = false;
+      });
+    } catch (e) {
+      debugPrint('❌ 오늘의 추천 데이터 로드 오류: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingRecommendations = false;
+        });
+      }
     }
   }
 
@@ -207,7 +280,9 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       Overlay.of(context).insert(_overlayEntry!);
-      setState(() => _isDropdownOpen = true);
+      if (mounted) {
+        setState(() => _isDropdownOpen = true);
+      }
     } catch (e) {
       debugPrint('❌ 드롭다운 표시 오류: $e');
       _removeDropdown();
@@ -259,7 +334,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     Overlay.of(context).insert(_overlayEntry!);
-    setState(() => _isDropdownOpen = true);
+    if (mounted) {
+      setState(() => _isDropdownOpen = true);
+    }
   }
 
 
@@ -293,13 +370,52 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!mounted) return;
 
-      // 리뷰 작성 화면으로 이동
+      // 매장 상세 화면으로 이동
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RestaurantDetailReviewScreen(
+          builder: (context) => RestaurantDetailScreen(
             restaurant: restaurant,
-            showReviewButton: true,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // 로딩 다이얼로그 닫기 (에러 시)
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('매장 정보를 불러올 수 없습니다: $e')));
+    }
+  }
+
+  /// 추천 매장 상세 페이지로 이동
+  void _navigateToRecommendationDetail(Restaurant recommendation) async {
+    try {
+      // 로딩 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+          ),
+        ),
+      );
+
+      // GET /api/categories/{id} 요청으로 매장 상세 정보 조회
+      final restaurant = await ApiService.getRestaurant(recommendation.id);
+
+      if (!mounted) return;
+      Navigator.pop(context); // 로딩 다이얼로그 닫기
+
+      if (!mounted) return;
+
+      // 매장 상세 화면으로 이동
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RestaurantDetailScreen(
+            restaurant: restaurant,
           ),
         ),
       );
@@ -479,46 +595,68 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '오늘의 추천',
+                Text(
+                  '오늘의 추천 매장',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFFF8126),
+                    color: const Color(0xFFFF8126).withOpacity(0.9), // 옅은 주황색
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  '내 위치 기반 추천 할 일',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textPrimaryColor,
-                  ),
-                ),
+                _isLoadingRecommendations
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF8126)),
+                        ),
+                      )
+                    : _recommendations.isNotEmpty
+                        ? Text(
+                            _recommendations[0].name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: AppTheme.textPrimaryColor,
+                              fontWeight: FontWeight.w700, // 강조: w500 -> w700
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : const Text(
+                            '내 위치 기반 추천 할 일',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textPrimaryColor,
+                            ),
+                          ),
               ],
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => const MainScreen(),
-                ),
-              );
-            },
+            onPressed: _recommendations.isNotEmpty
+                ? () => _navigateToRecommendationDetail(_recommendations[0])
+                : () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => const MainScreen(),
+                      ),
+                    );
+                  },
             style: TextButton.styleFrom(
-              backgroundColor: AppTheme.primaryColorWithOpacity10,
-              foregroundColor: AppTheme.primaryColor,
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: const Color.fromARGB(255, 255, 255, 255),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text(
-              '추천 보기',
+              '매장 상세 보기',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
@@ -568,12 +706,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '최근 일정',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFFF8126),
+                      color: const Color(0xFFFF8126).withOpacity(0.6), // 옅은 주황색
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -610,37 +748,66 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '최근 일정',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFFF8126),
+                    color: const Color(0xFFFF8126).withOpacity(0.9), // 옅은 주황색
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${_recentSchedule!['title']} ${_recentSchedule!['date']}',
+                  _recentSchedule!['date']?.toString() ?? '', // categories_name 표시
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     color: AppTheme.textPrimaryColor,
+                    fontWeight: FontWeight.w700, // 강조: 기본 -> w700
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
           TextButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ScheduleHistoryScreen(),
-                ),
-              );
+              final historyId = _recentSchedule!['id']?.toString() ?? '';
+              final templateType = _recentSchedule!['template_type'] as int? ?? 0;
+              
+              // template_type에 따라 다른 상세 화면으로 이동
+              if (templateType == 2) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScheduleHistoryTemplate2DetailScreen(
+                      historyId: historyId,
+                    ),
+                  ),
+                );
+              } else if (templateType == 3) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScheduleHistoryTemplate3DetailScreen(
+                      historyId: historyId,
+                    ),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScheduleHistoryDetailScreen(
+                      historyId: historyId,
+                    ),
+                  ),
+                );
+              }
             },
             style: TextButton.styleFrom(
-              backgroundColor: AppTheme.primaryColorWithOpacity10,
-              foregroundColor: AppTheme.primaryColor,
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: const Color.fromARGB(255, 255, 255, 255),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -650,7 +817,7 @@ class _HomeScreenState extends State<HomeScreen> {
               '일정 열기',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
@@ -710,3 +877,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
