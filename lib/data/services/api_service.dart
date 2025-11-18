@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import '../../shared/helpers/http_interceptor.dart';
 import '../../shared/helpers/token_manager.dart';
 import '../../core/config/server_config.dart';
@@ -32,7 +31,6 @@ class ApiService {
           .map((json) => Restaurant.fromMainScreenJson(json))
           .toList();
     } catch (e) {
-      print('API 호출 오류: $e');
       throw Exception('네트워크 오류: $e');
     }
   }
@@ -58,16 +56,6 @@ class ApiService {
         final Map<String, dynamic> obj = (root['data'] is Map<String, dynamic>)
             ? Map<String, dynamic>.from(root['data'])
             : root;
-        try {
-          final rawReviews = obj['reviews'];
-          print(
-            '🧾 getRestaurant($id) raw reviews: '
-            '${rawReviews is List ? json.encode(rawReviews) : rawReviews}',
-          );
-        } catch (e) {
-          print('🧾 getRestaurant($id) raw reviews 로그 실패: $e');
-        }
-
         final reviews = Review.fromList(obj['reviews']);
 
         // 이 API에서는 태그/리뷰만 사용한다. 나머지는 기본값으로 반환
@@ -98,8 +86,127 @@ class ApiService {
         throw Exception('HTTP 오류: ${response.statusCode}');
       }
     } catch (e) {
-      print('API 호출 오류: $e');
       throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  // "오늘의 추천" 카드 
+  static Future<Map<String, dynamic>> getTodayRecommendations() async {
+    try {
+      final headers = {
+        'Content-Type': 'application/json; charset=UTF-8',
+        ...TokenManager.jwtHeader,
+      };
+
+      final response = await HttpInterceptor.get(
+        '/api/categories/today-recommendations',
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+
+        // 응답은 배열: [히스토리 리스트, 추천 데이터]
+        // data[0] = 히스토리 리스트
+        // data[1] = 추천 데이터 (to_main(1) 결과 = ResponseCategoryListDTO)
+        if (data is List && data.length >= 2) {
+          // 첫 번째 요소: 히스토리 리스트
+          final firstItem = data[0];
+          final historyList = (firstItem is List) 
+              ? firstItem 
+              : (firstItem is Map) 
+                  ? [firstItem] 
+                  : [];
+          
+          // 두 번째 요소: 추천 데이터 (ResponseCategoryListDTO 형식)
+          final secondItem = data[1];
+          List<dynamic> recommendations = [];
+          
+          if (secondItem is Map<String, dynamic>) {
+            // ResponseCategoryListDTO 형식: { categories: [...] }
+            final categories = secondItem['categories'];
+            if (categories is List) {
+              recommendations = categories;
+            } else if (categories != null) {
+              recommendations = [categories];
+            }
+          } else if (secondItem is List) {
+            recommendations = secondItem;
+          }
+
+          return {
+            'histories': historyList,  // data[0] = 히스토리 리스트
+            'recommendations': recommendations,  // data[1] = 추천 데이터
+          };
+        } else if (data is Map<String, dynamic>) {
+          // Map 형식 응답 처리 (하위 호환성)
+          final historyList = (data['histories'] is List) 
+              ? data['histories'] as List<dynamic>
+              : [];
+          final recommendations = (data['recommendations'] is List) 
+              ? data['recommendations'] as List<dynamic>
+              : [];
+          
+          return {
+            'histories': recommendations,
+            'recommendations': historyList,
+          };
+        } else {
+          return {
+            'histories': [],
+            'recommendations': [],
+          };
+        }
+      } else {
+        return {
+          'recommendations': [],
+          'histories': []
+        };
+      }
+    } catch (e) {
+      return {
+        'recommendations': [],
+        'histories': [],
+      };
+    }
+  }
+
+  //  "최근 일정" 카테고리 조회 (리뷰가 있는 매장 중 평점 높은 순)
+  static Future<Map<String, dynamic>> getRecentScheduleCategories({
+    int limit = 10,
+  }) async {
+    try {
+      final headers = {
+        'Content-Type': 'application/json; charset=UTF-8',
+        ...TokenManager.jwtHeader,
+      };
+
+      final response = await HttpInterceptor.get(
+        '/api/categories',
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+
+        // ResponseCategoryListDTO 형식: { categories: [...] }
+        final Map<String, dynamic> responseData = 
+            data is Map<String, dynamic> ? data : <String, dynamic>{};
+        final List<dynamic> categories = 
+            (responseData['categories'] as List<dynamic>?) ?? [];
+
+        return {
+          'categories': categories,
+        };
+      } else {
+        return {
+          'categories': [],
+        };
+      }
+    } catch (e) {
+      return {
+        'categories': [],
+      };
     }
   }
 
@@ -108,8 +215,6 @@ class ApiService {
     int limit = 6,
   }) async {
     try {
-      debugPrint('🔍 리뷰 작성 가능한 매장 조회 시작...');
-
       final headers = {
         'Content-Type': 'application/json; charset=UTF-8',
         ...TokenManager.jwtHeader,
@@ -120,17 +225,12 @@ class ApiService {
         headers: headers,
       );
 
-      debugPrint('📡 응답 상태 코드: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
-        debugPrint('📦 응답 데이터: $data');
 
         final reviewList = data['review_list'] as List<dynamic>? ?? [];
-        debugPrint('📝 리뷰 가능 매장 개수: ${reviewList.length}');
 
         if (reviewList.isEmpty) {
-          debugPrint('❌ 리뷰 작성 가능한 매장이 없습니다');
           return [];
         }
 
@@ -141,16 +241,41 @@ class ApiService {
 
           final categoryId = review['category_id'] ?? '';
           final categoryName = review['category_name'] ?? '';
-          final address = review['comment'] ?? '주소 정보 없음';
           final visitCount = review['stars'] ?? 0;
+          
+          // 전체 주소 가져오기 (다른 곳에서처럼 getRestaurant 사용)
+          String address = '주소 정보 없음';
+          if (categoryId.isNotEmpty) {
+            try {
+              final restaurant = await getRestaurant(categoryId);
+              // detailAddress 우선, 없으면 address getter 사용
+              final rawAddress = restaurant.detailAddress ?? restaurant.address;
+              if (rawAddress != null && rawAddress.trim().isNotEmpty) {
+                address = rawAddress.trim(); // 앞뒤 공백 제거
+              } else {
+                address = '주소 정보 없음';
+              }
+            } catch (e) {
+              // 실패 시 comment 필드 사용 (fallback)
+              final comment = review['comment']?.toString();
+              address = (comment != null && comment.trim().isNotEmpty) 
+                  ? comment.trim() 
+                  : '주소 정보 없음';
+            }
+          } else {
+            // category_id가 없으면 comment 필드 사용
+            final comment = review['comment']?.toString();
+            address = (comment != null && comment.trim().isNotEmpty) 
+                ? comment.trim() 
+                : '주소 정보 없음';
+          }
 
-          // 🔥 이미지 조회 없이 바로 객체 생성
           stores.add(
             ReviewableStore(
               categoryId: categoryId,
               categoryName: categoryName,
               categoryType: review['category_type'] ?? '',
-              imageUrl: null, // 🔥 이미지 없음
+              imageUrl: null,
               address: address,
               visitCount: visitCount is int ? visitCount : 0,
               reviewCount: 0,
@@ -159,18 +284,13 @@ class ApiService {
                   : DateTime.now(),
             ),
           );
-
-          debugPrint('✅ ${categoryName} 추가 완료 (이미지 조회 생략)');
         }
 
-        debugPrint('✅ 리뷰 작성 가능한 매장 ${stores.length}개 조회 완료');
         return stores;
       } else {
-        debugPrint('❌ 응답 오류: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      debugPrint('❌ 리뷰 작성 가능한 매장 조회 오류: $e');
       return [];
     }
   }
