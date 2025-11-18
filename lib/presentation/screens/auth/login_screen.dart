@@ -31,7 +31,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLogin() async {
     if (_idController.text.isEmpty || _passwordController.text.isEmpty) {
-      // 🔥 에러 메시지 (빨간색)
       CommonDialogs.showError(context: context, message: '아이디와 비밀번호를 입력해주세요.');
       return;
     }
@@ -41,7 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // 입력한 아이디를 저장
       final inputUserId = _idController.text.trim();
 
       final response = await UserService.login(
@@ -49,14 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text.trim(),
       );
 
-      // 응답에서 토큰/사용자 정보 추출 및 저장
       final token1 = response['token1'];
       final token2 = response['token2'];
 
       if (token1 != null && token2 != null) {
         TokenManager.setTokens(token1, token2);
 
-        // 사용자 정보에서 닉네임, ID, 이메일 추출
         String? nickname;
         String? userId;
         String? email;
@@ -66,14 +62,12 @@ class _LoginScreenState extends State<LoginScreen> {
           userId = info['userID'] as String? ?? inputUserId;
           email = info['email'] as String?;
 
-          // 디버깅을 위한 로그
           print('로그인 응답에서 추출된 닉네임: $nickname');
           print('로그인 응답에서 추출된 사용자 ID: $userId');
           print('로그인 응답에서 추출된 이메일: $email');
           print('전체 info 데이터: $info');
         }
 
-        // 닉네임이 없으면 username 사용
         if (nickname == null && response['info'] != null) {
           final info = response['info'] as Map<String, dynamic>;
           nickname = info['username'] as String?;
@@ -83,12 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
         TokenManager.setUserId(userId);
         TokenManager.setUserEmail(email);
 
-        // TokenManager에 저장된 값 확인
         print('TokenManager에 저장된 닉네임: ${TokenManager.userName}');
         print('TokenManager에 저장된 사용자 ID: ${TokenManager.userId}');
         print('TokenManager에 저장된 이메일: ${TokenManager.userEmail}');
 
-        // 🔥 성공 메시지 (초록색)
         CommonDialogs.showSuccess(context: context, message: '로그인 성공!');
 
         Navigator.pushReplacement(
@@ -96,15 +88,18 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } else {
-        // 🔥 에러 메시지 (빨간색)
         CommonDialogs.showError(context: context, message: '토큰을 받지 못했습니다.');
       }
     } catch (e) {
-      // 🔥 에러 메시지 (빨간색)
-      CommonDialogs.showError(
-        context: context,
-        message: '로그인 중 오류가 발생했습니다: $e',
-      );
+      // 🔥 Exception 메시지에서 "Exception: " 부분 제거하고 표시
+      String errorMessage = e.toString();
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.replaceFirst('Exception: ', '');
+      }
+
+      CommonDialogs.showError(context: context, message: errorMessage);
+
+      print('로그인 오류: $e');
     } finally {
       setState(() {
         _isLoading = false;

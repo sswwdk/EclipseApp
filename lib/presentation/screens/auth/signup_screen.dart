@@ -13,13 +13,14 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _passwordConfirmController = TextEditingController();
+  final TextEditingController _passwordConfirmController =
+      TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  
+
   bool _isPasswordObscured = true;
   bool _isPasswordConfirmObscured = true;
   DateTime? _selectedDate;
@@ -47,17 +48,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final String nickname = _nicknameController.text.trim();
     final String email = _emailController.text.trim();
     final String name = _nameController.text.trim();
-    
+
     if (id.isEmpty) {
       _showSnackBar('아이디를 입력하세요.');
       return;
     }
-    
+
     if (password.isEmpty) {
       _showSnackBar('비밀번호를 입력하세요.');
       return;
     }
-    
+
     if (confirmPassword.isEmpty) {
       _showSnackBar('비밀번호 확인을 입력하세요.');
       return;
@@ -72,17 +73,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _showSnackBar('닉네임을 입력하세요.');
       return;
     }
-    
+
     if (email.isEmpty) {
       _showSnackBar('이메일을 입력하세요.');
       return;
     }
-    
+
     if (name.isEmpty) {
       _showSnackBar('이름을 입력하세요.');
       return;
     }
-    
+
     // 이메일 형식 검증
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(email)) {
@@ -96,13 +97,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       // 선택 필드 수집
-      final String? phone = _phoneController.text.trim().isNotEmpty 
-          ? _phoneController.text.trim() 
+      final String? phone = _phoneController.text.trim().isNotEmpty
+          ? _phoneController.text.trim()
           : null;
-      final String? address = _addressController.text.trim().isNotEmpty 
-          ? _addressController.text.trim() 
+      final String? address = _addressController.text.trim().isNotEmpty
+          ? _addressController.text.trim()
           : null;
-      
+
       // 성별 변환: 'female' -> 0, 'male' -> 1, 'none' 또는 null -> null
       int? sex;
       if (_selectedGender == 'female') {
@@ -110,11 +111,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       } else if (_selectedGender == 'male') {
         sex = 1;
       }
-      
+
       // 생년월일 형식 변환: DateTime -> 'yyyy-MM-dd'
       String? birth;
       if (_selectedDate != null) {
-        birth = '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
+        birth =
+            '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
       }
 
       // ✅ 실제 API 호출 (모든 필드 전달)
@@ -129,12 +131,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         sex: sex,
         birth: birth,
       );
-      
+
       if (!mounted) return;
 
       debugPrint('회원가입 성공: $response');
       _showSnackBar('회원가입이 완료되었습니다!', isSuccess: true);
-      
+
       // 1초 대기 후 로그인 화면으로 이동
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;
@@ -142,7 +144,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } catch (e) {
       if (!mounted) return;
       debugPrint('회원가입 실패: $e');
-      _showSnackBar('회원가입에 실패했습니다: $e');
+
+      // 🔥 Exception 메시지에서 "Exception: " 부분 제거하고 표시
+      String errorMessage = e.toString();
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.replaceFirst('Exception: ', '');
+      }
+
+      _showSnackBar(errorMessage);
     } finally {
       if (mounted) {
         setState(() {
@@ -154,15 +163,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _showSnackBar(String message, {bool isSuccess = false}) {
     if (isSuccess) {
-      CommonDialogs.showSuccess(
-        context: context,
-        message: message,
-      );
+      CommonDialogs.showSuccess(context: context, message: message);
     } else {
-      CommonDialogs.showError(
-        context: context,
-        message: message,
-      );
+      CommonDialogs.showError(context: context, message: message);
     }
   }
 
@@ -207,11 +210,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
             ),
-            
+
             // 아이디 입력 필드 (필수)
-            _buildInputField('아이디', '아이디를 입력하세요', _idController, isRequired: true),
+            _buildInputField(
+              '아이디',
+              '아이디를 입력하세요',
+              _idController,
+              isRequired: true,
+            ),
             const SizedBox(height: 20),
-            
+
             // 비밀번호 입력 필드 (필수)
             _buildInputField(
               '비밀번호',
@@ -243,35 +251,60 @@ class _SignUpScreenState extends State<SignUpScreen> {
               },
             ),
             const SizedBox(height: 20),
-            
+
             // 닉네임 입력 필드 (필수)
-            _buildInputField('닉네임', '닉네임을 입력하세요', _nicknameController, isRequired: true),
+            _buildInputField(
+              '닉네임',
+              '닉네임을 입력하세요',
+              _nicknameController,
+              isRequired: true,
+            ),
             const SizedBox(height: 20),
-            
+
             // 이메일 입력 필드 (필수)
-            _buildInputField('이메일', '이메일을 입력하세요', _emailController, isRequired: true),
+            _buildInputField(
+              '이메일',
+              '이메일을 입력하세요',
+              _emailController,
+              isRequired: true,
+            ),
             const SizedBox(height: 20),
-            
+
             // 이름 입력 필드 (필수)
-            _buildInputField('이름', '이름을 입력하세요', _nameController, isRequired: true),
+            _buildInputField(
+              '이름',
+              '이름을 입력하세요',
+              _nameController,
+              isRequired: true,
+            ),
             const SizedBox(height: 20),
-            
+
             // 전화번호 입력 필드 (선택)
-            _buildInputField('전화번호', '전화번호를 입력하세요', _phoneController, isOptional: true),
+            _buildInputField(
+              '전화번호',
+              '전화번호를 입력하세요',
+              _phoneController,
+              isOptional: true,
+            ),
             const SizedBox(height: 20),
-            
+
             // 주소 입력 필드 (선택)
-            _buildInputField('주소', '주소를 입력하세요', _addressController, isOptional: true),
+            _buildInputField(
+              '주소',
+              '주소를 입력하세요',
+              _addressController,
+              isOptional: true,
+            ),
             const SizedBox(height: 20),
-            
+
             // 성별 선택 필드 (선택)
             _buildGenderField(isOptional: true),
             const SizedBox(height: 20),
-            
+
             // 생년월일 선택 필드 (선택)
             _buildDateField(isOptional: true),
             const SizedBox(height: 40),
-            
+
             // 회원가입 버튼
             SizedBox(
               width: double.infinity,
@@ -290,7 +323,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                           strokeWidth: 2,
                         ),
                       )
@@ -304,7 +339,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
               ),
             ),
-            
+
             const SizedBox(height: 30),
           ],
         ),
@@ -466,7 +501,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ? '${_selectedDate!.year}년 ${_selectedDate!.month}월 ${_selectedDate!.day}일'
                         : '생년월일을 선택하세요',
                     style: TextStyle(
-                      color: _selectedDate != null ? Colors.black87 : Colors.grey[400],
+                      color: _selectedDate != null
+                          ? Colors.black87
+                          : Colors.grey[400],
                     ),
                   ),
                 ),
@@ -527,18 +564,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               isExpanded: true,
               items: const [
-                DropdownMenuItem(
-                  value: 'female',
-                  child: Text('여'),
-                ),
-                DropdownMenuItem(
-                  value: 'male',
-                  child: Text('남'),
-                ),
-                DropdownMenuItem(
-                  value: 'none',
-                  child: Text('선택안함'),
-                ),
+                DropdownMenuItem(value: 'female', child: Text('여')),
+                DropdownMenuItem(value: 'male', child: Text('남')),
+                DropdownMenuItem(value: 'none', child: Text('선택안함')),
               ],
               onChanged: (String? newValue) {
                 setState(() {
