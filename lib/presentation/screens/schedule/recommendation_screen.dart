@@ -543,7 +543,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   child: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 6),
                     child: Text(
-                      '일반 템플릿',
+                      '일반 일정표',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
