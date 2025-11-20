@@ -140,7 +140,7 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
   void _toggleSelection(String category, int index) {
     setState(() {
       final selected = _selectedStates[category]!;
-      
+
       if (selected.contains(index)) {
         // 같은 항목을 다시 클릭하면 해제
         selected.remove(index);
@@ -178,13 +178,14 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
       itemBuilder: (context, index) {
         // 🔥 Map으로 캐스팅하고 필드 추출
         final place = places[index] as Map<String, dynamic>;
-        
+
         // 선택 상태 확인
         final isSelected = _selectedStates[category]?.contains(index) ?? false;
-        
+
         // 디버깅: 선택된 항목의 서버 응답 데이터 확인
         if (isSelected) {
-          final placeName = place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
+          final placeName =
+              place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
           print('🔍 [선택된 항목] 추천 데이터 구조 확인 (index: $index):');
           print('   이름: $placeName');
           print('   전체 필드: ${place.keys.toList()}');
@@ -197,11 +198,10 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
           print('   id: ${place['id']}');
           print('   전체 데이터: $place');
         }
-        
+
         // 서버 응답 형식에 따라 여러 필드명 시도 (title, name 순서로)
-        final placeName = place['title'] as String? ?? 
-                         place['name'] as String? ?? 
-                         '알 수 없음';
+        final placeName =
+            place['title'] as String? ?? place['name'] as String? ?? '알 수 없음';
         final placeAddress =
             place['address'] as String? ??
             place['detail_address'] as String? ??
@@ -211,9 +211,8 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
             place['sub_category'] as String? ??
             category;
         // 이미지 필드도 여러 가능성 시도
-        final placeImage = place['image_url'] as String? ?? 
-                          place['image'] as String? ?? 
-                          '';
+        final placeImage =
+            place['image_url'] as String? ?? place['image'] as String? ?? '';
         final placeId = place['id'] as String? ?? '';
         final double? averageStars = _extractAverageStars(place);
 
@@ -402,14 +401,14 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                               as List<dynamic>?) ??
                           [];
                       final selectedIndices = _selectedStates[category] ?? {};
-                      
+
                       if (selectedIndices.isNotEmpty) {
                         selectedByCategory[category] = [];
                         for (final index in selectedIndices) {
                           if (index < places.length) {
                             // 🔥 실제 Map 객체를 전달
                             final place = places[index] as Map<String, dynamic>;
-                            
+
                             // 디버깅: 선택된 모든 장소의 데이터 확인 (위경도 포함)
                             print('🔍 [$category] 선택된 장소 #${index + 1} 데이터:');
                             print('   이름: ${place['title'] ?? place['name']}');
@@ -420,20 +419,26 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                             print('   latitude: ${place['latitude']}');
                             print('   longitude: ${place['longitude']}');
                             print('   category_id: ${place['category_id']}');
-                            
+
                             // 위경도가 있는지 확인
-                            final hasLatLng = place['lat'] != null || place['latitude'] != null;
-                            final hasLng = place['lng'] != null || place['longitude'] != null;
+                            final hasLatLng =
+                                place['lat'] != null ||
+                                place['latitude'] != null;
+                            final hasLng =
+                                place['lng'] != null ||
+                                place['longitude'] != null;
                             if (hasLatLng && hasLng) {
                               print('   ✅ 위경도 정보 있음');
                             } else {
                               print('   ⚠️ 위경도 정보 없음');
                             }
-                            
+
                             selectedByCategory[category]!.add(place);
                           }
                         }
-                        print('🔍 [$category] 총 ${selectedIndices.length}개 장소 선택됨');
+                        print(
+                          '🔍 [$category] 총 ${selectedIndices.length}개 장소 선택됨',
+                        );
                       }
                     }
 
@@ -444,18 +449,17 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                       );
                       return;
                     }
-                    
+
                     print('🔍 RouteConfirmScreen으로 전달할 데이터:');
                     print('   카테고리 목록: ${selectedByCategory.keys.toList()}');
 
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            RouteConfirmScreen(
-                              selected: selectedByCategory,
-                              showOriginDialogOnInit: true,
-                            ),
+                        builder: (_) => RouteConfirmScreen(
+                          selected: selectedByCategory,
+                          showOriginDialogOnInit: true,
+                        ),
                       ),
                     );
                   },
@@ -471,8 +475,11 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   child: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 6),
                     child: Text(
-                      '일정표 제작하기',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                      '템플릿 일정표',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -483,14 +490,15 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   onPressed: () {
                     // 선택된 항목만 모아 요약 화면으로 이동
                     if (!mounted) return;
-                    final Map<String, List<Map<String, dynamic>>> selectedByCategory = {};
+                    final Map<String, List<Map<String, dynamic>>>
+                    selectedByCategory = {};
                     for (final category in widget.selectedCategories) {
                       final places =
                           (widget.recommendations[category]
                               as List<dynamic>?) ??
                           [];
                       final selectedIndices = _selectedStates[category] ?? {};
-                      
+
                       if (selectedIndices.isNotEmpty) {
                         selectedByCategory[category] = [];
                         for (final index in selectedIndices) {
@@ -535,8 +543,11 @@ class _RecommendationResultScreenState extends State<RecommendationResultScreen>
                   child: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 6),
                     child: Text(
-                      '완료하기',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                      '일반 템플릿',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
